@@ -1,0 +1,84 @@
+# =============================================================================
+# Supabase CI/CD — Database Migrations + Edge Functions
+#
+# Triggers automatically on push to `main` when any of these change:
+#   - app/supabase/migrations/**   → runs `supabase db push`
+#   - app/supabase/functions/**    → runs `supabase functions deploy`
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   SUPABASE_ACCESS_TOKEN  — Personal access token from supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_ID    — Project reference ID (Dashboard → Project Settings → General)
+#   SUPABASE_DB_URL        — Direct DB URL: postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+# =============================================================================
+
+name: Supabase
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/supabase/migrations/**'
+      - 'app/supabase/functions/**'
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Apply new migration files to the production Supabase database.
+  # Only runs when migration SQL files are changed.
+  # ---------------------------------------------------------------------------
+  migrate:
+    name: DB Migrations
+    runs-on: ubuntu-latest
+    # Only run this job when migration files changed (or manual trigger)
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      contains(toJson(github.event.commits.*.modified + github.event.commits.*.added), 'app/supabase/migrations/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Run migrations
+        working-directory: app
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase db push \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Deploy Supabase Edge Functions to production.
+  # Only runs when function source files are changed.
+  # ---------------------------------------------------------------------------
+  deploy-functions:
+    name: Edge Functions
+    runs-on: ubuntu-latest
+    # Only run this job when edge function files changed (or manual trigger)
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      contains(toJson(github.event.commits.*.modified + github.event.commits.*.added), 'app/supabase/functions/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy all edge functions
+        working-directory: app
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy \
+            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
