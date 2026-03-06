@@ -1,12 +1,10 @@
 # =============================================================================
 # Proxy CI/CD — Deploy to Vercel on push to main
 #
-# Triggers automatically on push to `main` when proxy source files change.
-#
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   VERCEL_TOKEN       — from vercel.com/account/tokens
-#   VERCEL_ORG_ID      — from `vercel link` → .vercel/project.json → orgId
-#   VERCEL_PROJECT_ID  — from `vercel link` → .vercel/project.json → projectId
+#   VERCEL_ORG_ID      — from `vercel link` inside proxy/ → .vercel/project.json → orgId
+#   VERCEL_PROJECT_ID  — from `vercel link` inside proxy/ → .vercel/project.json → projectId
 # =============================================================================
 
 name: Proxy
@@ -17,7 +15,6 @@ on:
       - main
     paths:
       - 'proxy/**'
-  # Allow manual trigger from GitHub Actions tab
   workflow_dispatch:
 
 jobs:
@@ -29,44 +26,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        working-directory: proxy
-        run: npm ci
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel environment
+      - name: Deploy to Vercel production
         working-directory: proxy
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          vercel pull --yes --environment=production \
-            --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build project
-        working-directory: proxy
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          vercel build --prod \
-            --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy to production
-        working-directory: proxy
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          vercel deploy --prebuilt --prod \
-            --token=${{ secrets.VERCEL_TOKEN }}
+          DEPLOYMENT_URL=$(vercel deploy --prod --yes \
+            --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deployed to: $DEPLOYMENT_URL"
