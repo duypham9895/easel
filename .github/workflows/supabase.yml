@@ -31,10 +31,6 @@ jobs:
   migrate:
     name: DB Migrations
     runs-on: ubuntu-latest
-    # Only run this job when migration files changed (or manual trigger)
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      contains(toJson(github.event.commits.*.modified + github.event.commits.*.added), 'app/supabase/migrations/')
 
     steps:
       - name: Checkout code
@@ -61,10 +57,6 @@ jobs:
   deploy-functions:
     name: Edge Functions
     runs-on: ubuntu-latest
-    # Only run this job when edge function files changed (or manual trigger)
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      contains(toJson(github.event.commits.*.modified + github.event.commits.*.added), 'app/supabase/functions/')
 
     steps:
       - name: Checkout code
