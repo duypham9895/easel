@@ -8,8 +8,7 @@ A couples period tracking app. The girlfriend tracks her cycle and daily wellbei
 easel/
 ├── app/        Expo / React Native app (iOS + Android)
 ├── proxy/      Vercel serverless proxy (MiniMax AI key protection)
-├── DEPLOYMENT.md
-└── USER_JOURNEYS.md
+└── docs/       Product, design, and operational documentation
 ```
 
 ## Tech Stack
@@ -24,7 +23,7 @@ easel/
 
 ## Quick Start
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full setup guide.
+See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for the full setup guide.
 
 ```bash
 # App
@@ -36,5 +35,9 @@ cd proxy && npm install && vercel dev
 
 ## Documentation
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) — step-by-step deploy guide (Supabase, Vercel, EAS)
-- [USER_JOURNEYS.md](./USER_JOURNEYS.md) — customer journeys and use case diagrams
+| File | Description |
+|---|---|
+| [docs/PRD.md](./docs/PRD.md) | Product requirements document |
+| [docs/UX_DESIGN.md](./docs/UX_DESIGN.md) | UX/UI design concept and visual identity |
+| [docs/USER_JOURNEYS.md](./docs/USER_JOURNEYS.md) | Customer journeys, use cases, and system diagrams |
+| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Step-by-step deployment guide (Supabase, Vercel, EAS) |
