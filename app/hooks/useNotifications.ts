@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import { router } from 'expo-router';
 import { useAppStore } from '@/store/appStore';
 
 /**
@@ -28,7 +29,7 @@ Notifications.setNotificationHandler({
  */
 export function useNotifications() {
   const { isLoggedIn, registerPushToken } = useAppStore();
-  const tapListenerRef = useRef<Notifications.Subscription | null>(null);
+  const tapListenerRef = useRef<ReturnType<typeof Notifications.addNotificationResponseReceivedListener> | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -44,17 +45,10 @@ export function useNotifications() {
       }
     })();
 
-    // Handle notification tap — app was in background or closed
+    // Handle notification tap — routes user to their dashboard regardless of type
     tapListenerRef.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        // The `data` field comes from the Edge Function payload
-        const data = response.notification.request.content.data as {
-          type?: string;
-          coupleId?: string;
-        };
-        // You can use expo-router here to deep-link into the SOS screen:
-        // router.replace('/(tabs)'); — keep it simple for now
-        console.log('[useNotifications] notification tapped:', data);
+      () => {
+        router.replace('/(tabs)');
       }
     );
 
@@ -72,15 +66,31 @@ async function requestPermissionsAndGetToken(): Promise<string | null> {
     return null;
   }
 
-  // Set up the SOS notification channel on Android (required for Android 8+)
+  // Set up notification channels on Android (required for Android 8+)
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('sos', {
-      name: 'SOS Signals',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#F28B82',
-      sound: 'default',
-    });
+    await Promise.all([
+      Notifications.setNotificationChannelAsync('whisper', {
+        name: 'Whisper',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 200, 100, 200],
+        lightColor: '#B39DDB',
+        sound: 'default',
+      }),
+      Notifications.setNotificationChannelAsync('cycle', {
+        name: 'Cycle Reminders',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 150],
+        lightColor: '#F48FB1',
+        sound: 'default',
+      }),
+      Notifications.setNotificationChannelAsync('sos', {
+        name: 'SOS Signals',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#F28B82',
+        sound: 'default',
+      }),
+    ]);
   }
 
   const { status: existing } = await Notifications.getPermissionsAsync();

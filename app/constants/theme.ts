@@ -48,3 +48,27 @@ export const Typography = {
   caption: { fontSize: 13, fontWeight: '500' as const },
   tiny: { fontSize: 11, fontWeight: '600' as const },
 } as const;
+
+export const MoonColors = {
+  background: '#0D1B2A', surface: '#1A2B3C',
+  accentPrimary: '#B39DDB', accentSecondary: '#E0E0F0',
+  textPrimary: '#F0F0FF', textSecondary: '#8899AA',
+  textHint: '#4A5568', card: '#162233', inputBg: '#1E3045',
+  border: '#2D4A6B', overlay: 'rgba(0,0,0,0.6)',
+  white: '#FFFFFF', black: '#000000',
+} as const;
+
+export const SunColors = {
+  background: '#FFF8F0', surface: '#FFFFFF',
+  accentPrimary: '#F59E0B', accentSecondary: '#FF7043',
+  textPrimary: '#1A1008', textSecondary: '#6B5B45',
+  textHint: '#9C8B7A', card: '#FFFFFF', inputBg: '#FFF3E0',
+  border: '#FFE0B2', overlay: 'rgba(0,0,0,0.35)',
+  white: '#FFFFFF', black: '#000000',
+} as const;
+
+export function getTheme(role: 'moon' | 'sun' | null) {
+  if (role === 'moon') return MoonColors;
+  if (role === 'sun') return SunColors;
+  return Colors;
+}

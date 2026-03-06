@@ -1,11 +1,11 @@
-export type UserRole = 'girlfriend' | 'boyfriend' | null;
+export type UserRole = 'moon' | 'sun' | null;
 
 export type CyclePhase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
 
 export interface SOSOption {
   id: string;
   title: string;
-  emoji: string;
+  icon: string; // Feather icon name
   color: string;
   description: string;
 }
@@ -91,4 +91,20 @@ export interface DbUserPreferences {
   ai_model: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface NotificationPreferences {
+  periodApproaching: boolean;
+  periodStarted: boolean;
+  periodEnded: boolean;
+  whisperAlerts: boolean;
+  useAiTiming: boolean;
+  manualDaysBefore: number;
+}
+
+export interface CyclePrediction {
+  predictedDate: string;
+  confidence: number;
+  confidenceLabel: 'high' | 'medium' | 'low';
+  notifyDaysBefore: number;
 }

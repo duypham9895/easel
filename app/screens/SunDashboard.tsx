@@ -2,10 +2,9 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '@/store/appStore';
-import { useSOSListener } from '@/hooks/useSOSListener';
-import { useAIPartnerAdvice } from '@/hooks/useAIPartnerAdvice';
 import { GuideCard } from '@/components/bf/GuideCard';
-import { SOSAlert } from '@/components/bf/SOSAlert';
+import { WhisperAlert } from '@/components/sun/WhisperAlert';
+import { UnlinkedScreen } from '@/components/sun/UnlinkedScreen';
 import { PHASE_INFO } from '@/constants/phases';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 import {
@@ -13,26 +12,70 @@ import {
   getCurrentPhase,
   getDaysUntilNextPeriod,
 } from '@/utils/cycleCalculator';
+import { useAIPartnerAdvice } from '@/hooks/useAIPartnerAdvice';
+import { useSOSListener } from '@/hooks/useSOSListener';
 
-export function BFDashboard() {
-  const { cycleSettings, activeSOS } = useAppStore();
+const SUN = {
+  background: '#FFF8F0',
+  surface: '#FFFFFF',
+  accentPrimary: '#F59E0B',
+  accentSecondary: '#FF7043',
+  textPrimary: '#1A1008',
+  textSecondary: '#6B5B45',
+  textHint: '#9C8B7A',
+  card: '#FFFFFF',
+  inputBg: '#FFF3E0',
+  border: '#FFE0B2',
+};
 
-  // Subscribe to real-time SOS signals from GF (foreground/in-app case)
+const PHASE_KEYS = ['menstrual', 'follicular', 'ovulatory', 'luteal'] as const;
+
+export function SunDashboard() {
+  const { cycleSettings, isPartnerLinked, linkToPartner } = useAppStore();
+  const activeWhisper = useAppStore(
+    (s) => s.activeWhisper ?? s.activeSOS,
+  );
+
   useSOSListener();
 
   const dayInCycle = getCurrentDayInCycle(
     cycleSettings.lastPeriodStartDate,
     cycleSettings.avgCycleLength,
   );
-  const phase = getCurrentPhase(dayInCycle, cycleSettings.avgCycleLength, cycleSettings.avgPeriodLength);
-  const daysUntilPeriod = getDaysUntilNextPeriod(dayInCycle, cycleSettings.avgCycleLength);
+  const phase = getCurrentPhase(
+    dayInCycle,
+    cycleSettings.avgCycleLength,
+    cycleSettings.avgPeriodLength,
+  );
+  const daysUntilPeriod = getDaysUntilNextPeriod(
+    dayInCycle,
+    cycleSettings.avgCycleLength,
+  );
   const phaseInfo = PHASE_INFO[phase];
 
-  // AI-generated BF advice — replaces static partnerAdvice text
-  const { advice, isAI: adviceIsAI, isLoading: adviceLoading } = useAIPartnerAdvice(phase, dayInCycle);
+  const {
+    advice,
+    isAI: adviceIsAI,
+    isLoading: adviceLoading,
+  } = useAIPartnerAdvice(phase, dayInCycle);
+
+  function shareInvite() {
+    // Share.share would go here — stub for now
+    console.log('Share invite');
+  }
+
+  if (!isPartnerLinked) {
+    return (
+      <UnlinkedScreen
+        onLink={linkToPartner}
+        onInvite={shareInvite}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
+      {/* Ambient phase-colored gradient header */}
       <LinearGradient
         colors={[phaseInfo.color + '20', 'transparent']}
         style={styles.headerGlow}
@@ -45,79 +88,105 @@ export function BFDashboard() {
       >
         {/* Header */}
         <View style={styles.topBar}>
-          <View>
-            <Text style={styles.greeting}>Hey, partner 💙</Text>
-            <Text style={styles.headlineTitle}>Be there for her</Text>
-          </View>
+          <Text style={styles.greeting}>Hey, Sun</Text>
+          <Text style={styles.headlineTitle}>Be there for Moon</Text>
         </View>
 
-        {/* Active SOS alert */}
-        {activeSOS && <SOSAlert sos={activeSOS} phase={phase} dayInCycle={dayInCycle} />}
-
-        {/* Her Status Card */}
+        {/* Moon Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusLeft}>
-            <View style={[styles.phaseOrb, { backgroundColor: phaseInfo.color }]}>
+            {/* Phase orb */}
+            <View
+              style={[styles.phaseOrb, { backgroundColor: phaseInfo.color }]}
+            >
               <Text style={styles.phaseOrbDay}>{dayInCycle}</Text>
             </View>
+            {/* Text group */}
             <View style={styles.statusText}>
               <Text style={[styles.phaseName, { color: phaseInfo.color }]}>
                 {phaseInfo.name}
               </Text>
               <Text style={styles.phaseTagline}>{phaseInfo.tagline}</Text>
-              <Text style={styles.cycleDay}>Day {dayInCycle} of her cycle</Text>
+              <Text style={styles.cycleDay}>
+                Day {dayInCycle} of Moon's cycle
+              </Text>
             </View>
           </View>
 
-          <View style={[styles.countdownBadge, { backgroundColor: phaseInfo.color + '14' }]}>
-            <Text style={[styles.countdownNumber, { color: phaseInfo.color }]}>
+          {/* Countdown badge */}
+          <View
+            style={[
+              styles.countdownBadge,
+              { backgroundColor: phaseInfo.color + '14' },
+            ]}
+          >
+            <Text
+              style={[styles.countdownNumber, { color: phaseInfo.color }]}
+            >
               {daysUntilPeriod}
             </Text>
-            <Text style={[styles.countdownLabel, { color: phaseInfo.color }]}>
-              days until{'\n'}next period
+            <Text
+              style={[styles.countdownLabel, { color: phaseInfo.color }]}
+            >
+              {'days until\nnext period'}
             </Text>
           </View>
         </View>
 
+        {/* Active Whisper alert */}
+        {activeWhisper && (
+          <WhisperAlert
+            whisper={activeWhisper}
+            phase={phase}
+            dayInCycle={dayInCycle}
+          />
+        )}
+
         {/* Guide section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Her Survival Guide</Text>
+          <Text style={styles.sectionTitle}>Today's Guide</Text>
           <GuideCard
-            emoji="🧠"
-            title="Her mood right now"
+            icon="activity"
+            title="Moon's mood right now"
             text={phaseInfo.moodDescription}
             accent={phaseInfo.color}
           />
           <GuideCard
-            emoji="⭐️"
-            title={adviceIsAI ? 'What you can do ✦ AI' : 'What you can do'}
+            icon="star"
+            title={adviceIsAI ? 'How to show up ✦ AI' : 'How to show up'}
             text={adviceLoading ? '…' : advice}
             accent={phaseInfo.color}
           />
         </View>
 
-        {/* Phases overview */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>The 4 Phases</Text>
-          <View style={styles.phasesRow}>
-            {(['menstrual', 'follicular', 'ovulatory', 'luteal'] as const).map((p) => {
-              const info = PHASE_INFO[p];
-              const isActive = p === phase;
-              return (
-                <View
-                  key={p}
+        {/* Phases overview row */}
+        <View style={styles.phasesRow}>
+          {PHASE_KEYS.map((p) => {
+            const info = PHASE_INFO[p];
+            const isActive = p === phase;
+            return (
+              <View
+                key={p}
+                style={[
+                  styles.phaseChip,
+                  {
+                    backgroundColor: isActive
+                      ? info.color
+                      : info.color + '22',
+                  },
+                ]}
+              >
+                <Text
                   style={[
-                    styles.phaseChip,
-                    { backgroundColor: info.color + (isActive ? 'FF' : '22') },
+                    styles.phaseChipText,
+                    { color: isActive ? Colors.white : info.color },
                   ]}
                 >
-                  <Text style={[styles.phaseChipText, { color: isActive ? Colors.white : info.color }]}>
-                    {info.name.split(' ')[0]}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+                  {info.name.split(' ')[0]}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -127,7 +196,7 @@ export function BFDashboard() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: SUN.background,
   },
   headerGlow: {
     position: 'absolute',
@@ -146,22 +215,22 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...Typography.caption,
-    color: Colors.textSecondary,
+    color: SUN.textSecondary,
   },
   headlineTitle: {
     fontSize: 26,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: SUN.textPrimary,
     letterSpacing: -0.5,
   },
   statusCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: SUN.card,
     borderRadius: Radii.xl,
     padding: Spacing.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: Colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 16,
@@ -179,7 +248,7 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -199,11 +268,11 @@ const styles = StyleSheet.create({
   },
   phaseTagline: {
     ...Typography.caption,
-    color: Colors.textSecondary,
+    color: SUN.textSecondary,
   },
   cycleDay: {
     ...Typography.tiny,
-    color: Colors.textHint,
+    color: SUN.textHint,
     marginTop: 2,
   },
   countdownBadge: {
@@ -228,7 +297,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...Typography.headlineBold,
-    color: Colors.textPrimary,
+    color: SUN.textPrimary,
   },
   phasesRow: {
     flexDirection: 'row',

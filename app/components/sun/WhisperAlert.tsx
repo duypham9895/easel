@@ -1,29 +1,42 @@
 import { useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { CyclePhase, SOSOption } from '@/types';
-import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { Spacing, Radii, Typography } from '@/constants/theme';
 import { useAppStore } from '@/store/appStore';
 import { useAISOSTip } from '@/hooks/useAISOSTip';
 
 interface Props {
-  sos: SOSOption;
+  whisper: SOSOption;
   phase: CyclePhase;
   dayInCycle: number;
 }
 
-export function SOSAlert({ sos, phase, dayInCycle }: Props) {
-  const clearSOS = useAppStore((s) => s.clearSOS);
+export function WhisperAlert({ whisper, phase, dayInCycle }: Props) {
+  const clearWhisper = useAppStore((s) => s.clearWhisper ?? s.clearSOS);
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  // AI-generated specific action tip — replaces static sos.description
-  const { tip, isAI: tipIsAI } = useAISOSTip(sos, phase, dayInCycle);
+  const { tip, isAI: tipIsAI } = useAISOSTip(whisper, phase, dayInCycle);
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, damping: 14 }),
-      Animated.timing(opacityAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        damping: 14,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, []);
 
@@ -31,21 +44,31 @@ export function SOSAlert({ sos, phase, dayInCycle }: Props) {
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: sos.color, transform: [{ scale: scaleAnim }], opacity: opacityAnim },
+        {
+          backgroundColor: whisper.color,
+          transform: [{ scale: scaleAnim }],
+          opacity: opacityAnim,
+        },
       ]}
     >
+      {/* Left row */}
       <View style={styles.left}>
-        <View style={styles.emojiCircle}>
-          <Feather name={sos.icon as any} size={22} color="white" />
+        <View style={styles.iconCircle}>
+          <Feather name={whisper.icon as any} size={22} color="white" />
         </View>
         <View style={styles.textGroup}>
-          <Text style={styles.badge}>SOS SIGNAL{tipIsAI ? ' · ✦ AI' : ''}</Text>
-          <Text style={styles.title}>She needs: {sos.title}</Text>
+          <Text style={styles.badge}>
+            {`WHISPER${tipIsAI ? ' · ✦ AI' : ''}`}
+          </Text>
+          <Text style={styles.title}>Moon needs: {whisper.title}</Text>
           <Text style={styles.description}>{tip}</Text>
         </View>
       </View>
-      <TouchableOpacity onPress={clearSOS} style={styles.dismissButton}>
-        <Text style={styles.dismissText}>✓ Got it</Text>
+
+      {/* Dismiss */}
+      <TouchableOpacity onPress={clearWhisper} style={styles.dismissButton}>
+        <Feather name="check" size={14} color="white" />
+        <Text style={styles.dismissText}>Got it</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -56,7 +79,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
     padding: Spacing.md,
     gap: Spacing.sm,
-    shadowColor: Colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -66,8 +89,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.md,
+    flex: 1,
   },
-  emojiCircle: {
+  iconCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -86,7 +110,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.bodyBold,
-    color: Colors.white,
+    color: 'white',
   },
   description: {
     ...Typography.caption,
@@ -98,10 +122,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   dismissText: {
     ...Typography.caption,
-    color: Colors.white,
+    color: 'white',
     fontWeight: '700',
   },
 });

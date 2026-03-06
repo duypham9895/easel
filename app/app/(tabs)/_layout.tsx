@@ -1,15 +1,6 @@
-import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
-
-interface TabIconProps {
-  emoji: string;
-  focused: boolean;
-}
-
-function TabIcon({ emoji, focused }: TabIconProps) {
-  return <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.45 }}>{emoji}</Text>;
-}
 
 export default function TabsLayout() {
   return (
@@ -40,21 +31,21 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Today',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+          tabBarIcon: ({ color }) => <Feather name="home" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendar',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📅" focused={focused} />,
+          tabBarIcon: ({ color }) => <Feather name="calendar" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
+          tabBarIcon: ({ color }) => <Feather name="settings" size={22} color={color} />,
         }}
       />
     </Tabs>

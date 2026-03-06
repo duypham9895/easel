@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '@/store/appStore';
 import { UserRole } from '@/types';
@@ -8,7 +9,7 @@ import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 
 interface RoleCard {
   role: UserRole;
-  emoji: string;
+  icon: string; // Feather icon name
   title: string;
   subtitle: string;
   color: string;
@@ -16,17 +17,17 @@ interface RoleCard {
 
 const ROLE_CARDS: RoleCard[] = [
   {
-    role: 'girlfriend',
-    emoji: '🌸',
-    title: 'I am the Girlfriend',
-    subtitle: 'Track my cycle & send signals to my partner',
+    role: 'moon',
+    icon: 'moon',
+    title: 'I am the Moon',
+    subtitle: 'Track your cycle & whisper to your Sun when you need them',
     color: Colors.menstrual,
   },
   {
-    role: 'boyfriend',
-    emoji: '💙',
-    title: 'I am the Boyfriend',
-    subtitle: 'Stay informed & know how to care for her',
+    role: 'sun',
+    icon: 'sun',
+    title: 'I am the Sun',
+    subtitle: 'Stay in tune & know exactly how to show up for your Moon',
     color: Colors.follicular,
   },
 ];
@@ -37,7 +38,11 @@ export default function OnboardingScreen() {
   async function handleSelectRole(role: UserRole) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await setRole(role);
-    router.replace('/(tabs)');
+    if (role === 'moon') {
+      router.replace('/health-sync');
+    } else {
+      router.replace('/(tabs)');
+    }
   }
 
   return (
@@ -66,7 +71,7 @@ export default function OnboardingScreen() {
               activeOpacity={0.9}
             >
               <View style={[styles.cardIconBg, { backgroundColor: card.color + '18' }]}>
-                <Text style={styles.cardEmoji}>{card.emoji}</Text>
+                <Feather name={card.icon as any} size={26} color={card.color} />
               </View>
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>{card.title}</Text>
@@ -144,9 +149,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  cardEmoji: {
-    fontSize: 26,
   },
   cardText: {
     flex: 1,

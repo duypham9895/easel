@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAppStore } from '@/store/appStore';
 import { PhaseWheel } from '@/components/gf/PhaseWheel';
 import { InsightCard } from '@/components/gf/InsightCard';
-import { SOSSheet } from '@/components/gf/SOSSheet';
-import { HeaderButton } from '@/components/shared/HeaderButton';
+import { DailyCheckIn } from '@/components/gf/DailyCheckIn';
 import { PHASE_INFO } from '@/constants/phases';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 import {
@@ -19,27 +24,50 @@ import {
   getConceptionChance,
 } from '@/utils/cycleCalculator';
 import { useAIGreeting } from '@/hooks/useAIGreeting';
-import { DailyCheckIn } from '@/components/gf/DailyCheckIn';
+import { WhisperSheet } from '@/components/moon/WhisperSheet';
 
-export function GFDashboard() {
+const MOON = {
+  background: '#0D1B2A',
+  surface: '#1A2B3C',
+  accentPrimary: '#B39DDB',
+  accentSecondary: '#E0E0F0',
+  textPrimary: '#F0F0FF',
+  textSecondary: '#8899AA',
+  textHint: '#4A5568',
+  card: '#162233',
+  inputBg: '#1E3045',
+  border: '#2D4A6B',
+};
+
+export function MoonDashboard() {
   const { cycleSettings } = useAppStore();
-  const [sosVisible, setSOSVisible] = useState(false);
-  const sendSOS = useAppStore((s) => s.sendSOS);
+  const sendWhisper = useAppStore((s) => s.sendWhisper ?? s.sendSOS);
+  const [whisperVisible, setWhisperVisible] = useState(false);
 
   const dayInCycle = getCurrentDayInCycle(
     cycleSettings.lastPeriodStartDate,
     cycleSettings.avgCycleLength,
   );
-  const phase = getCurrentPhase(dayInCycle, cycleSettings.avgCycleLength, cycleSettings.avgPeriodLength);
-  const daysUntilPeriod = getDaysUntilNextPeriod(dayInCycle, cycleSettings.avgCycleLength);
+  const phase = getCurrentPhase(
+    dayInCycle,
+    cycleSettings.avgCycleLength,
+    cycleSettings.avgPeriodLength,
+  );
+  const daysUntilPeriod = getDaysUntilNextPeriod(
+    dayInCycle,
+    cycleSettings.avgCycleLength,
+  );
   const phaseInfo = PHASE_INFO[phase];
   const conceptionChance = getConceptionChance(phase);
 
-  const { greeting, isAI, isLoading: greetingLoading } = useAIGreeting(phase, dayInCycle);
+  const { greeting, isAI, isLoading: greetingLoading } = useAIGreeting(
+    phase,
+    dayInCycle,
+  );
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      {/* Phase-colored ambient gradient header */}
+      {/* Ambient phase-colored gradient header */}
       <LinearGradient
         colors={[phaseInfo.color + '28', 'transparent']}
         style={styles.headerGlow}
@@ -51,11 +79,15 @@ export function GFDashboard() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
+        {/* Top bar */}
         <View style={styles.topBar}>
           <View style={styles.greetingBlock}>
             {greetingLoading ? (
-              <ActivityIndicator size="small" color={phaseInfo.color} style={styles.greetingLoader} />
+              <ActivityIndicator
+                size="small"
+                color={phaseInfo.color}
+                style={styles.greetingLoader}
+              />
             ) : (
               <Text style={styles.headlineTitle}>{greeting}</Text>
             )}
@@ -63,12 +95,22 @@ export function GFDashboard() {
               <Text style={styles.aiLabel}>✦ AI</Text>
             )}
           </View>
-          <HeaderButton emoji="⚙️" onPress={() => router.navigate('/(tabs)/settings')} />
+          <TouchableOpacity
+            style={styles.settingsBtn}
+            onPress={() => router.navigate('/(tabs)/settings')}
+            activeOpacity={0.75}
+          >
+            <Feather name="settings" size={20} color={MOON.textPrimary} />
+          </TouchableOpacity>
         </View>
 
         {/* Phase tagline chip */}
-        <View style={[styles.taglineChip, { backgroundColor: phaseInfo.color + '18' }]}>
-          <View style={[styles.taglineDot, { backgroundColor: phaseInfo.color }]} />
+        <View
+          style={[styles.taglineChip, { backgroundColor: phaseInfo.color + '18' }]}
+        >
+          <View
+            style={[styles.taglineDot, { backgroundColor: phaseInfo.color }]}
+          />
           <Text style={[styles.taglineText, { color: phaseInfo.color }]}>
             {phaseInfo.name} · {phaseInfo.tagline}
           </Text>
@@ -82,27 +124,27 @@ export function GFDashboard() {
           totalCycleDays={cycleSettings.avgCycleLength}
         />
 
-        {/* SOS CTA Button */}
+        {/* Whisper CTA button */}
         <TouchableOpacity
-          style={[styles.sosButton, { backgroundColor: phaseInfo.color }]}
-          onPress={() => setSOSVisible(true)}
+          style={[styles.whisperButton, { backgroundColor: phaseInfo.color }]}
+          onPress={() => setWhisperVisible(true)}
           activeOpacity={0.85}
         >
-          <Text style={styles.sosButtonText}>Send a signal to him</Text>
-          <Text style={styles.sosButtonEmoji}>💗</Text>
+          <Text style={styles.whisperButtonText}>Whisper to your Sun</Text>
+          <Feather name="send" size={20} color="white" />
         </TouchableOpacity>
 
         {/* Insight row */}
         <View style={styles.insightRow}>
           <InsightCard
-            emoji="✨"
+            icon="sun"
             label="Conception Chance"
             value={conceptionChance}
             accent={phaseInfo.color}
           />
           <InsightCard
-            emoji="💆"
-            label="Self-Care Tip"
+            icon="heart"
+            label="Self-Care"
             value={phaseInfo.selfCareTip}
             accent={phaseInfo.color}
           />
@@ -114,14 +156,21 @@ export function GFDashboard() {
           <Text style={styles.descriptionText}>{phaseInfo.moodDescription}</Text>
         </View>
 
-        {/* Daily check-in + AI insight */}
-        <DailyCheckIn phase={phase} dayInCycle={dayInCycle} accentColor={phaseInfo.color} />
+        {/* Daily check-in */}
+        <DailyCheckIn
+          phase={phase}
+          dayInCycle={dayInCycle}
+          accentColor={phaseInfo.color}
+        />
       </ScrollView>
 
-      <SOSSheet
-        visible={sosVisible}
-        onClose={() => setSOSVisible(false)}
-        onSend={sendSOS}
+      {/* Whisper bottom sheet */}
+      <WhisperSheet
+        visible={whisperVisible}
+        onClose={() => setWhisperVisible(false)}
+        onSend={sendWhisper}
+        phase={phase}
+        dayInCycle={dayInCycle}
       />
     </SafeAreaView>
   );
@@ -130,7 +179,7 @@ export function GFDashboard() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: MOON.background,
   },
   headerGlow: {
     position: 'absolute',
@@ -143,7 +192,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: 24,
     paddingBottom: 40,
     gap: Spacing.lg,
   },
@@ -162,16 +211,24 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginVertical: 6,
   },
-  aiLabel: {
-    ...Typography.tiny,
-    color: Colors.textHint,
-    letterSpacing: 1,
-  },
   headlineTitle: {
     fontSize: 26,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: MOON.textPrimary,
     letterSpacing: -0.5,
+  },
+  aiLabel: {
+    ...Typography.tiny,
+    color: MOON.textHint,
+    letterSpacing: 1,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.sm,
+    backgroundColor: MOON.card,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   taglineChip: {
     flexDirection: 'row',
@@ -191,48 +248,45 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  sosButton: {
+  whisperButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: Radii.lg,
+    borderRadius: 28,
     paddingHorizontal: Spacing.lg,
     height: 60,
-    shadowColor: Colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 16,
     elevation: 5,
   },
-  sosButtonText: {
+  whisperButtonText: {
     ...Typography.bodyBold,
     color: Colors.white,
-  },
-  sosButtonEmoji: {
-    fontSize: 22,
   },
   insightRow: {
     flexDirection: 'row',
     gap: Spacing.md,
   },
   descriptionCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: MOON.card,
     borderRadius: Radii.lg,
     padding: Spacing.lg,
     gap: Spacing.sm,
-    shadowColor: Colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 2,
   },
   descriptionTitle: {
     ...Typography.bodyBold,
-    color: Colors.textPrimary,
+    color: MOON.textPrimary,
   },
   descriptionText: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: MOON.textSecondary,
     lineHeight: 24,
   },
 });

@@ -1,15 +1,16 @@
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 
 interface Props {
-  emoji: string;
+  icon: string; // Feather icon name
   onPress: () => void;
 }
 
-export function HeaderButton({ emoji, onPress }: Props) {
+export function HeaderButton({ icon, onPress }: Props) {
   return (
     <TouchableOpacity style={styles.button} onPress={onPress} activeOpacity={0.8}>
-      <Text style={styles.emoji}>{emoji}</Text>
+      <Feather name={icon as any} size={20} color={Colors.textPrimary} />
     </TouchableOpacity>
   );
 }
@@ -27,8 +28,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
-  },
-  emoji: {
-    fontSize: 20,
   },
 });

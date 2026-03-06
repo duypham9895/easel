@@ -1,18 +1,19 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 
 interface Props {
-  emoji: string;
+  icon: string; // Feather icon name
   label: string;
   value: string;
   accent?: string;
 }
 
-export function InsightCard({ emoji, label, value, accent = Colors.menstrual }: Props) {
+export function InsightCard({ icon, label, value, accent = Colors.menstrual }: Props) {
   return (
     <View style={styles.card}>
       <View style={[styles.iconBg, { backgroundColor: accent + '14' }]}>
-        <Text style={styles.emoji}>{emoji}</Text>
+        <Feather name={icon as any} size={20} color={accent} />
       </View>
       <Text style={styles.label}>{label}</Text>
       <Text style={[styles.value, { color: accent }]}>{value}</Text>
@@ -40,9 +41,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.xs,
-  },
-  emoji: {
-    fontSize: 20,
   },
   label: {
     ...Typography.caption,

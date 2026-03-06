@@ -41,20 +41,20 @@ interface ExpoPushMessage {
 
 const SOS_COPY: Record<string, { title: string; body: string }> = {
   sweet_tooth: {
-    title: '💗 She needs you',
-    body: "She's craving something sweet. Bring her a little treat!",
+    title: 'Moon needs you',
+    body: "She's craving something sweet — bring her a little treat.",
   },
   need_a_hug: {
-    title: '💗 She needs you',
-    body: 'She needs a hug right now. Just be there for her.',
+    title: 'Moon needs you',
+    body: 'She needs a hug right now. Just hold her close.',
   },
   cramps_alert: {
-    title: '💗 She needs you',
-    body: 'Cramps alert — a hot water bottle would mean the world to her.',
+    title: 'Moon needs you',
+    body: 'Cramps alert — a hot water bottle and your presence means everything.',
   },
   quiet_time: {
-    title: '💗 She needs you',
-    body: 'She needs some quiet time. Check in gently later.',
+    title: 'Moon needs you',
+    body: 'She needs some quiet time. Check in gently, softly.',
   },
 };
 
@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
 
     // 3. Build and send Expo push messages
     const copy = SOS_COPY[signal.type] ?? {
-      title: '💗 She needs you',
+      title: 'Moon needs you',
       body: signal.message ?? 'She sent you a signal.',
     };
 
@@ -105,7 +105,7 @@ Deno.serve(async (req: Request) => {
       title: copy.title,
       body: copy.body,
       data: { type: signal.type, coupleId: signal.couple_id },
-      channelId: 'sos',
+      channelId: 'whisper',
     }));
 
     const expoRes = await fetch('https://exp.host/--/api/v2/push/send', {

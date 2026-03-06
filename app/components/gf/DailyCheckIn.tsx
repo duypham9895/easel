@@ -9,11 +9,11 @@ import { useAppStore } from '@/store/appStore';
 import { supabase } from '@/lib/supabase';
 
 const MOOD_OPTIONS = [
-  { value: 1, emoji: '😔', label: 'Low' },
-  { value: 2, emoji: '😕', label: 'Meh' },
-  { value: 3, emoji: '😊', label: 'Okay' },
-  { value: 4, emoji: '😄', label: 'Good' },
-  { value: 5, emoji: '🤩', label: 'Great' },
+  { value: 1, label: 'Low' },
+  { value: 2, label: 'Meh' },
+  { value: 3, label: 'Okay' },
+  { value: 4, label: 'Good' },
+  { value: 5, label: 'Great' },
 ];
 
 const SYMPTOM_OPTIONS = [
@@ -89,7 +89,7 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
                 onPress={() => setMood(opt.value)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.moodEmoji}>{opt.emoji}</Text>
+                <Text style={styles.moodValue}>{opt.value}</Text>
                 <Text style={styles.moodLabel}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
@@ -186,8 +186,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  moodEmoji: {
-    fontSize: 22,
+  moodValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   moodLabel: {
     ...Typography.tiny,

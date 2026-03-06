@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   Modal, Pressable, Animated,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SOS_OPTIONS } from '@/constants/sos';
 import { SOSOption } from '@/types';
@@ -66,7 +67,7 @@ export function SOSSheet({ visible, onClose, onSend }: Props) {
                   activeOpacity={0.85}
                 >
                   <View style={[styles.optionIconBg, { backgroundColor: option.color + '18' }]}>
-                    <Text style={styles.optionEmoji}>{option.emoji}</Text>
+                    <Feather name={option.icon as any} size={28} color={option.color} />
                   </View>
                   <Text style={styles.optionTitle}>{option.title}</Text>
                 </TouchableOpacity>
@@ -152,9 +153,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  optionEmoji: {
-    fontSize: 28,
   },
   optionTitle: {
     ...Typography.bodyBold,

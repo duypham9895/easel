@@ -31,8 +31,12 @@ async function callMinimax(
   }
 
   const data = (await res.json()) as { choices: Array<{ message: { content: string } }> };
-  const output = data.choices?.[0]?.message?.content?.trim();
-  if (!output) throw new Error('Empty response from MiniMax');
+  const raw = data.choices?.[0]?.message?.content;
+  if (!raw) throw new Error('Empty response from MiniMax');
+
+  // Strip <think>...</think> blocks emitted by reasoning models (e.g. MiniMax-M2.5)
+  const output = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  if (!output) throw new Error('Empty response from MiniMax after stripping reasoning block');
   return output;
 }
 
@@ -144,4 +148,91 @@ Respond with ONLY the insight text.`;
   const user = `Phase: ${phase} | Day: ${dayInCycle}\nMood today: ${moodLabel}\nSymptoms: ${symptomText}\nWrite the insight.`;
 
   return callMinimax(system, user, 90, 0.8);
+}
+
+// ---------------------------------------------------------------------------
+// 5. Moon Whisper options — AI-generated per cycle phase
+// ---------------------------------------------------------------------------
+export async function generateWhisperOptions(
+  phase: string,
+  dayInCycle: number,
+  topSelections: string[]
+): Promise<string[]> {
+  const selectionContext = topSelections.length > 0
+    ? `Her most frequent requests: ${topSelections.slice(0, 5).join(', ')}.`
+    : '';
+
+  const system = `You generate Whisper options for the Easel app — short, intimate signals Moon sends to Sun when she needs something.
+Generate exactly 4 warm options matching her current cycle phase.
+Rules:
+- Each option is 2-5 words maximum (e.g. "Need a hug", "Bring me chocolate")
+- Match phase energy: quiet/gentle for menstrual, curious for follicular, vibrant for ovulatory, cosy for luteal
+- Sound personal and intimate, never clinical
+- Return ONLY a valid JSON array of exactly 4 strings, no other text`;
+
+  const user = `Phase: ${phase} | Day ${dayInCycle}
+${selectionContext}
+Generate 4 Whisper options as JSON array.`;
+
+  const raw = await callMinimax(system, user, 120, 0.9);
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length === 4 && parsed.every(s => typeof s === 'string')) {
+      return parsed;
+    }
+  } catch { /* fall through */ }
+  // Fallback: extract quoted strings
+  const matches = raw.match(/"([^"]{2,30})"/g);
+  if (matches && matches.length >= 4) {
+    return matches.slice(0, 4).map(s => s.replace(/"/g, ''));
+  }
+  throw new Error('Failed to parse Whisper options from AI response');
+}
+
+// ---------------------------------------------------------------------------
+// 6. Cycle prediction with AI confidence scoring
+// ---------------------------------------------------------------------------
+interface CycleEntry {
+  startDate: string;
+  endDate?: string | null;
+  length?: number | null;
+}
+
+export interface CyclePredictionResult {
+  predictedDate: string;
+  confidence: number;
+  confidenceLabel: 'high' | 'medium' | 'low';
+  notifyDaysBefore: number;
+}
+
+export async function generateCyclePrediction(
+  cycleHistory: CycleEntry[]
+): Promise<CyclePredictionResult> {
+  const historyText = cycleHistory
+    .map((c, i) => `Cycle ${i + 1}: start=${c.startDate}${c.endDate ? `, end=${c.endDate}` : ''}${c.length ? `, length=${c.length}d` : ''}`)
+    .join('\n');
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const system = `You analyze menstrual cycle data to predict the next period start date. Today is ${today}.
+Based on the cycle history, output:
+1. predictedDate: next predicted period start (YYYY-MM-DD, must be in the future)
+2. confidence: 0-100 based on regularity (high variance = low confidence)
+3. confidenceLabel: "high" if confidence>80, "medium" if 50-80, "low" if below 50
+4. notifyDaysBefore: 2 for high, 4 for medium, 7 for low
+Return ONLY valid JSON, no other text:
+{"predictedDate":"YYYY-MM-DD","confidence":85,"confidenceLabel":"high","notifyDaysBefore":2}`;
+
+  const user = `Cycle history (oldest first):\n${historyText}\n\nPredict next period.`;
+
+  const raw = await callMinimax(system, user, 120, 0.1);
+  try {
+    const parsed = JSON.parse(raw) as CyclePredictionResult;
+    if (typeof parsed.predictedDate !== 'string' || typeof parsed.confidence !== 'number') {
+      throw new Error('Invalid response shape');
+    }
+    return parsed;
+  } catch {
+    throw new Error(`Failed to parse cycle prediction: ${raw.slice(0, 100)}`);
+  }
 }

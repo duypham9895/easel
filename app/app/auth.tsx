@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import { useAppStore } from '@/store/appStore';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 
@@ -13,7 +14,6 @@ type AuthMode = 'signIn' | 'signUp';
 export default function AuthScreen() {
   const signIn = useAppStore((s) => s.signIn);
   const signUp = useAppStore((s) => s.signUp);
-  const role = useAppStore((s) => s.role);
 
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
@@ -33,8 +33,9 @@ export default function AuthScreen() {
       } else {
         await signUp(email.trim(), password);
       }
-      // role is hydrated from DB inside signIn/signUp
-      if (role) {
+      // Read fresh role from store after signIn/signUp mutates it
+      const freshRole = useAppStore.getState().role;
+      if (freshRole) {
         router.replace('/(tabs)');
       } else {
         router.replace('/onboarding');
@@ -64,7 +65,7 @@ export default function AuthScreen() {
         {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle}>
-            <Text style={styles.logoEmoji}>💗</Text>
+            <Feather name="heart" size={36} color={Colors.menstrual} />
           </View>
           <Text style={styles.appName}>Easel</Text>
           <Text style={styles.tagline}>
@@ -77,7 +78,7 @@ export default function AuthScreen() {
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputRow}>
-            <Text style={styles.inputIcon}>✉️</Text>
+            <Feather name="mail" size={18} color={Colors.textHint} />
             <TextInput
               style={styles.input}
               placeholder="Email address"
@@ -91,7 +92,7 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.inputRow}>
-            <Text style={styles.inputIcon}>🔒</Text>
+            <Feather name="lock" size={18} color={Colors.textHint} />
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -169,9 +170,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoEmoji: {
-    fontSize: 36,
-  },
   appName: {
     ...Typography.displayBold,
     color: Colors.textPrimary,
@@ -193,9 +191,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     height: 56,
     gap: Spacing.sm,
-  },
-  inputIcon: {
-    fontSize: 18,
   },
   input: {
     flex: 1,

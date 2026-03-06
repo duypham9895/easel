@@ -1,14 +1,14 @@
 import { useAppStore } from '@/store/appStore';
-import { GFDashboard } from '@/screens/GFDashboard';
-import { BFDashboard } from '@/screens/BFDashboard';
+import { MoonDashboard } from '@/screens/MoonDashboard';
+import { SunDashboard } from '@/screens/SunDashboard';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Typography } from '@/constants/theme';
 
 export default function DashboardTab() {
   const role = useAppStore((s) => s.role);
 
-  if (role === 'girlfriend') return <GFDashboard />;
-  if (role === 'boyfriend') return <BFDashboard />;
+  if (role === 'moon') return <MoonDashboard />;
+  if (role === 'sun') return <SunDashboard />;
 
   return (
     <View style={styles.fallback}>

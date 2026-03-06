@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserRole, SOSOption, CycleSettings } from '@/types';
+import { UserRole, SOSOption, CycleSettings, NotificationPreferences } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { getProfile, upsertProfile } from '@/lib/db/profiles';
 import { getCycleSettings, upsertCycleSettings } from '@/lib/db/cycle';
@@ -27,6 +27,11 @@ interface AppState {
   // Active SOS (transient — not persisted)
   activeSOS: SOSOption | null;
 
+  avatarUrl: string | null;
+  displayName: string | null;
+  notificationPrefs: NotificationPreferences;
+  activeWhisper: SOSOption | null;
+
   // Auth actions
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -49,9 +54,22 @@ interface AppState {
   receiveSOS: (option: SOSOption) => void;   // local-only: called by Realtime listener
   clearSOS: () => void;
 
+  // Whisper
+  sendWhisper: (option: SOSOption) => Promise<void>;
+  receiveWhisper: (option: SOSOption) => void;
+  clearWhisper: () => void;
+  updateAvatarUrl: (url: string) => void;
+  updateDisplayName: (name: string) => Promise<void>;
+  updateNotificationPrefs: (prefs: Partial<NotificationPreferences>) => void;
+
   // Push notifications
   registerPushToken: (token: string) => Promise<void>;
 }
+
+const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
+  periodApproaching: true, periodStarted: true, periodEnded: true,
+  whisperAlerts: true, useAiTiming: true, manualDaysBefore: 3,
+};
 
 const DEFAULT_CYCLE_SETTINGS: CycleSettings = {
   avgCycleLength: 28,
@@ -74,6 +92,10 @@ export const useAppStore = create<AppState>()(
       coupleId: null,
       cycleSettings: DEFAULT_CYCLE_SETTINGS,
       activeSOS: null,
+      avatarUrl: null,
+      displayName: null,
+      notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
+      activeWhisper: null,
 
       // -----------------------------------------------------------------------
       // Auth
@@ -86,7 +108,7 @@ export const useAppStore = create<AppState>()(
 
         // Hydrate profile from DB
         const profile = await getProfile(userId);
-        const cycleSettings = profile?.role === 'girlfriend'
+        const cycleSettings = profile?.role === 'moon'
           ? await getCycleSettings(userId) ?? DEFAULT_CYCLE_SETTINGS
           : DEFAULT_CYCLE_SETTINGS;
 
@@ -100,6 +122,7 @@ export const useAppStore = create<AppState>()(
           isPartnerLinked: couple?.status === 'linked',
           coupleId: couple?.id ?? null,
           cycleSettings,
+          displayName: profile?.display_name ?? null,
         });
       },
 
@@ -133,6 +156,7 @@ export const useAppStore = create<AppState>()(
           coupleId: null,
           activeSOS: null,
           cycleSettings: DEFAULT_CYCLE_SETTINGS,
+          displayName: null,
         });
       },
 
@@ -157,7 +181,7 @@ export const useAppStore = create<AppState>()(
 
         const userId = session.user.id;
         const profile = await getProfile(userId);
-        const cycleSettings = profile?.role === 'girlfriend'
+        const cycleSettings = profile?.role === 'moon'
           ? await getCycleSettings(userId) ?? DEFAULT_CYCLE_SETTINGS
           : DEFAULT_CYCLE_SETTINGS;
         const couple = await getMyCouple();
@@ -170,6 +194,7 @@ export const useAppStore = create<AppState>()(
           isPartnerLinked: couple?.status === 'linked',
           coupleId: couple?.id ?? null,
           cycleSettings,
+          displayName: profile?.display_name ?? null,
         });
       },
 
@@ -232,6 +257,34 @@ export const useAppStore = create<AppState>()(
       clearSOS: () => set({ activeSOS: null }),
 
       // -----------------------------------------------------------------------
+      // Whisper
+      // -----------------------------------------------------------------------
+      sendWhisper: async (option) => {
+        const { userId, coupleId } = get();
+        set({ activeWhisper: option, activeSOS: option });
+        setTimeout(() => get().clearWhisper(), 10_000);
+        if (userId && coupleId) {
+          await sendSOSSignal(coupleId, userId, option);
+        }
+      },
+      receiveWhisper: (option) => {
+        set({ activeWhisper: option, activeSOS: option });
+        setTimeout(() => get().clearWhisper(), 10_000);
+      },
+      clearWhisper: () => set({ activeWhisper: null, activeSOS: null }),
+      updateAvatarUrl: (url) => set({ avatarUrl: url }),
+      updateDisplayName: async (name) => {
+        set({ displayName: name });
+        const { userId } = get();
+        if (userId) {
+          await upsertProfile(userId, { display_name: name });
+        }
+      },
+      updateNotificationPrefs: (partial) => set(state => ({
+        notificationPrefs: { ...state.notificationPrefs, ...partial },
+      })),
+
+      // -----------------------------------------------------------------------
       // Push notifications
       // -----------------------------------------------------------------------
       registerPushToken: async (token) => {
@@ -244,8 +297,8 @@ export const useAppStore = create<AppState>()(
     {
       name: 'easel-app-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      // activeSOS is transient; userId/coupleId are re-hydrated via bootstrapSession
-      partialize: ({ activeSOS, userId, coupleId, ...rest }) => rest,
+      // activeSOS/activeWhisper are transient; userId/coupleId are re-hydrated via bootstrapSession
+      partialize: ({ activeSOS, activeWhisper, userId, coupleId, ...rest }) => rest,
     },
   ),
 );

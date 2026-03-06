@@ -19,7 +19,7 @@
       },
       "package": "com.easel.app"
     },
-    "plugins": ["expo-router", "expo-notifications"],
+    "plugins": ["expo-router", "expo-notifications", "expo-image-picker", ["react-native-health", {"NSHealthShareUsageDescription": "Easel reads your menstrual cycle history to make period predictions more accurate.", "NSHealthUpdateUsageDescription": "Easel does not write to Apple Health."}]],
     "scheme": "easel",
     "extra": {
       "router": {
