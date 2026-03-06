@@ -19,13 +19,16 @@
       },
       "package": "com.easel.app"
     },
-    "plugins": [
-      "expo-router",
-      "expo-notifications",
-      [
-        "expo-haptics"
-      ]
-    ],
-    "scheme": "easel"
+    "plugins": ["expo-router", "expo-notifications"],
+    "scheme": "easel",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "7dc0f149-563f-4ea5-94d3-a4fe10830b4b"
+      }
+    },
+    "owner": "duypham9895"
   }
 }

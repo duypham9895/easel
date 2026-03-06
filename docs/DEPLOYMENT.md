@@ -7,9 +7,9 @@ Complete steps to deploy all services and run the app from scratch.
 ## Architecture Overview
 
 ```
-easel-expo/          → Expo/React Native app (iOS + Android)
-easel-proxy/         → Vercel serverless proxy (AI API key protection)
-easel-expo/supabase/ → Supabase project (DB + Auth + Realtime + Edge Functions)
+app/          → Expo/React Native app (iOS + Android)
+proxy/        → Vercel serverless proxy (AI API key protection)
+app/supabase/ → Supabase project (DB + Auth + Realtime + Edge Functions)
 ```
 
 ---
@@ -60,7 +60,7 @@ Copy these values — you will need them later:
 
 Dashboard → **SQL Editor** → New query
 
-Open `easel-expo/supabase/migrations/001_initial_schema.sql`, paste the entire contents, and click **Run**.
+Open `app/supabase/migrations/001_initial_schema.sql`, paste the entire contents, and click **Run**.
 
 This creates:
 - 8 tables: `profiles`, `couples`, `cycle_settings`, `period_logs`, `daily_logs`, `sos_signals`, `push_tokens`, `user_preferences`
@@ -101,21 +101,21 @@ openssl rand -hex 32
 ### 2.3 Set up environment variables
 
 ```bash
-cd easel-proxy
+cd proxy
 cp .env.example .env
 ```
 
 Edit `.env`:
 ```
 MINIMAX_API_KEY=<your MiniMax key>
-MINIMAX_MODEL=MiniMax-M25
+MINIMAX_MODEL=MiniMax-M2.5
 CLIENT_TOKEN=<the hex string from openssl above>
 ```
 
 ### 2.4 Deploy to Vercel
 
 ```bash
-cd easel-proxy
+cd proxy
 npm install
 vercel --prod
 ```
@@ -162,7 +162,7 @@ The `notify-sos` Edge Function sends push notifications to the boyfriend when th
 ### 3.1 Link Supabase CLI to your project
 
 ```bash
-cd easel-expo
+cd app
 supabase login
 supabase link --project-ref <your-project-ref>
 ```
@@ -206,7 +206,7 @@ Click **Create webhook**.
 ### 4.1 Get your EAS Project ID
 
 ```bash
-cd easel-expo
+cd app
 npm install
 eas login
 eas init
@@ -219,7 +219,7 @@ Alternatively, find it in https://expo.dev → your project → **Project ID**.
 ### 4.2 Create the app environment file
 
 ```bash
-cd easel-expo
+cd app
 cp .env.example .env
 ```
 
@@ -234,7 +234,7 @@ EXPO_PUBLIC_CLIENT_TOKEN=<same CLIENT_TOKEN from Step 2.2>
 
 ### 4.3 Update app.json with EAS project ID
 
-Open `easel-expo/app.json` and add the `extra` field:
+Open `app/app.json` and add the `extra` field:
 
 ```json
 {
@@ -256,7 +256,7 @@ Open `easel-expo/app.json` and add the `extra` field:
 ### 5.1 Install dependencies
 
 ```bash
-cd easel-expo
+cd app
 npm install
 ```
 
@@ -292,7 +292,7 @@ To distribute via TestFlight (iOS) or Google Play (Android):
 npm install -g eas-cli
 eas login
 
-cd easel-expo
+cd app
 
 # iOS build (requires Apple Developer account)
 eas build --platform ios --profile preview
@@ -307,7 +307,7 @@ eas build --platform android --profile preview
 
 ## Environment Variables Reference
 
-### `easel-expo/.env`
+### `app/.env`
 
 | Variable | Where to get it |
 |---|---|
@@ -317,12 +317,12 @@ eas build --platform android --profile preview
 | `EXPO_PUBLIC_PROXY_URL` | Vercel deployment URL |
 | `EXPO_PUBLIC_CLIENT_TOKEN` | Same value as `CLIENT_TOKEN` in Vercel |
 
-### `easel-proxy/.env` (also set in Vercel Dashboard)
+### `proxy/.env` (also set in Vercel Dashboard)
 
 | Variable | Where to get it |
 |---|---|
 | `MINIMAX_API_KEY` | minimax.io → API Keys |
-| `MINIMAX_MODEL` | `MiniMax-M25` (default, don't change) |
+| `MINIMAX_MODEL` | `MiniMax-M2.5` (default, don't change) |
 | `CLIENT_TOKEN` | Your `openssl rand -hex 32` output |
 
 ---

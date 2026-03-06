@@ -226,7 +226,7 @@ CREATE TABLE public.user_preferences (
   sos_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   ai_greetings_enabled      BOOLEAN NOT NULL DEFAULT TRUE,
   proxy_url                 TEXT,   -- Vercel proxy URL (non-secret)
-  ai_model                  TEXT DEFAULT 'MiniMax-M25',
+  ai_model                  TEXT DEFAULT 'MiniMax-M2.5',
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

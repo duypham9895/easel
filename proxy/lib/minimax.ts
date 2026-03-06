@@ -8,7 +8,7 @@ async function callMinimax(
   temperature: number
 ): Promise<string> {
   const apiKey = process.env.MINIMAX_API_KEY;
-  const model = process.env.MINIMAX_MODEL ?? 'MiniMax-M25';
+  const model = process.env.MINIMAX_MODEL ?? 'MiniMax-M2.5';
   if (!apiKey) throw new Error('MINIMAX_API_KEY not set');
 
   const res = await fetch(MINIMAX_API_URL, {

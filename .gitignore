@@ -28,3 +28,10 @@ proxy/dist/
 .idea/
 *.swp
 *.swo
+
+# Supabase CLI cache (machine-specific, auto-regenerated)
+app/supabase/.temp/
+supabase/.temp/
+
+# Accidentally created root-level supabase dir (real project is at app/supabase/)
+/supabase/

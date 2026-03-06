@@ -39,15 +39,6 @@ jobs:
         with:
           version: latest
 
-      - name: Force IPv4 for Supabase host
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: |
-          DB_HOST=$(echo "$SUPABASE_DB_URL" | sed -E 's|.*@([^:/]+).*|\1|')
-          IPV4=$(getent ahostsv4 "$DB_HOST" | awk 'NR==1{print $1}')
-          echo "$IPV4  $DB_HOST" | sudo tee -a /etc/hosts
-          echo "Pinned $DB_HOST → $IPV4"
-
       - name: Run migrations
         working-directory: app
         env:
