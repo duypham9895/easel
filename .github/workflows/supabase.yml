@@ -39,6 +39,11 @@ jobs:
         with:
           version: latest
 
+      - name: Force IPv4 (GitHub Actions runners lack IPv6 routing)
+        run: |
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
       - name: Run migrations
         working-directory: app
         env:
