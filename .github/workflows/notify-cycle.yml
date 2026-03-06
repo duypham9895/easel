@@ -1,0 +1,40 @@
+# =============================================================================
+# Notify Cycle — Daily Push Notifications
+#
+# Invokes the notify-cycle Supabase Edge Function once per day at 8 AM UTC.
+# The function calculates each Moon user's cycle phase and sends period
+# approach / start / end notifications to both Moon and their linked Sun.
+#
+# Runs automatically every day. Can also be triggered manually from the
+# GitHub Actions tab (workflow_dispatch) for testing.
+#
+# Required GitHub Secrets (same as supabase.yml — no new secrets needed):
+#   SUPABASE_ACCESS_TOKEN  — Personal access token from supabase.com
+#   SUPABASE_PROJECT_ID    — Project reference ID (Dashboard → Project Settings)
+# =============================================================================
+
+name: Notify Cycle Daily
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # 8:00 AM UTC every day
+  workflow_dispatch:        # manual trigger for testing
+
+jobs:
+  invoke:
+    name: Invoke notify-cycle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Invoke notify-cycle edge function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions invoke notify-cycle \
+            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" \
+            --body '{}'
