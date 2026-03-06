@@ -25,6 +25,7 @@ import {
 } from '@/utils/cycleCalculator';
 import { useAIGreeting } from '@/hooks/useAIGreeting';
 import { WhisperSheet } from '@/components/moon/WhisperSheet';
+import { useCoupleLinkedListener } from '@/hooks/useCoupleLinkedListener';
 
 const MOON = {
   background: '#0D1B2A',
@@ -42,7 +43,11 @@ const MOON = {
 export function MoonDashboard() {
   const { cycleSettings } = useAppStore();
   const sendWhisper = useAppStore((s) => s.sendWhisper ?? s.sendSOS);
+  const isPartnerLinked = useAppStore((s) => s.isPartnerLinked);
   const [whisperVisible, setWhisperVisible] = useState(false);
+
+  // Real-time: update GF's store the moment BF links
+  useCoupleLinkedListener();
 
   const dayInCycle = getCurrentDayInCycle(
     cycleSettings.lastPeriodStartDate,
@@ -115,6 +120,21 @@ export function MoonDashboard() {
             {phaseInfo.name} · {phaseInfo.tagline}
           </Text>
         </View>
+
+        {/* Invite Sun banner — shown when partner not yet linked */}
+        {!isPartnerLinked && (
+          <TouchableOpacity
+            style={styles.inviteBanner}
+            onPress={() => router.navigate('/(tabs)/settings')}
+            activeOpacity={0.85}
+          >
+            <Feather name="link-2" size={16} color={MOON.accentPrimary} />
+            <Text style={styles.inviteBannerText}>
+              Share your code with your Sun to connect
+            </Text>
+            <Feather name="chevron-right" size={14} color={MOON.textHint} />
+          </TouchableOpacity>
+        )}
 
         {/* Phase Wheel */}
         <PhaseWheel
@@ -288,5 +308,22 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: MOON.textSecondary,
     lineHeight: 24,
+  },
+  inviteBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: MOON.card,
+    borderRadius: Radii.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: MOON.accentPrimary + '30',
+  },
+  inviteBannerText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: MOON.accentPrimary,
   },
 });

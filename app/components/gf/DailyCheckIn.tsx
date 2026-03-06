@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
@@ -34,8 +34,31 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const { insight, isLoading: insightLoading, fetchInsight } = useAIDailyInsight(phase, dayInCycle);
+
+  // On mount, check if user already logged today — restore their state
+  useEffect(() => {
+    if (!userId) return;
+    let isMounted = true;
+    const today = new Date().toISOString().split('T')[0];
+    (async () => {
+      const { data } = await supabase
+        .from('daily_logs')
+        .select('mood, symptoms')
+        .eq('user_id', userId)
+        .eq('log_date', today)
+        .maybeSingle();
+
+      if (isMounted && data) {
+        setMood(data.mood ?? null);
+        setSymptoms(data.symptoms ?? []);
+        setSubmitted(true);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [userId]);
 
   function toggleSymptom(s: string) {
     setSymptoms((prev) =>
@@ -46,26 +69,29 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
   async function handleSubmit() {
     if (!userId) return;
     setSaving(true);
+    setSaveError(null);
 
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      // Save to daily_logs in Supabase
-      await supabase.from('daily_logs').upsert(
+      const { error } = await supabase.from('daily_logs').upsert(
         {
           user_id: userId,
           log_date: today,
           mood: mood ?? null,
           symptoms: symptoms.length > 0 ? symptoms : null,
         },
-        { onConflict: 'user_id, log_date' }
+        { onConflict: 'user_id,log_date' }
       );
+
+      if (error) throw error;
 
       setSubmitted(true);
       // Fetch AI insight immediately after saving
       await fetchInsight(mood, symptoms);
     } catch (err) {
       console.warn('[DailyCheckIn] save failed:', err);
+      setSaveError('Could not save. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -131,6 +157,10 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
               <Text style={styles.submitText}>Log & get insight ✦</Text>
             )}
           </TouchableOpacity>
+
+          {saveError !== null && (
+            <Text style={styles.errorText}>{saveError}</Text>
+          )}
         </>
       ) : (
         <View style={styles.insightBlock}>
@@ -251,5 +281,10 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     fontWeight: '700',
     marginTop: 4,
+  },
+  errorText: {
+    ...Typography.caption,
+    color: '#EF5350',
+    textAlign: 'center',
   },
 });

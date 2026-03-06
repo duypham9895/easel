@@ -23,6 +23,8 @@ interface AppState {
 
   // Cycle data
   cycleSettings: CycleSettings;
+  // Sun-only: girlfriend's cycle settings fetched after linking
+  partnerCycleSettings: CycleSettings | null;
 
   // Active SOS (transient — not persisted)
   activeSOS: SOSOption | null;
@@ -45,6 +47,7 @@ interface AppState {
   setPartnerLinked: (linked: boolean) => void;
   generateLinkCode: () => Promise<string>;
   linkToPartner: (code: string) => Promise<void>;
+  setLinked: (coupleId: string) => void;
 
   // Cycle
   updateCycleSettings: (settings: Partial<CycleSettings>) => Promise<void>;
@@ -71,11 +74,17 @@ const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
   whisperAlerts: true, useAiTiming: true, manualDaysBefore: 3,
 };
 
-const DEFAULT_CYCLE_SETTINGS: CycleSettings = {
-  avgCycleLength: 28,
-  avgPeriodLength: 5,
-  lastPeriodStartDate: new Date().toISOString().split('T')[0],
-};
+function makeDefaultCycleSettings(): CycleSettings {
+  return {
+    avgCycleLength: 28,
+    avgPeriodLength: 5,
+    lastPeriodStartDate: new Date().toISOString().split('T')[0],
+  };
+}
+
+// Module-level timer refs so they can be cleared without adding to persisted state
+let _sosTimer: ReturnType<typeof setTimeout> | null = null;
+let _whisperTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -90,7 +99,8 @@ export const useAppStore = create<AppState>()(
       linkCode: null,
       userId: null,
       coupleId: null,
-      cycleSettings: DEFAULT_CYCLE_SETTINGS,
+      cycleSettings: makeDefaultCycleSettings(),
+      partnerCycleSettings: null,
       activeSOS: null,
       avatarUrl: null,
       displayName: null,
@@ -103,16 +113,23 @@ export const useAppStore = create<AppState>()(
       signIn: async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (!data.user) throw new Error('Sign in failed — no user returned');
 
         const userId = data.user.id;
 
         // Hydrate profile from DB
         const profile = await getProfile(userId);
         const cycleSettings = profile?.role === 'moon'
-          ? await getCycleSettings(userId) ?? DEFAULT_CYCLE_SETTINGS
-          : DEFAULT_CYCLE_SETTINGS;
+          ? await getCycleSettings(userId) ?? makeDefaultCycleSettings()
+          : makeDefaultCycleSettings();
 
         const couple = await getMyCouple();
+
+        // Sun users see girlfriend's real cycle data, not the default placeholder
+        const partnerCycleSettings =
+          profile?.role === 'sun' && couple?.status === 'linked' && couple.girlfriend_id
+            ? await getCycleSettings(couple.girlfriend_id) ?? null
+            : null;
 
         set({
           isLoggedIn: true,
@@ -122,6 +139,7 @@ export const useAppStore = create<AppState>()(
           isPartnerLinked: couple?.status === 'linked',
           coupleId: couple?.id ?? null,
           cycleSettings,
+          partnerCycleSettings,
           displayName: profile?.display_name ?? null,
         });
       },
@@ -140,7 +158,7 @@ export const useAppStore = create<AppState>()(
           role: null,
           isPartnerLinked: false,
           coupleId: null,
-          cycleSettings: DEFAULT_CYCLE_SETTINGS,
+          cycleSettings: makeDefaultCycleSettings(),
         });
       },
 
@@ -155,7 +173,8 @@ export const useAppStore = create<AppState>()(
           userId: null,
           coupleId: null,
           activeSOS: null,
-          cycleSettings: DEFAULT_CYCLE_SETTINGS,
+          cycleSettings: makeDefaultCycleSettings(),
+          partnerCycleSettings: null,
           displayName: null,
         });
       },
@@ -182,9 +201,14 @@ export const useAppStore = create<AppState>()(
         const userId = session.user.id;
         const profile = await getProfile(userId);
         const cycleSettings = profile?.role === 'moon'
-          ? await getCycleSettings(userId) ?? DEFAULT_CYCLE_SETTINGS
-          : DEFAULT_CYCLE_SETTINGS;
+          ? await getCycleSettings(userId) ?? makeDefaultCycleSettings()
+          : makeDefaultCycleSettings();
         const couple = await getMyCouple();
+
+        const partnerCycleSettings =
+          profile?.role === 'sun' && couple?.status === 'linked' && couple.girlfriend_id
+            ? await getCycleSettings(couple.girlfriend_id) ?? null
+            : null;
 
         set({
           isLoggedIn: true,
@@ -194,7 +218,11 @@ export const useAppStore = create<AppState>()(
           isPartnerLinked: couple?.status === 'linked',
           coupleId: couple?.id ?? null,
           cycleSettings,
+          partnerCycleSettings,
           displayName: profile?.display_name ?? null,
+          // Restore a pending link code so GF can see it without regenerating.
+          // Clear stale persisted code if the couple is already linked.
+          linkCode: couple?.status === 'pending' ? (couple.link_code ?? null) : null,
         });
       },
 
@@ -207,10 +235,12 @@ export const useAppStore = create<AppState>()(
         const { userId } = get();
         if (!userId) throw new Error('Not signed in');
 
-        const code = await createOrRefreshLinkCode(userId);
-        set({ linkCode: code });
+        const { code, coupleId } = await createOrRefreshLinkCode(userId);
+        set({ linkCode: code, coupleId });
         return code;
       },
+
+      setLinked: (coupleId) => set({ isPartnerLinked: true, coupleId, linkCode: null }),
 
       linkToPartner: async (code) => {
         const { userId } = get();
@@ -239,8 +269,9 @@ export const useAppStore = create<AppState>()(
       sendSOS: async (option) => {
         const { userId, coupleId } = get();
 
+        if (_sosTimer) clearTimeout(_sosTimer);
         set({ activeSOS: option });
-        setTimeout(() => get().clearSOS(), 10_000);
+        _sosTimer = setTimeout(() => get().clearSOS(), 300_000); // 5 min — enough time to notice
 
         // Persist to DB so BF's Realtime subscription triggers
         if (userId && coupleId) {
@@ -250,28 +281,37 @@ export const useAppStore = create<AppState>()(
 
       // Called by useSOSListener when BF receives via Realtime — no DB write needed
       receiveSOS: (option) => {
+        if (_sosTimer) clearTimeout(_sosTimer);
         set({ activeSOS: option });
-        setTimeout(() => get().clearSOS(), 10_000);
+        _sosTimer = setTimeout(() => get().clearSOS(), 300_000); // 5 min
       },
 
-      clearSOS: () => set({ activeSOS: null }),
+      clearSOS: () => {
+        if (_sosTimer) { clearTimeout(_sosTimer); _sosTimer = null; }
+        set({ activeSOS: null });
+      },
 
       // -----------------------------------------------------------------------
       // Whisper
       // -----------------------------------------------------------------------
       sendWhisper: async (option) => {
         const { userId, coupleId } = get();
-        set({ activeWhisper: option, activeSOS: option });
-        setTimeout(() => get().clearWhisper(), 10_000);
+        if (_whisperTimer) clearTimeout(_whisperTimer);
+        set({ activeWhisper: option });
+        _whisperTimer = setTimeout(() => get().clearWhisper(), 300_000); // 5 min
         if (userId && coupleId) {
           await sendSOSSignal(coupleId, userId, option);
         }
       },
       receiveWhisper: (option) => {
-        set({ activeWhisper: option, activeSOS: option });
-        setTimeout(() => get().clearWhisper(), 10_000);
+        if (_whisperTimer) clearTimeout(_whisperTimer);
+        set({ activeWhisper: option });
+        _whisperTimer = setTimeout(() => get().clearWhisper(), 300_000); // 5 min
       },
-      clearWhisper: () => set({ activeWhisper: null, activeSOS: null }),
+      clearWhisper: () => {
+        if (_whisperTimer) { clearTimeout(_whisperTimer); _whisperTimer = null; }
+        set({ activeWhisper: null });
+      },
       updateAvatarUrl: (url) => set({ avatarUrl: url }),
       updateDisplayName: async (name) => {
         set({ displayName: name });

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
@@ -31,10 +32,26 @@ interface Props {
 }
 
 const BENEFITS = [
-  'See their cycle in real time',
-  'Know how to show up each day',
-  'Get AI advice tailored to their phase',
-  'Receive Whispers when they need you',
+  {
+    icon: 'eye' as const,
+    title: 'Never be caught off guard',
+    description: "See exactly where she is in her cycle — before emotions run high.",
+  },
+  {
+    icon: 'zap' as const,
+    title: 'Know what to do, every day',
+    description: 'Get AI-personalized tips on how to show up based on her exact phase.',
+  },
+  {
+    icon: 'bell' as const,
+    title: 'Whispers when she needs you',
+    description: "She can send you a quiet signal when she needs support — no awkward conversations.",
+  },
+  {
+    icon: 'heart' as const,
+    title: 'Less conflict, more connection',
+    description: 'Understanding her cycle turns friction into empathy — automatically.',
+  },
 ] as const;
 
 export function UnlinkedScreen({ onLink, onInvite }: Props) {
@@ -48,8 +65,19 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
     setLinking(true);
     try {
       await onLink(code);
-    } catch {
-      setError('Invalid code. Please try again.');
+      // Success — celebrate with a strong haptic before the dashboard replaces this screen
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('expired')) {
+        setError('This code has expired. Ask her to generate a new one.');
+      } else if (msg.includes('already been used')) {
+        setError('This code has already been used.');
+      } else if (msg.includes('yourself')) {
+        setError("That's your own code — enter her code instead.");
+      } else {
+        setError('Invalid code. Please check and try again.');
+      }
     } finally {
       setLinking(false);
     }
@@ -69,44 +97,65 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {/* Icon */}
-        <View style={styles.iconContainer}>
-          <Feather name="link-2" size={48} color={SUN.accentPrimary} />
-        </View>
-
-        {/* Heading */}
-        <View style={styles.headingGroup}>
-          <Text style={styles.heading}>Find your Moon</Text>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={styles.iconContainer}>
+            <Feather name="sun" size={44} color={SUN.accentPrimary} />
+          </View>
+          <Text style={styles.heading}>Be the partner{'\n'}she deserves</Text>
           <Text style={styles.subheading}>
-            Ask your partner to share their code with you
+            Easel gives you real-time insight into her cycle so you always know how to show up — even when she can't explain it.
           </Text>
         </View>
 
-        {/* Code input section */}
+        {/* Benefit cards */}
+        <View style={styles.benefitsSection}>
+          {BENEFITS.map((benefit) => (
+            <View key={benefit.title} style={styles.benefitCard}>
+              <View style={styles.benefitIconWrap}>
+                <Feather name={benefit.icon} size={20} color={SUN.accentPrimary} />
+              </View>
+              <View style={styles.benefitText}>
+                <Text style={styles.benefitTitle}>{benefit.title}</Text>
+                <Text style={styles.benefitDescription}>{benefit.description}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>Connect with your partner</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Partner code input */}
         <View style={styles.codeSection}>
-          <Text style={styles.codeLabel}>PARTNER CODE</Text>
+          <View style={styles.codeLabelRow}>
+            <Feather name="link-2" size={13} color={SUN.textHint} />
+            <Text style={styles.codeLabel}>ENTER HER 6-DIGIT CODE</Text>
+          </View>
           <TextInput
             style={[
               styles.codeInput,
-              {
-                borderColor:
-                  code.length === 6 ? SUN.accentPrimary : SUN.border,
-              },
+              { borderColor: code.length === 6 ? SUN.accentPrimary : SUN.border },
             ]}
             value={code}
             onChangeText={(t) => {
-              setCode(t.toUpperCase());
+              setCode(t.replace(/\D/g, ''));
               setError(null);
             }}
             maxLength={6}
-            autoCapitalize="characters"
-            keyboardType="default"
-            placeholder="ABC123"
+            autoCapitalize="none"
+            keyboardType="number-pad"
+            placeholder="000000"
             placeholderTextColor={SUN.textHint}
           />
-          {error !== null && (
-            <Text style={styles.errorText}>{error}</Text>
-          )}
+          <Text style={styles.codeHint}>
+            Ask your partner to open Easel and share her 6-character code with you.
+          </Text>
+          {error !== null && <Text style={styles.errorText}>{error}</Text>}
         </View>
 
         {/* Connect button */}
@@ -122,36 +171,26 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
           {linking ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.connectButtonText}>Connect</Text>
+            <>
+              <Feather name="link-2" size={16} color="#FFFFFF" />
+              <Text style={styles.connectButtonText}>Connect to her</Text>
+            </>
           )}
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Invite button */}
-        <TouchableOpacity
-          style={styles.inviteButton}
-          onPress={handleInvite}
-          activeOpacity={0.85}
-        >
-          <Feather name="user-plus" size={16} color={SUN.accentPrimary} />
-          <Text style={styles.inviteButtonText}>Invite your Moon</Text>
-        </TouchableOpacity>
-
-        {/* Benefits section */}
-        <View style={styles.benefitsSection}>
-          <Text style={styles.benefitsLabel}>What linking unlocks</Text>
-          {BENEFITS.map((benefit) => (
-            <View key={benefit} style={styles.benefitRow}>
-              <Feather name="check" size={14} color={SUN.accentPrimary} />
-              <Text style={styles.benefitText}>{benefit}</Text>
-            </View>
-          ))}
+        {/* Invite section */}
+        <View style={styles.inviteSection}>
+          <Text style={styles.inviteHint}>
+            She doesn't have Easel yet?
+          </Text>
+          <TouchableOpacity
+            style={styles.inviteButton}
+            onPress={handleInvite}
+            activeOpacity={0.85}
+          >
+            <Feather name="user-plus" size={16} color={SUN.accentPrimary} />
+            <Text style={styles.inviteButtonText}>Invite her to Easel</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -165,56 +204,125 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 40,
-    gap: 32,
+    paddingTop: 40,
+    paddingBottom: 48,
+    gap: 28,
+  },
+  hero: {
+    alignItems: 'center',
+    gap: 12,
   },
   iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: SUN.accentPrimary + '18',
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: 8,
-  },
-  headingGroup: {
-    alignItems: 'center',
-    gap: 8,
+    marginBottom: 4,
   },
   heading: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '800',
     color: SUN.textPrimary,
     textAlign: 'center',
+    lineHeight: 34,
+    letterSpacing: -0.5,
   },
   subheading: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '400',
     color: SUN.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
+  benefitsSection: {
+    gap: 12,
+  },
+  benefitCard: {
+    backgroundColor: SUN.card,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  benefitIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: SUN.accentPrimary + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  benefitText: {
+    flex: 1,
+    gap: 3,
+  },
+  benefitTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: SUN.textPrimary,
+  },
+  benefitDescription: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: SUN.textSecondary,
+    lineHeight: 19,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: SUN.border,
+  },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: SUN.textHint,
+    letterSpacing: 0.3,
+  },
   codeSection: {
     gap: 8,
   },
+  codeLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   codeLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     color: SUN.textHint,
     letterSpacing: 1,
   },
   codeInput: {
-    height: 64,
+    height: 68,
     backgroundColor: SUN.surface,
     borderRadius: 20,
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
-    letterSpacing: 8,
+    letterSpacing: 10,
     textAlign: 'center',
     borderWidth: 1.5,
     color: SUN.textPrimary,
+  },
+  codeHint: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: SUN.textHint,
+    textAlign: 'center',
+    lineHeight: 17,
   },
   errorText: {
     fontSize: 13,
@@ -226,8 +334,10 @@ const styles = StyleSheet.create({
     height: 60,
     backgroundColor: SUN.accentPrimary,
     borderRadius: 30,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   connectButtonDisabled: {
     opacity: 0.4,
@@ -237,23 +347,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  divider: {
-    flexDirection: 'row',
+  inviteSection: {
     alignItems: 'center',
-    gap: 16,
+    gap: 10,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: SUN.border,
-  },
-  dividerText: {
+  inviteHint: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '400',
     color: SUN.textHint,
   },
   inviteButton: {
     height: 52,
+    paddingHorizontal: 28,
     borderWidth: 1.5,
     borderColor: SUN.accentPrimary,
     borderRadius: 30,
@@ -263,28 +368,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inviteButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: SUN.accentPrimary,
-  },
-  benefitsSection: {
-    gap: 8,
-  },
-  benefitsLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: SUN.textHint,
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  benefitText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: SUN.textSecondary,
   },
 });

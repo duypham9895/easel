@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '@/store/appStore';
@@ -31,25 +31,28 @@ const SUN = {
 const PHASE_KEYS = ['menstrual', 'follicular', 'ovulatory', 'luteal'] as const;
 
 export function SunDashboard() {
-  const { cycleSettings, isPartnerLinked, linkToPartner } = useAppStore();
-  const activeWhisper = useAppStore(
-    (s) => s.activeWhisper ?? s.activeSOS,
-  );
+  const { isPartnerLinked, linkToPartner } = useAppStore();
+  const displayName = useAppStore((s) => s.displayName);
+  // Use girlfriend's real cycle data when linked; fall back to defaults only if unavailable
+  const partnerCycleSettings = useAppStore((s) => s.partnerCycleSettings);
+  const cycleSettings = useAppStore((s) => s.cycleSettings);
+  const activeCycle = partnerCycleSettings ?? cycleSettings;
+  const activeWhisper = useAppStore((s) => s.activeWhisper);
 
   useSOSListener();
 
   const dayInCycle = getCurrentDayInCycle(
-    cycleSettings.lastPeriodStartDate,
-    cycleSettings.avgCycleLength,
+    activeCycle.lastPeriodStartDate,
+    activeCycle.avgCycleLength,
   );
   const phase = getCurrentPhase(
     dayInCycle,
-    cycleSettings.avgCycleLength,
-    cycleSettings.avgPeriodLength,
+    activeCycle.avgCycleLength,
+    activeCycle.avgPeriodLength,
   );
   const daysUntilPeriod = getDaysUntilNextPeriod(
     dayInCycle,
-    cycleSettings.avgCycleLength,
+    activeCycle.avgCycleLength,
   );
   const phaseInfo = PHASE_INFO[phase];
 
@@ -60,8 +63,10 @@ export function SunDashboard() {
   } = useAIPartnerAdvice(phase, dayInCycle);
 
   function shareInvite() {
-    // Share.share would go here — stub for now
-    console.log('Share invite');
+    Share.share({
+      message:
+        "I'm using Easel to understand and support you better. Download it and share your code with me so we can connect: https://easel.app",
+    });
   }
 
   if (!isPartnerLinked) {
@@ -88,7 +93,7 @@ export function SunDashboard() {
       >
         {/* Header */}
         <View style={styles.topBar}>
-          <Text style={styles.greeting}>Hey, Sun</Text>
+          <Text style={styles.greeting}>Hey, {displayName ?? 'Sun'}</Text>
           <Text style={styles.headlineTitle}>Be there for Moon</Text>
         </View>
 

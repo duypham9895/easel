@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useAppStore } from '@/store/appStore';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -20,18 +21,49 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
-  const isValid = email.trim().length > 0 && password.length >= 6;
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isValid = isValidEmail && password.length >= 6;
+
+  const isValidResetEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim());
+
+  async function handleSendResetLink() {
+    if (!isValidResetEmail) return;
+    setIsSendingReset(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim());
+      if (resetError) throw resetError;
+      setSuccessMsg('Check your email for a reset link.');
+      setShowForgotPassword(false);
+      setResetEmail('');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send reset link.');
+    } finally {
+      setIsSendingReset(false);
+    }
+  }
 
   async function handleSubmit() {
     if (!isValid) return;
     setIsLoading(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       if (mode === 'signIn') {
         await signIn(email.trim(), password);
       } else {
         await signUp(email.trim(), password);
+      }
+      // If signUp returned but the user isn't logged in, email confirmation is pending
+      if (mode === 'signUp' && !useAppStore.getState().isLoggedIn) {
+        setError('Check your email to confirm your account before signing in.');
+        return;
       }
       // Read fresh role from store after signIn/signUp mutates it
       const freshRole = useAppStore.getState().role;
@@ -70,7 +102,7 @@ export default function AuthScreen() {
           <Text style={styles.appName}>Easel</Text>
           <Text style={styles.tagline}>
             {mode === 'signIn'
-              ? 'Welcome back. She misses you.'
+              ? 'Welcome back.'
               : 'Start your journey together.'}
           </Text>
         </View>
@@ -103,6 +135,53 @@ export default function AuthScreen() {
             />
           </View>
 
+          {mode === 'signIn' && (
+            <>
+              <TouchableOpacity
+                style={styles.forgotPasswordLink}
+                onPress={() => {
+                  setShowForgotPassword(!showForgotPassword);
+                  setError(null);
+                  setSuccessMsg(null);
+                  setResetEmail('');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+              </TouchableOpacity>
+
+              {showForgotPassword && (
+                <View style={styles.forgotPasswordContainer}>
+                  <View style={styles.inputRow}>
+                    <Feather name="mail" size={18} color={Colors.textHint} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter your email"
+                      placeholderTextColor={Colors.textHint}
+                      value={resetEmail}
+                      onChangeText={setResetEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.resetButton, !isValidResetEmail && styles.submitButtonDisabled]}
+                    onPress={handleSendResetLink}
+                    disabled={!isValidResetEmail || isSendingReset}
+                    activeOpacity={0.85}
+                  >
+                    {isSendingReset ? (
+                      <ActivityIndicator color={Colors.white} />
+                    ) : (
+                      <Text style={styles.resetButtonText}>Send reset link</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
+          )}
+
           <TouchableOpacity
             style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
             onPress={handleSubmit}
@@ -120,6 +199,9 @@ export default function AuthScreen() {
 
           {error && (
             <Text style={styles.errorText}>{error}</Text>
+          )}
+          {successMsg && (
+            <Text style={styles.successText}>{successMsg}</Text>
           )}
         </View>
 
@@ -234,5 +316,31 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: '#EF5350',
     textAlign: 'center',
+  },
+  successText: {
+    ...Typography.caption,
+    color: '#4CAF50',
+    textAlign: 'center',
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+  },
+  forgotPasswordText: {
+    ...Typography.caption,
+    color: Colors.textHint,
+  },
+  forgotPasswordContainer: {
+    gap: Spacing.sm,
+  },
+  resetButton: {
+    backgroundColor: Colors.menstrual,
+    borderRadius: Radii.md,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetButtonText: {
+    ...Typography.bodyBold,
+    color: Colors.white,
   },
 });

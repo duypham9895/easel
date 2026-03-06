@@ -61,8 +61,13 @@ function buildHealthKitSync(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let AppleHealthKit: any = null;
   try {
-    AppleHealthKit = require('react-native-health').default;
+    const mod = require('react-native-health');
+    AppleHealthKit = mod.default ?? mod;
   } catch {
+    return { isAvailable: false, sync: async () => [] };
+  }
+
+  if (!AppleHealthKit?.Constants?.Permissions) {
     return { isAvailable: false, sync: async () => [] };
   }
 
@@ -125,7 +130,7 @@ function buildHealthConnectSync(
       const granted = await HealthConnect.requestPermission([
         { accessType: 'read', recordType: 'MenstruationFlow' },
       ]);
-      if (!granted) return [];
+      if (!granted || granted.length === 0) return [];
 
       const twoYearsAgo = new Date();
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
@@ -191,5 +196,6 @@ function buildPeriodRecords(samples: any[]): PeriodRecord[] {
     records.push({ startDate: periodEnd!, endDate: periodStart });
   }
 
-  return records;
+  // Reverse so records[0] is the most recent period (loop pushed in second-newest-first order)
+  return records.reverse();
 }

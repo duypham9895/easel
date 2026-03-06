@@ -1,12 +1,28 @@
 import { useState, useEffect } from 'react';
 import { CyclePhase, SOSOption } from '@/types';
 
-/** Per-type static fallbacks shown while AI loads. */
+/** Per-type static fallbacks shown while AI loads. Keys match SOSOption.id values. */
 const FALLBACK_TIPS: Record<string, string> = {
-  sweet_tooth: 'Grab her favourite snack or dessert right now — it will mean a lot.',
-  need_a_hug: 'Put down your phone, go to her, and just hold her. No words needed.',
-  cramps_alert: 'Fill a hot water bottle and bring it to her with something warm to drink.',
-  quiet_time: 'Give her space right now. Check in with a gentle message in an hour.',
+  // SOS options
+  sweet: 'Grab her favourite snack or dessert right now — it will mean a lot.',
+  hug: 'Put down your phone, go to her, and just hold her. No words needed.',
+  pain: 'Fill a hot water bottle and bring it to her with something warm to drink.',
+  quiet: 'Give her space right now. Check in with a gentle message in an hour.',
+  // Whisper options
+  warmth: 'Get her a hot water bottle or warm blanket right away.',
+  chocolate: 'Bring her favourite sweet treat — no questions asked.',
+  plan: 'Surprise her with a fun outing or activity today.',
+  cook: 'Offer to cook her favourite meal together tonight.',
+  walk: 'Suggest a gentle walk outside — fresh air helps.',
+  movie: 'Pick a film she loves and set up a cosy movie night.',
+  date: 'Plan something special — even a simple dinner out counts.',
+  compliment: 'Tell her something genuine and specific you love about her.',
+  dance: 'Put on her favourite song and ask her to dance.',
+  kiss: 'Go find her and give her a slow, deliberate kiss.',
+  snacks: 'Pick up her favourite snacks on your way home.',
+  space: 'Give her quiet alone time — check in gently in an hour.',
+  cuddle: 'Drop everything and go cuddle her right now.',
+  kind: 'Send her a heartfelt message about what she means to you.',
 };
 
 interface UseAISOSTipResult {

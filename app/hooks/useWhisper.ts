@@ -22,15 +22,19 @@ export function useWhisper(userId: string | null): UseWhisperResult {
   useEffect(() => {
     if (!userId) return;
 
+    let isMounted = true;
     setIsLoading(true);
-    supabase
-      .from('whisper_history')
-      .select('id, text, selected_count, last_selected_at')
-      .eq('user_id', userId)
-      .order('selected_count', { ascending: false })
-      .order('last_selected_at', { ascending: false })
-      .limit(50)
-      .then(({ data, error }) => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('whisper_history')
+          .select('id, text, selected_count, last_selected_at')
+          .eq('user_id', userId)
+          .order('selected_count', { ascending: false })
+          .order('last_selected_at', { ascending: false })
+          .limit(50);
+
+        if (!isMounted) return;
         if (error) {
           console.warn('[useWhisper] fetch error:', error);
           return;
@@ -43,8 +47,11 @@ export function useWhisper(userId: string | null): UseWhisperResult {
             lastSelectedAt: r.last_selected_at,
           })),
         );
-      })
-      .finally(() => setIsLoading(false));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
   }, [userId]);
 
   const getSuggestions = useCallback(

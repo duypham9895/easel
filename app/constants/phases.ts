@@ -43,7 +43,7 @@ export const PHASE_INFO: Record<CyclePhase, PhaseInfo> = {
   },
   luteal: {
     key: 'luteal',
-    name: 'Luteal (PMS)',
+    name: 'Luteal',
     tagline: 'Wind Down',
     color: Colors.luteal,
     moodDescription: 'She may feel more sensitive or irritable. PMS symptoms can emerge in this phase.',

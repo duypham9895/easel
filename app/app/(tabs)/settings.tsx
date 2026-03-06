@@ -1,20 +1,29 @@
 import { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, TextInput, Alert, Switch, Image, ActivityIndicator,
+  StyleSheet, TextInput, Alert, Switch, Image, ActivityIndicator, Share, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useAppStore } from '@/store/appStore';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 import { useAvatarUpload } from '@/hooks/useAvatarUpload';
 import { useHealthSync } from '@/hooks/useHealthSync';
+import { getCurrentDayInCycle, getCurrentPhase, getDaysUntilNextPeriod } from '@/utils/cycleCalculator';
+import { PHASE_INFO } from '@/constants/phases';
 
 export default function SettingsTab() {
   const { email, role, cycleSettings, updateCycleSettings, signOut, generateLinkCode, linkCode,
-    notificationPrefs, updateNotificationPrefs } =
+    isPartnerLinked, partnerCycleSettings,
+    notificationPrefs: rawNotificationPrefs, updateNotificationPrefs } =
     useAppStore();
+  // Guard against legacy persisted store missing this field
+  const notificationPrefs = rawNotificationPrefs ?? {
+    periodApproaching: true, periodStarted: true, periodEnded: true,
+    whisperAlerts: true, useAiTiming: true, manualDaysBefore: 3,
+  };
   const avatarUrl = useAppStore((s) => s.avatarUrl);
   const { upload, isUploading } = useAvatarUpload();
   const displayName = useAppStore((s) => s.displayName);
@@ -23,10 +32,12 @@ export default function SettingsTab() {
   const [displayNameInput, setDisplayNameInput] = useState(displayName ?? '');
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSyncingHealth, setIsSyncingHealth] = useState(false);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   const [cycleLen, setCycleLen] = useState(String(cycleSettings.avgCycleLength));
   const [periodLen, setPeriodLen] = useState(String(cycleSettings.avgPeriodLength));
   const [lastPeriod, setLastPeriod] = useState(cycleSettings.lastPeriodStartDate);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   async function handleSaveCycle() {
     const cl = parseInt(cycleLen, 10);
@@ -85,11 +96,28 @@ export default function SettingsTab() {
         text: 'Sign Out',
         style: 'destructive',
         onPress: () => {
-          signOut().then(() => router.replace('/auth'));
+          signOut()
+            .then(() => router.replace('/auth'))
+            .catch(() => Alert.alert('Error', 'Sign out failed. Please try again.'));
         },
       },
     ]);
   }
+
+  const partnerPhaseInfo = (() => {
+    if (!partnerCycleSettings) return null;
+    const dayInCycle = getCurrentDayInCycle(
+      partnerCycleSettings.lastPeriodStartDate,
+      partnerCycleSettings.avgCycleLength,
+    );
+    const phase = getCurrentPhase(
+      dayInCycle,
+      partnerCycleSettings.avgCycleLength,
+      partnerCycleSettings.avgPeriodLength,
+    );
+    const daysUntilPeriod = getDaysUntilNextPeriod(dayInCycle, partnerCycleSettings.avgCycleLength);
+    return { dayInCycle, phase, daysUntilPeriod, phaseInfo: PHASE_INFO[phase] };
+  })();
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -102,7 +130,7 @@ export default function SettingsTab() {
           <View style={styles.card}>
             <AvatarPicker url={avatarUrl} onPress={upload} loading={isUploading} />
             <Divider />
-            <Row label="Email" value={email} />
+            <Row label="Email" value={email || '—'} />
             <Divider />
             <View style={rowStyles.row}>
               <Text style={rowStyles.label}>Display Name</Text>
@@ -126,29 +154,144 @@ export default function SettingsTab() {
               </View>
             </View>
             <Divider />
-            <Row label="Role" value={role === 'moon' ? 'Moon' : 'Sun'} />
+            <TouchableOpacity
+              style={rowStyles.row}
+              onPress={() => {
+                Alert.alert(
+                  'Change Role',
+                  'This will reset your experience. Are you sure?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Change',
+                      style: 'destructive',
+                      onPress: () => router.replace('/onboarding'),
+                    },
+                  ],
+                );
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={rowStyles.label}>Role</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                <Text style={rowStyles.value}>
+                  {role === 'moon' ? 'Moon' : role === 'sun' ? 'Sun' : '—'}
+                </Text>
+                <Feather name="chevron-right" size={16} color={Colors.textHint} />
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* Partner — Sun only */}
+        {role === 'sun' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>PARTNER</Text>
+            <View style={styles.card}>
+              {!isPartnerLinked ? (
+                <>
+                  <Text style={styles.cardBody}>
+                    Connect with your Moon to see her cycle and receive Whispers.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.generateButton}
+                    onPress={() => router.replace('/(tabs)')}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.generateButtonText}>Connect Now</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <View style={styles.linkedBadge}>
+                    <Feather name="check-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.linkedBadgeText}>Moon connected</Text>
+                  </View>
+                  <Divider />
+                  <View style={rowStyles.row}>
+                    <Text style={rowStyles.label}>Phase</Text>
+                    {partnerPhaseInfo ? (
+                      <Text style={[rowStyles.value, { color: partnerPhaseInfo.phaseInfo.color }]}>
+                        {partnerPhaseInfo.phaseInfo.name} · Day {partnerPhaseInfo.dayInCycle}
+                      </Text>
+                    ) : (
+                      <Text style={rowStyles.value}>—</Text>
+                    )}
+                  </View>
+                  <Divider />
+                  <View style={rowStyles.row}>
+                    <Text style={rowStyles.label}>Next period</Text>
+                    {partnerPhaseInfo ? (
+                      <Text style={rowStyles.value}>
+                        In {partnerPhaseInfo.daysUntilPeriod} day{partnerPhaseInfo.daysUntilPeriod === 1 ? '' : 's'}
+                      </Text>
+                    ) : (
+                      <Text style={rowStyles.value}>—</Text>
+                    )}
+                  </View>
+                  <Divider />
+                  <ToggleRow
+                    label="Whisper notifications"
+                    value={notificationPrefs.whisperAlerts}
+                    onToggle={v => updateNotificationPrefs({ whisperAlerts: v })}
+                  />
+                </>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Partner Linking */}
         {role === 'moon' && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>PARTNER LINK</Text>
             <View style={styles.card}>
-              <Text style={styles.cardBody}>
-                Share this code with your Sun so they can join your cycle.
-              </Text>
-              <TouchableOpacity
-                style={styles.generateButton}
-                onPress={() => generateLinkCode()}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.generateButtonText}>Generate Link Code</Text>
-              </TouchableOpacity>
-              {linkCode && (
-                <View style={styles.codeDisplay}>
-                  <Text style={styles.codeText}>{linkCode}</Text>
+              {isPartnerLinked ? (
+                <View style={styles.linkedBadge}>
+                  <Feather name="check-circle" size={16} color="#4CAF50" />
+                  <Text style={styles.linkedBadgeText}>Your Sun is connected</Text>
                 </View>
+              ) : (
+                <>
+                  <Text style={styles.cardBody}>
+                    Share this 6-digit code with your Sun so they can join your cycle.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.generateButton, isGeneratingCode && { opacity: 0.6 }]}
+                    onPress={async () => {
+                      setIsGeneratingCode(true);
+                      try { await generateLinkCode(); } catch { /* already linked guard handled in DB */ } finally { setIsGeneratingCode(false); }
+                    }}
+                    activeOpacity={0.85}
+                    disabled={isGeneratingCode}
+                  >
+                    {isGeneratingCode ? (
+                      <ActivityIndicator color={Colors.menstrual} />
+                    ) : (
+                      <Text style={styles.generateButtonText}>
+                        {linkCode ? 'Regenerate Code' : 'Generate Link Code'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                  {linkCode && (
+                    <View style={styles.codeDisplay}>
+                      <Text style={styles.codeText}>{linkCode}</Text>
+                      <Text style={styles.codeHint}>Tell him to enter this code in Easel</Text>
+                      <TouchableOpacity
+                        style={styles.shareCodeButton}
+                        onPress={() =>
+                          Share.share({
+                            message: `My Easel partner code is: ${linkCode}\n\nDownload Easel and enter this code to connect with me.`,
+                          })
+                        }
+                        activeOpacity={0.85}
+                      >
+                        <Feather name="share-2" size={14} color={Colors.menstrual} />
+                        <Text style={styles.shareCodeText}>Share code</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
               )}
             </View>
           </View>
@@ -197,12 +340,49 @@ export default function SettingsTab() {
                 keyboardType="number-pad"
               />
               <Divider />
-              <SettingInput
-                label="Last Period Start (YYYY-MM-DD)"
-                value={lastPeriod}
-                onChangeText={setLastPeriod}
-                keyboardType="default"
-              />
+              <View style={settingStyles.row}>
+                <Text style={settingStyles.label}>Last Period Start</Text>
+                <TouchableOpacity
+                  style={settingStyles.input}
+                  onPress={() => setShowDatePicker(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ ...Typography.body, color: Colors.textPrimary }}>
+                    {lastPeriod
+                      ? new Date(lastPeriod + 'T12:00:00').toLocaleDateString('en-US', {
+                          year: 'numeric', month: 'long', day: 'numeric',
+                        })
+                      : 'Select date'}
+                  </Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={lastPeriod ? new Date(lastPeriod + 'T12:00:00') : new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    maximumDate={new Date()}
+                    onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                      if (Platform.OS === 'android') {
+                        setShowDatePicker(false);
+                      }
+                      if (event.type === 'set' && selectedDate) {
+                        const yyyy = selectedDate.getFullYear();
+                        const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                        const dd = String(selectedDate.getDate()).padStart(2, '0');
+                        setLastPeriod(`${yyyy}-${mm}-${dd}`);
+                      }
+                    }}
+                  />
+                )}
+                {showDatePicker && Platform.OS === 'ios' && (
+                  <TouchableOpacity
+                    style={[styles.saveButton, { marginTop: Spacing.xs }]}
+                    onPress={() => setShowDatePicker(false)}
+                  >
+                    <Text style={styles.saveButtonText}>Done</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <TouchableOpacity style={styles.saveButton} onPress={handleSaveCycle}>
                 <Text style={styles.saveButtonText}>Save Cycle Settings</Text>
               </TouchableOpacity>
@@ -346,9 +526,22 @@ const styles = StyleSheet.create({
   generateButtonText: { ...Typography.bodyBold, color: Colors.menstrual },
   codeDisplay: {
     backgroundColor: Colors.inputBg, borderRadius: Radii.md,
-    padding: Spacing.md, alignItems: 'center',
+    padding: Spacing.md, alignItems: 'center', gap: 4,
   },
   codeText: { fontSize: 32, fontWeight: '800', letterSpacing: 8, color: Colors.textPrimary },
+  codeHint: { ...Typography.caption, color: Colors.textHint, textAlign: 'center' },
+  shareCodeButton: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+    paddingVertical: Spacing.xs, paddingHorizontal: Spacing.md,
+    borderRadius: Radii.full, borderWidth: 1, borderColor: Colors.menstrual + '40',
+    marginTop: 2,
+  },
+  shareCodeText: { ...Typography.caption, fontWeight: '700', color: Colors.menstrual },
+  linkedBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+    paddingVertical: Spacing.xs,
+  },
+  linkedBadgeText: { ...Typography.bodyBold, color: '#4CAF50' },
   saveButton: {
     backgroundColor: Colors.textPrimary, borderRadius: Radii.md,
     padding: Spacing.md, alignItems: 'center', marginTop: Spacing.xs,
