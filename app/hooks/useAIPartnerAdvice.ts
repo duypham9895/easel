@@ -1,0 +1,79 @@
+import { useState, useEffect } from 'react';
+import { CyclePhase } from '@/types';
+import { PHASE_INFO } from '@/constants/phases';
+
+/** Static fallback advice shown instantly while AI loads or if proxy is unavailable. */
+function getFallbackAdvice(phase: CyclePhase): string {
+  return PHASE_INFO[phase].partnerAdvice;
+}
+
+interface UseAIPartnerAdviceResult {
+  advice: string;
+  isAI: boolean;
+  isLoading: boolean;
+}
+
+/**
+ * Fetches AI-generated, phase-aware partner advice for the boyfriend.
+ * Shows static fallback immediately; replaces with AI text once fetched.
+ * Re-fetches when phase or dayInCycle changes (i.e. day rollover).
+ */
+export function useAIPartnerAdvice(
+  phase: CyclePhase,
+  dayInCycle: number
+): UseAIPartnerAdviceResult {
+  const proxyUrl = process.env.EXPO_PUBLIC_PROXY_URL;
+  const clientToken = process.env.EXPO_PUBLIC_CLIENT_TOKEN;
+  const phaseTagline = PHASE_INFO[phase].tagline;
+
+  const fallback = getFallbackAdvice(phase);
+
+  const [advice, setAdvice] = useState(fallback);
+  const [isAI, setIsAI] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!proxyUrl);
+
+  useEffect(() => {
+    setAdvice(fallback);
+    setIsAI(false);
+
+    if (!proxyUrl || !clientToken) {
+      setIsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsLoading(true);
+
+    (async () => {
+      try {
+        const res = await fetch(`${proxyUrl}/api/partner-advice`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Client-Token': clientToken,
+          },
+          body: JSON.stringify({ phase, dayInCycle, phaseTagline }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) throw new Error(`Proxy ${res.status}`);
+
+        const data = (await res.json()) as { advice?: string };
+        if (data.advice) {
+          setAdvice(data.advice);
+          setIsAI(true);
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.warn('[useAIPartnerAdvice] falling back to static advice:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, dayInCycle]);
+
+  return { advice, isAI, isLoading };
+}

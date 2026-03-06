@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Easel",
+    "slug": "easel",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FBFBFD"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.easel.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FBFBFD"
+      },
+      "package": "com.easel.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      [
+        "expo-haptics"
+      ]
+    ],
+    "scheme": "easel"
+  }
+}

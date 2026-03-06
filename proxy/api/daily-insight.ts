@@ -1,0 +1,60 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { validateClientToken } from '../lib/auth';
+import { isRateLimited, maybePrune } from '../lib/rateLimit';
+import { generateDailyInsight } from '../lib/minimax';
+
+const VALID_PHASES = new Set(['menstrual', 'follicular', 'ovulatory', 'luteal']);
+
+function getClientIP(req: VercelRequest): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress ?? 'unknown';
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const token = req.headers['x-client-token'];
+  if (!validateClientToken(typeof token === 'string' ? token : undefined)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  maybePrune();
+  if (isRateLimited(getClientIP(req))) return res.status(429).json({ error: 'Too many requests' });
+
+  const { phase, dayInCycle, mood, symptoms } = req.body ?? {};
+
+  if (typeof phase !== 'string' || !VALID_PHASES.has(phase)) {
+    return res.status(400).json({ error: 'Invalid phase' });
+  }
+  if (typeof dayInCycle !== 'number' || dayInCycle < 1 || dayInCycle > 45) {
+    return res.status(400).json({ error: 'Invalid dayInCycle' });
+  }
+  // mood is optional (1–5)
+  if (mood !== undefined && (typeof mood !== 'number' || mood < 1 || mood > 5)) {
+    return res.status(400).json({ error: 'Invalid mood' });
+  }
+  // symptoms is optional — validate as string array, max 10 items, max 30 chars each
+  if (symptoms !== undefined) {
+    if (
+      !Array.isArray(symptoms) ||
+      symptoms.length > 10 ||
+      symptoms.some((s: unknown) => typeof s !== 'string' || s.length > 30)
+    ) {
+      return res.status(400).json({ error: 'Invalid symptoms' });
+    }
+  }
+
+  try {
+    const insight = await generateDailyInsight(
+      phase,
+      dayInCycle,
+      mood ?? null,
+      (symptoms as string[]) ?? []
+    );
+    return res.status(200).json({ insight });
+  } catch (err) {
+    console.error('[daily-insight] error:', err);
+    return res.status(502).json({ error: 'AI service unavailable' });
+  }
+}
