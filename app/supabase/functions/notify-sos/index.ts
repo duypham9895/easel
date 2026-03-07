@@ -58,6 +58,29 @@ const SOS_COPY: Record<string, { title: string; body: string }> = {
   },
 };
 
+const WHISPER_COPY: Record<string, { title: string; body: string }> = {
+  // Menstrual
+  hug:       { title: 'Moon needs you', body: 'She needs a hug right now — just hold her close.' },
+  warmth:    { title: 'Moon needs you', body: 'She wants something warm. Bring a blanket or a hot drink.' },
+  chocolate: { title: 'Moon needs you', body: "Sweet tooth alert — she's craving something sweet." },
+  quiet:     { title: 'Moon needs you', body: 'She needs peace and quiet. Tread softly.' },
+  // Follicular
+  plan:      { title: 'Moon is ready', body: "She's up for an adventure — surprise her with something fun." },
+  cook:      { title: 'Moon wants you', body: "She'd love to cook together tonight." },
+  walk:      { title: 'Moon wants you', body: "She's in the mood for a walk. Let's go outside." },
+  movie:     { title: 'Moon wants you', body: "Movie night — she wants to watch something together." },
+  // Ovulatory
+  date:      { title: 'Moon is glowing', body: "Take her somewhere nice — she's ready for a date." },
+  compliment:{ title: 'Moon needs to hear it', body: "Say something kind. She needs to hear it from you." },
+  dance:     { title: 'Moon wants to dance', body: "Put on a song and dance with her." },
+  kiss:      { title: 'Moon wants a kiss', body: "She just wants a kiss." },
+  // Luteal
+  snacks:    { title: 'Moon has a craving', body: "Bring her favourite snacks — she'll love you for it." },
+  space:     { title: 'Moon needs space', body: "Give her a little room today. Check in gently." },
+  cuddle:    { title: 'Moon needs you', body: "Come cuddle. That's all she needs." },
+  kind:      { title: 'Moon needs kind words', body: "Say something kind. Small words, big impact." },
+};
+
 Deno.serve(async (req: Request) => {
   try {
     const payload: WebhookPayload = await req.json();
@@ -94,10 +117,12 @@ Deno.serve(async (req: Request) => {
     }
 
     // 3. Build and send Expo push messages
-    const copy = SOS_COPY[signal.type] ?? {
-      title: 'Moon needs you',
-      body: signal.message ?? 'She sent you a signal.',
-    };
+    const copy =
+      SOS_COPY[signal.type] ??
+      WHISPER_COPY[signal.type] ?? {
+        title: 'Moon whispered to you',
+        body: signal.message ?? 'She sent you a whisper.',
+      };
 
     const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
       to: token,

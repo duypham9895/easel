@@ -39,6 +39,10 @@ interface Props {
 export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Props) {
   const slideAnim = useRef(new Animated.Value(600)).current;
   const [customInput, setCustomInput] = useState('');
+  const [sent, setSent] = useState(false);
+  const [sentOption, setSentOption] = useState<SOSOption | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const checkOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
@@ -57,13 +61,51 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
     }
   }, [visible]);
 
+  // Reset state when sheet closes
+  useEffect(() => {
+    if (!visible) {
+      setSent(false);
+      setSentOption(null);
+      setCustomInput('');
+      pulseAnim.setValue(1);
+      checkOpacity.setValue(0);
+    }
+  }, [visible]);
+
   const { options, isAI } = useAIWhisperOptions(phase, dayInCycle);
+
+  function animateSentState() {
+    Animated.timing(checkOpacity, {
+      toValue: 1,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.08, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ]),
+    ).start();
+  }
+
+  function handleClose() {
+    setSent(false);
+    setSentOption(null);
+    setCustomInput('');
+    pulseAnim.setValue(1);
+    checkOpacity.setValue(0);
+    onClose();
+  }
 
   function handleSend(option: SOSOption) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSentOption(option);
+    setSent(true);
+    animateSentState();
     onSend(option);
-    onClose();
-    setCustomInput('');
+    setTimeout(() => {
+      handleClose();
+    }, 2500);
   }
 
   function handleSendCustom() {
@@ -83,9 +125,9 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
       transparent
       visible={visible}
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable style={styles.backdrop} onPress={handleClose}>
         <Animated.View
           style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}
         >
@@ -93,63 +135,96 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
             {/* Handle */}
             <View style={styles.handle} />
 
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>What do you need?</Text>
-              <Text style={styles.subtitle}>
-                {isAI ? 'Personalized for your phase ✦ AI' : 'Whisper it to your Sun'}
-              </Text>
-            </View>
-
-            {/* Options grid */}
-            <View style={styles.grid}>
-              {options.map((option) => (
-                <TouchableOpacity
-                  key={option.id}
-                  style={styles.optionCard}
-                  onPress={() => handleSend(option)}
-                  activeOpacity={0.85}
+            {sent && sentOption ? (
+              /* ── Success state ──────────────────────────────── */
+              <View style={styles.successContainer}>
+                <Animated.View
+                  style={[
+                    styles.successCircle,
+                    {
+                      backgroundColor: sentOption.color + '22',
+                      borderColor: sentOption.color + '55',
+                      transform: [{ scale: pulseAnim }],
+                      opacity: checkOpacity,
+                    },
+                  ]}
                 >
-                  <View
-                    style={[
-                      styles.optionIconBg,
-                      { backgroundColor: option.color + '18' },
-                    ]}
-                  >
-                    <Feather name={option.icon as any} size={28} color={option.color} />
+                  <Feather name="check" size={48} color={sentOption.color} />
+                </Animated.View>
+
+                <Animated.View style={[styles.successTextGroup, { opacity: checkOpacity }]}>
+                  <Text style={styles.successTitle}>Whispered to your Sun</Text>
+                  <View style={[styles.sentOptionChip, { backgroundColor: sentOption.color + '20' }]}>
+                    <Feather name={sentOption.icon as any} size={14} color={sentOption.color} />
+                    <Text style={[styles.sentOptionText, { color: sentOption.color }]}>
+                      {sentOption.title}
+                    </Text>
                   </View>
-                  <Text style={styles.optionTitle}>{option.title}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Custom input row */}
-            <View style={styles.customRow}>
-              <View style={styles.customInputContainer}>
-                <TextInput
-                  style={styles.customInput}
-                  placeholder="Something else..."
-                  placeholderTextColor={MOON.textHint}
-                  value={customInput}
-                  onChangeText={setCustomInput}
-                  returnKeyType="send"
-                  onSubmitEditing={handleSendCustom}
-                />
-                {customInput.length > 0 && (
-                  <TouchableOpacity
-                    onPress={handleSendCustom}
-                    activeOpacity={0.75}
-                  >
-                    <Feather name="send" size={18} color={MOON.accentPrimary} />
-                  </TouchableOpacity>
-                )}
+                  <Text style={styles.successHint}>He'll know what to do.</Text>
+                </Animated.View>
               </View>
-            </View>
+            ) : (
+              /* ── Normal content ─────────────────────────────── */
+              <>
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={styles.title}>What do you need?</Text>
+                  <Text style={styles.subtitle}>
+                    {isAI ? 'Personalized for your phase ✦ AI' : 'Whisper it to your Sun'}
+                  </Text>
+                </View>
 
-            {/* Cancel */}
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelText}>Maybe later</Text>
-            </TouchableOpacity>
+                {/* Options grid */}
+                <View style={styles.grid}>
+                  {options.map((option) => (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={styles.optionCard}
+                      onPress={() => handleSend(option)}
+                      activeOpacity={0.85}
+                    >
+                      <View
+                        style={[
+                          styles.optionIconBg,
+                          { backgroundColor: option.color + '18' },
+                        ]}
+                      >
+                        <Feather name={option.icon as any} size={28} color={option.color} />
+                      </View>
+                      <Text style={styles.optionTitle}>{option.title}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Custom input row */}
+                <View style={styles.customRow}>
+                  <View style={styles.customInputContainer}>
+                    <TextInput
+                      style={styles.customInput}
+                      placeholder="Something else..."
+                      placeholderTextColor={MOON.textHint}
+                      value={customInput}
+                      onChangeText={setCustomInput}
+                      returnKeyType="send"
+                      onSubmitEditing={handleSendCustom}
+                    />
+                    {customInput.length > 0 && (
+                      <TouchableOpacity
+                        onPress={handleSendCustom}
+                        activeOpacity={0.75}
+                      >
+                        <Feather name="send" size={18} color={MOON.accentPrimary} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
+                {/* Cancel */}
+                <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
+                  <Text style={styles.cancelText}>Maybe later</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </Pressable>
         </Animated.View>
       </Pressable>
@@ -251,6 +326,50 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
   },
   cancelText: {
+    ...Typography.body,
+    color: MOON.textHint,
+    textAlign: 'center',
+  },
+  successContainer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.xl,
+    minHeight: 280,
+    justifyContent: 'center',
+  },
+  successCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successTextGroup: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: MOON.textPrimary,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  sentOptionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    borderRadius: Radii.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  sentOptionText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  successHint: {
     ...Typography.body,
     color: MOON.textHint,
     textAlign: 'center',
