@@ -8,6 +8,8 @@ import { getCycleSettings, upsertCycleSettings } from '@/lib/db/cycle';
 import { createOrRefreshLinkCode, linkToPartnerByCode, getMyCouple } from '@/lib/db/couples';
 import { sendSOSSignal } from '@/lib/db/sos';
 import { upsertPushToken } from '@/lib/db/pushTokens';
+import i18n from '@/i18n/config';
+import type { SupportedLanguage } from '@/i18n/config';
 
 interface AppState {
   // Auth
@@ -67,6 +69,10 @@ interface AppState {
 
   // Push notifications
   registerPushToken: (token: string) => Promise<void>;
+
+  // Language
+  language: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
 }
 
 const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
@@ -106,6 +112,7 @@ export const useAppStore = create<AppState>()(
       displayName: null,
       notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
       activeWhisper: null,
+      language: (i18n.language as SupportedLanguage) ?? 'en',
 
       // -----------------------------------------------------------------------
       // Auth
@@ -149,6 +156,10 @@ export const useAppStore = create<AppState>()(
         if (error) throw error;
         if (!data.user) throw new Error('Sign up failed — no user returned');
 
+        // When email confirmation is enabled, data.session is null.
+        // Do NOT set isLoggedIn until the user confirms their email.
+        if (!data.session) return;
+
         // Profile row is auto-created by the DB trigger.
         // Role is set in onboarding.
         set({
@@ -173,10 +184,14 @@ export const useAppStore = create<AppState>()(
           userId: null,
           coupleId: null,
           activeSOS: null,
+          activeWhisper: null,
           cycleSettings: makeDefaultCycleSettings(),
           partnerCycleSettings: null,
           displayName: null,
+          notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
+          language: 'en',
         });
+        i18n.changeLanguage('en');
       },
 
       // -----------------------------------------------------------------------
@@ -331,6 +346,24 @@ export const useAppStore = create<AppState>()(
         const { userId } = get();
         if (userId) {
           await upsertPushToken(userId, token);
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // Language
+      // -----------------------------------------------------------------------
+      setLanguage: (lang) => {
+        set({ language: lang });
+        i18n.changeLanguage(lang);
+        // Background sync to Supabase
+        const { userId } = get();
+        if (userId) {
+          supabase
+            .from('user_preferences')
+            .upsert({ user_id: userId, language: lang }, { onConflict: 'user_id' })
+            .then(({ error }) => {
+              if (error) console.warn('[setLanguage] sync failed:', error.message);
+            });
         }
       },
     }),

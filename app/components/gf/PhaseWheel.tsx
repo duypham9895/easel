@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { CyclePhase } from '@/types';
 import { PHASE_INFO } from '@/constants/phases';
 import { Colors, Typography } from '@/constants/theme';
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export function PhaseWheel({ phase, dayInCycle, daysUntilPeriod, totalCycleDays }: Props) {
+  const { t: tPhases } = useTranslation('phases');
+  const { t: tCommon } = useTranslation('common');
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.15);
   const phaseInfo = PHASE_INFO[phase];
@@ -80,11 +83,11 @@ export function PhaseWheel({ phase, dayInCycle, daysUntilPeriod, totalCycleDays 
 
       {/* Inner filled circle */}
       <View style={[styles.innerCircle, { backgroundColor: phaseInfo.color }]}>
-        <Text style={styles.phaseLabel}>{phaseInfo.name}</Text>
+        <Text style={styles.phaseLabel}>{tPhases(`${phase}_name`)}</Text>
         <Text style={styles.dayNumber}>{dayInCycle}</Text>
         <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
           <Text style={styles.pillText}>
-            {daysUntilPeriod === 1 ? '1 day left' : `${daysUntilPeriod} days left`}
+            {tCommon('daysLeft', { count: daysUntilPeriod })}
           </Text>
         </View>
       </View>

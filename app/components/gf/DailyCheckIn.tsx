@@ -2,24 +2,12 @@ import { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 import { CyclePhase } from '@/types';
 import { useAIDailyInsight } from '@/hooks/useAIDailyInsight';
 import { useAppStore } from '@/store/appStore';
 import { supabase } from '@/lib/supabase';
-
-const MOOD_OPTIONS = [
-  { value: 1, label: 'Low' },
-  { value: 2, label: 'Meh' },
-  { value: 3, label: 'Okay' },
-  { value: 4, label: 'Good' },
-  { value: 5, label: 'Great' },
-];
-
-const SYMPTOM_OPTIONS = [
-  'Cramps', 'Bloating', 'Headache', 'Fatigue',
-  'Tender', 'Mood swings', 'Spotting', 'Cravings',
-];
 
 interface Props {
   phase: CyclePhase;
@@ -28,7 +16,27 @@ interface Props {
 }
 
 export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
+  const { t } = useTranslation('checkin');
   const { userId } = useAppStore();
+
+  const MOOD_OPTIONS = [
+    { value: 1, label: t('moodLow') },
+    { value: 2, label: t('moodMeh') },
+    { value: 3, label: t('moodOkay') },
+    { value: 4, label: t('moodGood') },
+    { value: 5, label: t('moodGreat') },
+  ];
+
+  const SYMPTOM_OPTIONS = [
+    { key: 'Cramps', label: t('cramps') },
+    { key: 'Bloating', label: t('bloating') },
+    { key: 'Headache', label: t('headache') },
+    { key: 'Fatigue', label: t('fatigue') },
+    { key: 'Tender', label: t('tender') },
+    { key: 'Mood swings', label: t('moodSwings') },
+    { key: 'Spotting', label: t('spotting') },
+    { key: 'Cravings', label: t('cravings') },
+  ];
 
   const [mood, setMood] = useState<number | null>(null);
   const [symptoms, setSymptoms] = useState<string[]>([]);
@@ -38,7 +46,7 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
 
   const { insight, isLoading: insightLoading, fetchInsight } = useAIDailyInsight(phase, dayInCycle);
 
-  // On mount, check if user already logged today — restore their state
+  // On mount, check if user already logged today — restore their state + fetch insight
   useEffect(() => {
     if (!userId) return;
     let isMounted = true;
@@ -55,10 +63,12 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
         setMood(data.mood ?? null);
         setSymptoms(data.symptoms ?? []);
         setSubmitted(true);
+        // Fetch insight for the restored log so returning users see it too
+        await fetchInsight(data.mood ?? null, data.symptoms ?? []);
       }
     })();
     return () => { isMounted = false; };
-  }, [userId]);
+  }, [userId, fetchInsight]);
 
   function toggleSymptom(s: string) {
     setSymptoms((prev) =>
@@ -67,7 +77,10 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
   }
 
   async function handleSubmit() {
-    if (!userId) return;
+    if (!userId) {
+      setSaveError(t('sessionError'));
+      return;
+    }
     setSaving(true);
     setSaveError(null);
 
@@ -91,7 +104,7 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
       await fetchInsight(mood, symptoms);
     } catch (err) {
       console.warn('[DailyCheckIn] save failed:', err);
-      setSaveError('Could not save. Please try again.');
+      setSaveError(t('saveError'));
     } finally {
       setSaving(false);
     }
@@ -99,7 +112,7 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>How are you feeling today?</Text>
+      <Text style={styles.title}>{t('title')}</Text>
 
       {!submitted ? (
         <>
@@ -124,21 +137,21 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
           {/* Symptom chips */}
           <View style={styles.symptomsGrid}>
             {SYMPTOM_OPTIONS.map((s) => {
-              const active = symptoms.includes(s);
+              const active = symptoms.includes(s.key);
               return (
                 <TouchableOpacity
-                  key={s}
+                  key={s.key}
                   style={[
                     styles.symptomChip,
                     active && { backgroundColor: accentColor + '22', borderColor: accentColor },
                   ]}
-                  onPress={() => toggleSymptom(s)}
+                  onPress={() => toggleSymptom(s.key)}
                   activeOpacity={0.8}
                 >
                   <Text
                     style={[styles.symptomText, active && { color: accentColor, fontWeight: '700' }]}
                   >
-                    {s}
+                    {s.label}
                   </Text>
                 </TouchableOpacity>
               );
@@ -154,7 +167,7 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
             {saving ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
-              <Text style={styles.submitText}>Log & get insight ✦</Text>
+              <Text style={styles.submitText}>{t('logAndInsight')}</Text>
             )}
           </TouchableOpacity>
 
@@ -167,14 +180,14 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
           {insightLoading ? (
             <View style={styles.insightLoading}>
               <ActivityIndicator color={accentColor} />
-              <Text style={styles.insightLoadingText}>Thinking about your day…</Text>
+              <Text style={styles.insightLoadingText}>{t('thinkingAboutDay')}</Text>
             </View>
           ) : (
             <>
-              <Text style={styles.insightLabel}>✦ AI Insight</Text>
-              <Text style={styles.insightText}>{insight ?? 'Thanks for logging today.'}</Text>
+              <Text style={styles.insightLabel}>{t('aiInsight')}</Text>
+              <Text style={styles.insightText}>{insight ?? t('thanksForLogging')}</Text>
               <TouchableOpacity onPress={() => { setSubmitted(false); setMood(null); setSymptoms([]); }}>
-                <Text style={[styles.relogText, { color: accentColor }]}>Update today's log</Text>
+                <Text style={[styles.relogText, { color: accentColor }]}>{t('updateLog')}</Text>
               </TouchableOpacity>
             </>
           )}

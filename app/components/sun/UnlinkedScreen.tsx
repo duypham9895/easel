@@ -12,6 +12,8 @@ import {
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n/config';
 
 const SUN = {
   background: '#FFF8F0',
@@ -31,30 +33,15 @@ interface Props {
   onInvite: () => void;
 }
 
-const BENEFITS = [
-  {
-    icon: 'eye' as const,
-    title: 'Never be caught off guard',
-    description: "See exactly where she is in her cycle — before emotions run high.",
-  },
-  {
-    icon: 'zap' as const,
-    title: 'Know what to do, every day',
-    description: 'Get AI-personalized tips on how to show up based on her exact phase.',
-  },
-  {
-    icon: 'bell' as const,
-    title: 'Whispers when she needs you',
-    description: "She can send you a quiet signal when she needs support — no awkward conversations.",
-  },
-  {
-    icon: 'heart' as const,
-    title: 'Less conflict, more connection',
-    description: 'Understanding her cycle turns friction into empathy — automatically.',
-  },
-] as const;
-
 export function UnlinkedScreen({ onLink, onInvite }: Props) {
+  const { t } = useTranslation('partner');
+
+  const BENEFITS = [
+    { icon: 'eye' as const, title: t('benefitEyeTitle'), description: t('benefitEyeDesc') },
+    { icon: 'zap' as const, title: t('benefitZapTitle'), description: t('benefitZapDesc') },
+    { icon: 'bell' as const, title: t('benefitBellTitle'), description: t('benefitBellDesc') },
+    { icon: 'heart' as const, title: t('benefitHeartTitle'), description: t('benefitHeartDesc') },
+  ];
   const [code, setCode] = useState('');
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,13 +57,13 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('expired')) {
-        setError('This code has expired. Ask her to generate a new one.');
+        setError(t('errorExpired'));
       } else if (msg.includes('already been used')) {
-        setError('This code has already been used.');
+        setError(t('errorAlreadyUsed'));
       } else if (msg.includes('yourself')) {
-        setError("That's your own code — enter her code instead.");
+        setError(t('errorOwnCode'));
       } else {
-        setError('Invalid code. Please check and try again.');
+        setError(t('errorInvalidCode'));
       }
     } finally {
       setLinking(false);
@@ -85,8 +72,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
 
   function handleInvite() {
     Share.share({
-      message:
-        "I'm using Easel to understand and support you better. Download it and let's connect: https://easel.app",
+      message: i18n.t('partner:inviteMessage'),
     });
     onInvite();
   }
@@ -102,9 +88,9 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
           <View style={styles.iconContainer}>
             <Feather name="sun" size={44} color={SUN.accentPrimary} />
           </View>
-          <Text style={styles.heading}>Be the partner{'\n'}she deserves</Text>
+          <Text style={styles.heading}>{t('bePartner')}</Text>
           <Text style={styles.subheading}>
-            Easel gives you real-time insight into her cycle so you always know how to show up — even when she can't explain it.
+            {t('heroSubtitle')}
           </Text>
         </View>
 
@@ -126,7 +112,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
         {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>Connect with your partner</Text>
+          <Text style={styles.dividerText}>{t('connectWithPartner')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -134,7 +120,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
         <View style={styles.codeSection}>
           <View style={styles.codeLabelRow}>
             <Feather name="link-2" size={13} color={SUN.textHint} />
-            <Text style={styles.codeLabel}>ENTER HER 6-DIGIT CODE</Text>
+            <Text style={styles.codeLabel}>{t('enterCode')}</Text>
           </View>
           <TextInput
             style={[
@@ -153,7 +139,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
             placeholderTextColor={SUN.textHint}
           />
           <Text style={styles.codeHint}>
-            Ask your partner to open Easel and share her 6-character code with you.
+            {t('codeHint')}
           </Text>
           {error !== null && <Text style={styles.errorText}>{error}</Text>}
         </View>
@@ -173,7 +159,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
           ) : (
             <>
               <Feather name="link-2" size={16} color="#FFFFFF" />
-              <Text style={styles.connectButtonText}>Connect to her</Text>
+              <Text style={styles.connectButtonText}>{t('connectToHer')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -181,7 +167,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
         {/* Invite section */}
         <View style={styles.inviteSection}>
           <Text style={styles.inviteHint}>
-            She doesn't have Easel yet?
+            {t('noEaselYet')}
           </Text>
           <TouchableOpacity
             style={styles.inviteButton}
@@ -189,7 +175,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
             activeOpacity={0.85}
           >
             <Feather name="user-plus" size={16} color={SUN.accentPrimary} />
-            <Text style={styles.inviteButtonText}>Invite her to Easel</Text>
+            <Text style={styles.inviteButtonText}>{t('inviteHer')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

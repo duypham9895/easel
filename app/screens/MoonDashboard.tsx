@@ -26,6 +26,7 @@ import {
 import { useAIGreeting } from '@/hooks/useAIGreeting';
 import { WhisperSheet } from '@/components/moon/WhisperSheet';
 import { useCoupleLinkedListener } from '@/hooks/useCoupleLinkedListener';
+import { useTranslation } from 'react-i18next';
 
 const MOON = {
   background: '#0D1B2A',
@@ -41,6 +42,8 @@ const MOON = {
 };
 
 export function MoonDashboard() {
+  const { t } = useTranslation('dashboard');
+  const { t: tPhases } = useTranslation('phases');
   const { cycleSettings } = useAppStore();
   const sendWhisper = useAppStore((s) => s.sendWhisper ?? s.sendSOS);
   const isPartnerLinked = useAppStore((s) => s.isPartnerLinked);
@@ -117,7 +120,7 @@ export function MoonDashboard() {
             style={[styles.taglineDot, { backgroundColor: phaseInfo.color }]}
           />
           <Text style={[styles.taglineText, { color: phaseInfo.color }]}>
-            {phaseInfo.name} · {phaseInfo.tagline}
+            {tPhases(`${phase}_name`)} · {tPhases(`${phase}_tagline`)}
           </Text>
         </View>
 
@@ -130,7 +133,7 @@ export function MoonDashboard() {
           >
             <Feather name="link-2" size={16} color={MOON.accentPrimary} />
             <Text style={styles.inviteBannerText}>
-              Share your code with your Sun to connect
+              {t('shareCodeBanner')}
             </Text>
             <Feather name="chevron-right" size={14} color={MOON.textHint} />
           </TouchableOpacity>
@@ -150,7 +153,7 @@ export function MoonDashboard() {
           onPress={() => setWhisperVisible(true)}
           activeOpacity={0.85}
         >
-          <Text style={styles.whisperButtonText}>Whisper to your Sun</Text>
+          <Text style={styles.whisperButtonText}>{t('whisperToSun')}</Text>
           <Feather name="send" size={20} color="white" />
         </TouchableOpacity>
 
@@ -158,22 +161,22 @@ export function MoonDashboard() {
         <View style={styles.insightRow}>
           <InsightCard
             icon="sun"
-            label="Conception Chance"
+            label={t('conceptionChance')}
             value={conceptionChance}
             accent={phaseInfo.color}
           />
           <InsightCard
             icon="heart"
-            label="Self-Care"
-            value={phaseInfo.selfCareTip}
+            label={t('selfCare')}
+            value={tPhases(`${phase}_selfCare`)}
             accent={phaseInfo.color}
           />
         </View>
 
         {/* Phase description card */}
         <View style={styles.descriptionCard}>
-          <Text style={styles.descriptionTitle}>About this phase</Text>
-          <Text style={styles.descriptionText}>{phaseInfo.moodDescription}</Text>
+          <Text style={styles.descriptionTitle}>{t('aboutPhase')}</Text>
+          <Text style={styles.descriptionText}>{tPhases(`${phase}_mood`)}</Text>
         </View>
 
         {/* Daily check-in */}

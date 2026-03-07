@@ -17,6 +17,35 @@ Versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.4.0] — 2026-03-07
+
+### Added — Bilingual Support (Vietnamese + English)
+- **i18next integration** — `i18next` + `react-i18next` + `expo-localization` for full internationalization.
+- **11 translation namespaces** — `common`, `auth`, `onboarding`, `dashboard`, `settings`, `calendar`, `checkin`, `signals`, `phases`, `partner`, `health`. Each has both `en` and `vi` JSON files (`app/i18n/en/`, `app/i18n/vi/`).
+- **Language auto-detection** — Device locale detected via `expo-localization`; falls back to `'en'` if not Vietnamese.
+- **Language picker in Settings** — Toggle between English and Vietnamese with flag display (🇬🇧 / 🇻🇳). Persisted locally (Zustand + AsyncStorage) and synced to Supabase `user_preferences.language`.
+- **All UI strings translated** — 17 files updated to replace hardcoded English with `t()` / `useTranslation()` calls:
+  - Auth: `auth.tsx`, `reset-password.tsx`
+  - Onboarding: `onboarding.tsx`
+  - Tabs: `index.tsx`, `calendar.tsx`, `settings.tsx`
+  - Moon: `MoonDashboard.tsx`, `DailyCheckIn.tsx`, `SOSSheet.tsx`, `PhaseWheel.tsx`, `InsightCard.tsx`, `WhisperSheet.tsx`, `HealthSyncPrompt.tsx`
+  - Sun: `SunDashboard.tsx`, `SOSAlert.tsx`, `WhisperAlert.tsx`, `UnlinkedScreen.tsx`
+- **Vietnamese translations** — Natural, culturally appropriate Vietnamese copy for all UI strings, phase names, symptom labels, whisper/SOS options, error messages, and onboarding flows. Moon/Sun kept as brand names.
+- **Locale-aware date formatting** — Calendar and Settings use `toLocaleDateString()` with `vi-VN` or `en-US` based on selected language.
+
+### Changed
+- `appStore.ts` — Added `language` state + `setLanguage` action with background Supabase sync. Language resets to `'en'` on sign out.
+- `_layout.tsx` — Imports `@/i18n/config` to initialize i18n before any component renders.
+- `DailyCheckIn.tsx` — Symptom options refactored from `string[]` to `{key, label}[]` so DB stores English keys while UI shows translated labels.
+
+### Database (migration 005)
+- New column: `user_preferences.language` — `TEXT NOT NULL DEFAULT 'en'` with `CHECK (language IN ('en', 'vi'))`.
+
+### Documentation
+- `docs/plans/2026-03-07-bilingual-i18n-design.md` — Design doc covering architecture, namespace structure, translation scope, and Phase 2 AI content localization plan.
+
+---
+
 ## [1.3.0] — 2026-03-07
 
 ### Added

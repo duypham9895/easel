@@ -1,0 +1,20 @@
+{
+  "title": "Lịch chu kỳ",
+  "subtitle": "Dự đoán cho 3 chu kỳ tiếp theo",
+  "moonCycleAtGlance": "Chu kỳ của Moon trong tầm mắt",
+  "completeOnboarding": "Hoàn tất đăng ký để xem lịch chu kỳ.",
+  "notLinked": "Chưa liên kết",
+  "moonCycleSynced": "Đã đồng bộ chu kỳ Moon",
+  "moonCycleAppearHere": "Dự đoán và lịch giai đoạn của Moon sẽ hiện ở đây khi cô ấy cập nhật chu kỳ trong Cài đặt.",
+  "linkFirst": "Hãy liên kết với Moon trước. Nhờ cô ấy tạo mã trong Cài đặt và nhập mã trên dashboard Sun.",
+  "setCycleSettings": "Vui lòng cài đặt chu kỳ trong tab Cài đặt để xem lịch.",
+  "cycleDay": "Ngày {{day}} của chu kỳ",
+  "whatsHappening": "Đang diễn ra",
+  "selfCareTip": "Mẹo chăm sóc bản thân",
+  "periodPredicted": "Kỳ kinh (dự đoán)",
+  "fertileWindow": "Cửa sổ thụ thai",
+  "ovulationDay": "Ngày rụng trứng",
+  "today": "Hôm nay",
+  "phaseLabel": "Giai đoạn {{name}}",
+  "predictedPeriodDay": "Ngày kỳ kinh dự đoán"
+}

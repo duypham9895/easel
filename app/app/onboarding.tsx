@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/appStore';
 import { UserRole } from '@/types';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
@@ -15,25 +16,26 @@ interface RoleCard {
   color: string;
 }
 
-const ROLE_CARDS: RoleCard[] = [
-  {
-    role: 'moon',
-    icon: 'moon',
-    title: 'I am the Moon',
-    subtitle: 'Track your cycle & whisper to your Sun when you need them',
-    color: Colors.menstrual,
-  },
-  {
-    role: 'sun',
-    icon: 'sun',
-    title: 'I am the Sun',
-    subtitle: 'Stay in tune & know exactly how to show up for your Moon',
-    color: Colors.follicular,
-  },
-];
-
 export default function OnboardingScreen() {
+  const { t } = useTranslation('onboarding');
   const setRole = useAppStore((s) => s.setRole);
+
+  const ROLE_CARDS: RoleCard[] = [
+    {
+      role: 'moon',
+      icon: 'moon',
+      title: t('iAmMoon'),
+      subtitle: t('moonSubtitle'),
+      color: Colors.menstrual,
+    },
+    {
+      role: 'sun',
+      icon: 'sun',
+      title: t('iAmSun'),
+      subtitle: t('sunSubtitle'),
+      color: Colors.follicular,
+    },
+  ];
 
   async function handleSelectRole(role: UserRole) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -55,10 +57,10 @@ export default function OnboardingScreen() {
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Welcome to</Text>
+          <Text style={styles.welcomeText}>{t('welcomeTo')}</Text>
           <Text style={styles.appName}>Easel</Text>
           <Text style={styles.description}>
-            Choose your role to personalize your experience. Understanding each other starts here.
+            {t('chooseRole')}
           </Text>
         </View>
 
@@ -83,7 +85,7 @@ export default function OnboardingScreen() {
         </View>
 
         <Text style={styles.footerNote}>
-          You can change your role anytime in Settings.
+          {t('changeRoleHint')}
         </Text>
       </View>
     </View>

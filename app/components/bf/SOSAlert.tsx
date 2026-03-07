@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { CyclePhase, SOSOption } from '@/types';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 import { useAppStore } from '@/store/appStore';
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export function SOSAlert({ sos, phase, dayInCycle }: Props) {
+  const { t } = useTranslation('dashboard');
+  const { t: tCommon } = useTranslation('common');
   const clearSOS = useAppStore((s) => s.clearSOS);
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -39,13 +42,13 @@ export function SOSAlert({ sos, phase, dayInCycle }: Props) {
           <Feather name={sos.icon as any} size={22} color="white" />
         </View>
         <View style={styles.textGroup}>
-          <Text style={styles.badge}>SOS SIGNAL{tipIsAI ? ' · ✦ AI' : ''}</Text>
-          <Text style={styles.title}>She needs: {sos.title}</Text>
+          <Text style={styles.badge}>{`${t('sosSignal')}${tipIsAI ? ' · ✦ AI' : ''}`}</Text>
+          <Text style={styles.title}>{t('sheNeeds', { title: sos.title })}</Text>
           <Text style={styles.description}>{tip}</Text>
         </View>
       </View>
       <TouchableOpacity onPress={clearSOS} style={styles.dismissButton}>
-        <Text style={styles.dismissText}>✓ Got it</Text>
+        <Text style={styles.dismissText}>{`✓ ${tCommon('gotIt')}`}</Text>
       </TouchableOpacity>
     </Animated.View>
   );

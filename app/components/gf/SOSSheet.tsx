@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { SOS_OPTIONS } from '@/constants/sos';
 import { SOSOption } from '@/types';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export function SOSSheet({ visible, onClose, onSend }: Props) {
+  const { t } = useTranslation('signals');
+  const { t: tCommon } = useTranslation('common');
   const slideAnim = useRef(new Animated.Value(600)).current;
 
   useEffect(() => {
@@ -52,9 +55,9 @@ export function SOSSheet({ visible, onClose, onSend }: Props) {
             <View style={styles.handle} />
 
             <View style={styles.header}>
-              <Text style={styles.title}>What do you need right now?</Text>
+              <Text style={styles.title}>{t('whatDoYouNeed')}</Text>
               <Text style={styles.subtitle}>
-                Send a signal — he will know exactly how to show up for you.
+                {t('sendSignal')}
               </Text>
             </View>
 
@@ -69,13 +72,13 @@ export function SOSSheet({ visible, onClose, onSend }: Props) {
                   <View style={[styles.optionIconBg, { backgroundColor: option.color + '18' }]}>
                     <Feather name={option.icon as any} size={28} color={option.color} />
                   </View>
-                  <Text style={styles.optionTitle}>{option.title}</Text>
+                  <Text style={styles.optionTitle}>{t(`sos_${option.id}_title`)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelText}>Maybe later</Text>
+              <Text style={styles.cancelText}>{tCommon('maybeLater')}</Text>
             </TouchableOpacity>
           </Pressable>
         </Animated.View>

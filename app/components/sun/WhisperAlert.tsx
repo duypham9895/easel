@@ -7,6 +7,7 @@ import {
   Animated,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { CyclePhase, SOSOption } from '@/types';
 import { Spacing, Radii, Typography } from '@/constants/theme';
 import { useAppStore } from '@/store/appStore';
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export function WhisperAlert({ whisper, phase, dayInCycle }: Props) {
+  const { t } = useTranslation('dashboard');
+  const { t: tCommon } = useTranslation('common');
   const clearWhisper = useAppStore((s) => s.clearWhisper ?? s.clearSOS);
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -58,9 +61,9 @@ export function WhisperAlert({ whisper, phase, dayInCycle }: Props) {
         </View>
         <View style={styles.textGroup}>
           <Text style={styles.badge}>
-            {`WHISPER${tipIsAI ? ' · ✦ AI' : ''}`}
+            {`${t('whisper')}${tipIsAI ? ' · ✦ AI' : ''}`}
           </Text>
-          <Text style={styles.title}>Moon needs: {whisper.title}</Text>
+          <Text style={styles.title}>{t('moonNeeds', { title: whisper.title })}</Text>
           <Text style={styles.description}>{tip}</Text>
         </View>
       </View>
@@ -68,7 +71,7 @@ export function WhisperAlert({ whisper, phase, dayInCycle }: Props) {
       {/* Dismiss */}
       <TouchableOpacity onPress={clearWhisper} style={styles.dismissButton}>
         <Feather name="check" size={14} color="white" />
-        <Text style={styles.dismissText}>Got it</Text>
+        <Text style={styles.dismissText}>{tCommon('gotIt')}</Text>
       </TouchableOpacity>
     </Animated.View>
   );

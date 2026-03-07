@@ -3,6 +3,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-calendars';
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n/config';
 import { useAppStore } from '@/store/appStore';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 import { getCurrentPhase, buildCalendarMarkers } from '@/utils/cycleCalculator';
@@ -12,16 +14,18 @@ import type { CyclePhase } from '@/types';
 export default function CalendarTab() {
   const { cycleSettings, role, isPartnerLinked } = useAppStore();
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const { t } = useTranslation('calendar');
+  const { t: tPhases } = useTranslation('phases');
 
   // Unauthenticated / onboarding-incomplete users have no cycle yet
   if (!role) {
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.title}>Cycle Calendar</Text>
+          <Text style={styles.title}>{t('title')}</Text>
         </View>
         <View style={styles.sunEmptyCard}>
-          <Text style={styles.sunEmptyBody}>Complete onboarding to view your cycle calendar.</Text>
+          <Text style={styles.sunEmptyBody}>{t('completeOnboarding')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -32,18 +36,18 @@ export default function CalendarTab() {
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.title}>Cycle Calendar</Text>
-          <Text style={styles.subtitle}>Your Moon's cycle at a glance</Text>
+          <Text style={styles.title}>{t('title')}</Text>
+          <Text style={styles.subtitle}>{t('moonCycleAtGlance')}</Text>
         </View>
         <View style={styles.sunEmptyCard}>
           <Feather name="moon" size={40} color={Colors.menstrual} />
           <Text style={styles.sunEmptyTitle}>
-            {isPartnerLinked ? "Moon's cycle is synced" : 'Not linked yet'}
+            {isPartnerLinked ? t('moonCycleSynced') : t('notLinked')}
           </Text>
           <Text style={styles.sunEmptyBody}>
             {isPartnerLinked
-              ? "Your Moon's predictions and phase calendar will appear here once she logs her cycle in Settings."
-              : "Link with your Moon first. Ask her to generate a code in Settings and enter it on your Sun dashboard."}
+              ? t('moonCycleAppearHere')
+              : t('linkFirst')}
           </Text>
         </View>
       </SafeAreaView>
@@ -55,10 +59,10 @@ export default function CalendarTab() {
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.title}>Cycle Calendar</Text>
+          <Text style={styles.title}>{t('title')}</Text>
         </View>
         <View style={styles.sunEmptyCard}>
-          <Text style={styles.sunEmptyBody}>Please set your cycle settings in the Settings tab to view your calendar.</Text>
+          <Text style={styles.sunEmptyBody}>{t('setCycleSettings')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -89,7 +93,7 @@ export default function CalendarTab() {
     markedDates[date] = {
       marked: true,
       dotColor: color,
-      selected: data.type === 'period' || data.type === 'ovulation',
+      selected: data.type === 'period' || data.type === 'ovulation' || data.type === 'fertile',
       selectedColor: color + 'CC',
       selectedTextColor: Colors.white,
     };
@@ -117,8 +121,8 @@ export default function CalendarTab() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Cycle Calendar</Text>
-        <Text style={styles.subtitle}>Predictions for the next 3 cycles</Text>
+        <Text style={styles.title}>{t('title')}</Text>
+        <Text style={styles.subtitle}>{t('subtitle')}</Text>
       </View>
 
       <Calendar
@@ -152,10 +156,10 @@ export default function CalendarTab() {
 
       {/* Legend */}
       <View style={styles.legend}>
-        <LegendItem color={Colors.menstrual} label="Period (predicted)" />
-        <LegendItem color={Colors.follicular} label="Fertile window" />
-        <LegendItem color={Colors.ovulatory} label="Ovulation day" />
-        <LegendItem color={Colors.textPrimary} label="Today" />
+        <LegendItem color={Colors.menstrual} label={t('periodPredicted')} />
+        <LegendItem color={Colors.follicular} label={t('fertileWindow')} />
+        <LegendItem color={Colors.ovulatory} label={t('ovulationDay')} />
+        <LegendItem color={Colors.textPrimary} label={t('today')} />
       </View>
 
       <DayDetailSheet
@@ -201,9 +205,9 @@ function formatDate(dateString: string): string {
 }
 
 function markerLabel(type: 'period' | 'ovulation' | 'fertile'): string {
-  if (type === 'period') return 'Predicted period day';
-  if (type === 'ovulation') return 'Ovulation day';
-  return 'Fertile window';
+  if (type === 'period') return i18n.t('calendar:predictedPeriodDay');
+  if (type === 'ovulation') return i18n.t('calendar:ovulationDay');
+  return i18n.t('calendar:fertileWindow');
 }
 
 function markerColor(type: 'period' | 'ovulation' | 'fertile'): string {
@@ -213,6 +217,9 @@ function markerColor(type: 'period' | 'ovulation' | 'fertile'): string {
 }
 
 function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLength, avgPeriodLength, onClose }: DayDetailSheetProps) {
+  const { t: tCal } = useTranslation('calendar');
+  const { t: tPhases } = useTranslation('phases');
+
   if (!dateString) return null;
 
   const { dayInCycle, phase } = computeDayInfo(dateString, lastPeriodStartDate, avgCycleLength, avgPeriodLength);
@@ -238,7 +245,7 @@ function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLeng
         <View style={sheetStyles.headerRow}>
           <View>
             <Text style={sheetStyles.dateText}>{formatDate(dateString)}</Text>
-            <Text style={sheetStyles.cycleDayText}>Cycle Day {dayInCycle}</Text>
+            <Text style={sheetStyles.cycleDayText}>{tCal('cycleDay', { day: dayInCycle })}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Feather name="x" size={20} color={Colors.textHint} />
@@ -248,8 +255,8 @@ function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLeng
         {/* Phase badge */}
         <View style={[sheetStyles.phaseBadge, { backgroundColor: info.color + '22' }]}>
           <View style={[sheetStyles.phaseDot, { backgroundColor: info.color }]} />
-          <Text style={[sheetStyles.phaseName, { color: info.color }]}>{info.name} Phase</Text>
-          <Text style={sheetStyles.phaseTagline}>{info.tagline}</Text>
+          <Text style={[sheetStyles.phaseName, { color: info.color }]}>{tCal('phaseLabel', { name: tPhases(`${phase}_name`) })}</Text>
+          <Text style={sheetStyles.phaseTagline}>{tPhases(`${phase}_tagline`)}</Text>
         </View>
 
         {/* Special marker label */}
@@ -264,14 +271,14 @@ function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLeng
 
         {/* Description */}
         <View style={sheetStyles.section}>
-          <Text style={sheetStyles.sectionLabel}>What's happening</Text>
-          <Text style={sheetStyles.sectionBody}>{info.moodDescription}</Text>
+          <Text style={sheetStyles.sectionLabel}>{tCal('whatsHappening')}</Text>
+          <Text style={sheetStyles.sectionBody}>{tPhases(`${phase}_mood`)}</Text>
         </View>
 
         {/* Self-care tip */}
         <View style={sheetStyles.section}>
-          <Text style={sheetStyles.sectionLabel}>Self-care tip</Text>
-          <Text style={sheetStyles.sectionBody}>{info.selfCareTip}</Text>
+          <Text style={sheetStyles.sectionLabel}>{tCal('selfCareTip')}</Text>
+          <Text style={sheetStyles.sectionBody}>{tPhases(`${phase}_selfCare`)}</Text>
         </View>
       </View>
     </Modal>

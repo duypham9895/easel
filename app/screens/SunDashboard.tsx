@@ -14,6 +14,8 @@ import {
 } from '@/utils/cycleCalculator';
 import { useAIPartnerAdvice } from '@/hooks/useAIPartnerAdvice';
 import { useSOSListener } from '@/hooks/useSOSListener';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n/config';
 
 const SUN = {
   background: '#FFF8F0',
@@ -31,6 +33,9 @@ const SUN = {
 const PHASE_KEYS = ['menstrual', 'follicular', 'ovulatory', 'luteal'] as const;
 
 export function SunDashboard() {
+  const { t } = useTranslation('dashboard');
+  const { t: tPhases } = useTranslation('phases');
+  const { t: tCommon } = useTranslation('common');
   const { isPartnerLinked, linkToPartner } = useAppStore();
   const displayName = useAppStore((s) => s.displayName);
   // Use girlfriend's real cycle data when linked; fall back to defaults only if unavailable
@@ -64,8 +69,7 @@ export function SunDashboard() {
 
   function shareInvite() {
     Share.share({
-      message:
-        "I'm using Easel to understand and support you better. Download it and share your code with me so we can connect: https://easel.app",
+      message: i18n.t('dashboard:inviteShareMessage'),
     });
   }
 
@@ -93,8 +97,8 @@ export function SunDashboard() {
       >
         {/* Header */}
         <View style={styles.topBar}>
-          <Text style={styles.greeting}>Hey, {displayName ?? 'Sun'}</Text>
-          <Text style={styles.headlineTitle}>Be there for Moon</Text>
+          <Text style={styles.greeting}>{t('heySun', { name: displayName ?? tCommon('sun') })}</Text>
+          <Text style={styles.headlineTitle}>{t('beThereForMoon')}</Text>
         </View>
 
         {/* Moon Status Card */}
@@ -109,11 +113,11 @@ export function SunDashboard() {
             {/* Text group */}
             <View style={styles.statusText}>
               <Text style={[styles.phaseName, { color: phaseInfo.color }]}>
-                {phaseInfo.name}
+                {tPhases(`${phase}_name`)}
               </Text>
-              <Text style={styles.phaseTagline}>{phaseInfo.tagline}</Text>
+              <Text style={styles.phaseTagline}>{tPhases(`${phase}_tagline`)}</Text>
               <Text style={styles.cycleDay}>
-                Day {dayInCycle} of Moon's cycle
+                {tCommon('dayOfCycle', { day: dayInCycle })}
               </Text>
             </View>
           </View>
@@ -133,7 +137,7 @@ export function SunDashboard() {
             <Text
               style={[styles.countdownLabel, { color: phaseInfo.color }]}
             >
-              {'days until\nnext period'}
+              {tCommon('daysUntilPeriod')}
             </Text>
           </View>
         </View>
@@ -149,16 +153,16 @@ export function SunDashboard() {
 
         {/* Guide section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Guide</Text>
+          <Text style={styles.sectionTitle}>{t('todaysGuide')}</Text>
           <GuideCard
             icon="activity"
-            title="Moon's mood right now"
-            text={phaseInfo.moodDescription}
+            title={t('moonMoodNow')}
+            text={tPhases(`${phase}_mood`)}
             accent={phaseInfo.color}
           />
           <GuideCard
             icon="star"
-            title={adviceIsAI ? 'How to show up ✦ AI' : 'How to show up'}
+            title={adviceIsAI ? t('howToShowUpAI') : t('howToShowUp')}
             text={adviceLoading ? '…' : advice}
             accent={phaseInfo.color}
           />
@@ -187,7 +191,7 @@ export function SunDashboard() {
                     { color: isActive ? Colors.white : info.color },
                   ]}
                 >
-                  {info.name.split(' ')[0]}
+                  {tPhases(`${p}_name`)}
                 </Text>
               </View>
             );

@@ -1,0 +1,20 @@
+{
+  "title": "Cycle Calendar",
+  "subtitle": "Predictions for the next 3 cycles",
+  "moonCycleAtGlance": "Your Moon's cycle at a glance",
+  "completeOnboarding": "Complete onboarding to view your cycle calendar.",
+  "notLinked": "Not linked yet",
+  "moonCycleSynced": "Moon's cycle is synced",
+  "moonCycleAppearHere": "Your Moon's predictions and phase calendar will appear here once she logs her cycle in Settings.",
+  "linkFirst": "Link with your Moon first. Ask her to generate a code in Settings and enter it on your Sun dashboard.",
+  "setCycleSettings": "Please set your cycle settings in the Settings tab to view your calendar.",
+  "cycleDay": "Cycle Day {{day}}",
+  "whatsHappening": "What's happening",
+  "selfCareTip": "Self-care tip",
+  "periodPredicted": "Period (predicted)",
+  "fertileWindow": "Fertile window",
+  "ovulationDay": "Ovulation day",
+  "today": "Today",
+  "phaseLabel": "{{name}} Phase",
+  "predictedPeriodDay": "Predicted period day"
+}

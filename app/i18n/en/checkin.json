@@ -1,0 +1,23 @@
+{
+  "title": "How are you feeling today?",
+  "moodLow": "Low",
+  "moodMeh": "Meh",
+  "moodOkay": "Okay",
+  "moodGood": "Good",
+  "moodGreat": "Great",
+  "cramps": "Cramps",
+  "bloating": "Bloating",
+  "headache": "Headache",
+  "fatigue": "Fatigue",
+  "tender": "Tender",
+  "moodSwings": "Mood swings",
+  "spotting": "Spotting",
+  "cravings": "Cravings",
+  "logAndInsight": "Log & get insight ✦",
+  "sessionError": "Session error. Please close and reopen the app.",
+  "saveError": "Could not save. Please try again.",
+  "thinkingAboutDay": "Thinking about your day…",
+  "aiInsight": "✦ AI Insight",
+  "thanksForLogging": "Thanks for logging today.",
+  "updateLog": "Update today's log"
+}

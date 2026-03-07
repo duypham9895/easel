@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 const MOON = {
   background: '#0D1B2A',
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export function HealthSyncPrompt({ onSync, onSkip }: Props) {
+  const { t } = useTranslation('health');
   const [loading, setLoading] = useState(false);
 
   async function handleSync() {
@@ -52,16 +54,14 @@ export function HealthSyncPrompt({ onSync, onSkip }: Props) {
 
       {/* Headline */}
       <Text style={styles.headline}>
-        {'Smarter predictions\nfrom day one'}
+        {t('headline')}
       </Text>
 
       <View style={styles.gap16} />
 
       {/* Body */}
       <Text style={styles.body}>
-        {
-          'We can read your cycle history from Apple Health to predict your next period more accurately — right away.\n\nWe never write to or share your health data.'
-        }
+        {t('body')}
       </Text>
 
       <View style={styles.gap48} />
@@ -76,7 +76,7 @@ export function HealthSyncPrompt({ onSync, onSkip }: Props) {
         {loading ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.primaryButtonText}>Sync with Apple Health</Text>
+          <Text style={styles.primaryButtonText}>{t('syncButton')}</Text>
         )}
       </TouchableOpacity>
 
@@ -84,7 +84,7 @@ export function HealthSyncPrompt({ onSync, onSkip }: Props) {
 
       {/* Skip */}
       <TouchableOpacity onPress={onSkip} style={styles.skipButton}>
-        <Text style={styles.skipText}>Skip for now</Text>
+        <Text style={styles.skipText}>{t('skip')}</Text>
       </TouchableOpacity>
 
       <View style={styles.spacerBottom} />
@@ -93,7 +93,7 @@ export function HealthSyncPrompt({ onSync, onSkip }: Props) {
       <View style={styles.privacyRow}>
         <Feather name="shield" size={12} color={MOON.textHint} />
         <Text style={styles.privacyText}>
-          Read-only · Never shared · Change anytime in Settings
+          {t('privacy')}
         </Text>
       </View>
     </SafeAreaView>

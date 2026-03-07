@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { CyclePhase, SOSOption } from '@/types';
 import { Spacing, Radii, Typography } from '@/constants/theme';
 import { useAIWhisperOptions } from '@/hooks/useAIWhisperOptions';
@@ -37,6 +38,9 @@ interface Props {
 }
 
 export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Props) {
+  const { t } = useTranslation('signals');
+  const { t: tCommon } = useTranslation('common');
+  const { t: tDashboard } = useTranslation('dashboard');
   const slideAnim = useRef(new Animated.Value(600)).current;
   const [customInput, setCustomInput] = useState('');
   const [sent, setSent] = useState(false);
@@ -153,14 +157,14 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
                 </Animated.View>
 
                 <Animated.View style={[styles.successTextGroup, { opacity: checkOpacity }]}>
-                  <Text style={styles.successTitle}>Whispered to your Sun</Text>
+                  <Text style={styles.successTitle}>{tDashboard('whispered')}</Text>
                   <View style={[styles.sentOptionChip, { backgroundColor: sentOption.color + '20' }]}>
                     <Feather name={sentOption.icon as any} size={14} color={sentOption.color} />
                     <Text style={[styles.sentOptionText, { color: sentOption.color }]}>
                       {sentOption.title}
                     </Text>
                   </View>
-                  <Text style={styles.successHint}>He'll know what to do.</Text>
+                  <Text style={styles.successHint}>{tDashboard('heWillKnow')}</Text>
                 </Animated.View>
               </View>
             ) : (
@@ -168,9 +172,9 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
               <>
                 {/* Header */}
                 <View style={styles.header}>
-                  <Text style={styles.title}>What do you need?</Text>
+                  <Text style={styles.title}>{t('whatDoYouNeedWhisper')}</Text>
                   <Text style={styles.subtitle}>
-                    {isAI ? 'Personalized for your phase ✦ AI' : 'Whisper it to your Sun'}
+                    {isAI ? t('personalizedAI') : t('whisperToSun')}
                   </Text>
                 </View>
 
@@ -201,7 +205,7 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
                   <View style={styles.customInputContainer}>
                     <TextInput
                       style={styles.customInput}
-                      placeholder="Something else..."
+                      placeholder={t('somethingElse')}
                       placeholderTextColor={MOON.textHint}
                       value={customInput}
                       onChangeText={setCustomInput}
@@ -221,7 +225,7 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
 
                 {/* Cancel */}
                 <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
-                  <Text style={styles.cancelText}>Maybe later</Text>
+                  <Text style={styles.cancelText}>{tCommon('maybeLater')}</Text>
                 </TouchableOpacity>
               </>
             )}

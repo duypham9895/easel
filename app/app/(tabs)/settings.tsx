@@ -7,14 +7,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/appStore';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
 import { useAvatarUpload } from '@/hooks/useAvatarUpload';
 import { useHealthSync } from '@/hooks/useHealthSync';
 import { getCurrentDayInCycle, getCurrentPhase, getDaysUntilNextPeriod } from '@/utils/cycleCalculator';
-import { PHASE_INFO } from '@/constants/phases';
+import type { SupportedLanguage } from '@/i18n/config';
 
 export default function SettingsTab() {
+  const { t } = useTranslation('settings');
+  const { t: tCommon } = useTranslation('common');
+  const { t: tPhases } = useTranslation('phases');
   const { email, role, cycleSettings, updateCycleSettings, signOut, generateLinkCode, linkCode,
     isPartnerLinked, partnerCycleSettings,
     notificationPrefs: rawNotificationPrefs, updateNotificationPrefs } =
@@ -28,6 +32,8 @@ export default function SettingsTab() {
   const { upload, isUploading } = useAvatarUpload();
   const displayName = useAppStore((s) => s.displayName);
   const updateDisplayName = useAppStore((s) => s.updateDisplayName);
+  const language = useAppStore((s) => s.language);
+  const setLanguage = useAppStore((s) => s.setLanguage);
   const { sync: syncHealth, isAvailable: healthAvailable } = useHealthSync();
   const [displayNameInput, setDisplayNameInput] = useState(displayName ?? '');
   const [isSavingName, setIsSavingName] = useState(false);
@@ -39,17 +45,22 @@ export default function SettingsTab() {
   const [lastPeriod, setLastPeriod] = useState(cycleSettings.lastPeriodStartDate);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  function handleToggleLanguage() {
+    const next: SupportedLanguage = language === 'en' ? 'vi' : 'en';
+    setLanguage(next);
+  }
+
   async function handleSaveCycle() {
     const cl = parseInt(cycleLen, 10);
     const pl = parseInt(periodLen, 10);
     if (isNaN(cl) || isNaN(pl) || cl < 21 || cl > 45 || pl < 2 || pl > 10) {
-      Alert.alert('Invalid values', 'Cycle: 21–45 days. Period: 2–10 days.');
+      Alert.alert(t('invalidValues'), t('invalidValuesMsg'));
       return;
     }
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const parsedDate = new Date(lastPeriod);
     if (!dateRegex.test(lastPeriod) || isNaN(parsedDate.getTime())) {
-      Alert.alert('Invalid date', 'Enter date as YYYY-MM-DD (e.g. 2026-02-14).');
+      Alert.alert(t('invalidDate'), t('invalidDateMsg'));
       return;
     }
     try {
@@ -58,9 +69,9 @@ export default function SettingsTab() {
         avgPeriodLength: pl,
         lastPeriodStartDate: lastPeriod,
       });
-      Alert.alert('Saved', 'Cycle settings updated.');
+      Alert.alert(tCommon('saved'), t('cycleSettingsSaved'));
     } catch {
-      Alert.alert('Error', 'Failed to save. Please try again.');
+      Alert.alert(tCommon('error'), t('saveError'));
     }
   }
 
@@ -71,7 +82,7 @@ export default function SettingsTab() {
     try {
       await updateDisplayName(trimmed);
     } catch {
-      Alert.alert('Error', 'Could not save name. Please try again.');
+      Alert.alert(tCommon('error'), t('nameError'));
     } finally {
       setIsSavingName(false);
     }
@@ -81,24 +92,24 @@ export default function SettingsTab() {
     setIsSyncingHealth(true);
     try {
       await syncHealth();
-      Alert.alert('Synced', 'Health data updated successfully.');
+      Alert.alert(t('synced'), t('healthSynced'));
     } catch {
-      Alert.alert('Error', 'Could not sync health data. Please try again.');
+      Alert.alert(tCommon('error'), t('healthSyncError'));
     } finally {
       setIsSyncingHealth(false);
     }
   }
 
   function handleSignOut() {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(tCommon('signOut'), tCommon('signOutConfirm'), [
+      { text: tCommon('cancel'), style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: tCommon('signOut'),
         style: 'destructive',
         onPress: () => {
           signOut()
             .then(() => router.replace('/auth'))
-            .catch(() => Alert.alert('Error', 'Sign out failed. Please try again.'));
+            .catch(() => Alert.alert(tCommon('error'), tCommon('signOutFailed')));
         },
       },
     ]);
@@ -116,24 +127,24 @@ export default function SettingsTab() {
       partnerCycleSettings.avgPeriodLength,
     );
     const daysUntilPeriod = getDaysUntilNextPeriod(dayInCycle, partnerCycleSettings.avgCycleLength);
-    return { dayInCycle, phase, daysUntilPeriod, phaseInfo: PHASE_INFO[phase] };
+    return { dayInCycle, phase, daysUntilPeriod };
   })();
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>{t('title')}</Text>
 
         {/* Account */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>ACCOUNT</Text>
+          <Text style={styles.sectionLabel}>{t('account')}</Text>
           <View style={styles.card}>
             <AvatarPicker url={avatarUrl} onPress={upload} loading={isUploading} />
             <Divider />
-            <Row label="Email" value={email || '—'} />
+            <Row label={t('email')} value={email || '—'} />
             <Divider />
             <View style={rowStyles.row}>
-              <Text style={rowStyles.label}>Display Name</Text>
+              <Text style={rowStyles.label}>{t('displayName')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <TextInput
                   style={[settingStyles.input, { width: 120, padding: 6 }]}
@@ -142,7 +153,7 @@ export default function SettingsTab() {
                   onSubmitEditing={handleSaveName}
                   returnKeyType="done"
                   placeholderTextColor={Colors.textHint}
-                  placeholder="Your name"
+                  placeholder={t('yourName')}
                 />
                 {isSavingName ? (
                   <ActivityIndicator size="small" color={Colors.textHint} />
@@ -154,16 +165,31 @@ export default function SettingsTab() {
               </View>
             </View>
             <Divider />
+            {/* Language */}
+            <TouchableOpacity
+              style={rowStyles.row}
+              onPress={handleToggleLanguage}
+              activeOpacity={0.7}
+            >
+              <Text style={rowStyles.label}>{t('language')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                <Text style={rowStyles.value}>
+                  {language === 'vi' ? '🇻🇳 ' + t('vietnamese') : '🇬🇧 ' + t('english')}
+                </Text>
+                <Feather name="chevron-right" size={16} color={Colors.textHint} />
+              </View>
+            </TouchableOpacity>
+            <Divider />
             <TouchableOpacity
               style={rowStyles.row}
               onPress={() => {
                 Alert.alert(
-                  'Change Role',
-                  'This will reset your experience. Are you sure?',
+                  t('changeRole'),
+                  t('changeRoleConfirm'),
                   [
-                    { text: 'Cancel', style: 'cancel' },
+                    { text: tCommon('cancel'), style: 'cancel' },
                     {
-                      text: 'Change',
+                      text: tCommon('change'),
                       style: 'destructive',
                       onPress: () => router.replace('/onboarding'),
                     },
@@ -172,10 +198,10 @@ export default function SettingsTab() {
               }}
               activeOpacity={0.7}
             >
-              <Text style={rowStyles.label}>Role</Text>
+              <Text style={rowStyles.label}>{t('role')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
                 <Text style={rowStyles.value}>
-                  {role === 'moon' ? 'Moon' : role === 'sun' ? 'Sun' : '—'}
+                  {role === 'moon' ? tCommon('moon') : role === 'sun' ? tCommon('sun') : '—'}
                 </Text>
                 <Feather name="chevron-right" size={16} color={Colors.textHint} />
               </View>
@@ -186,33 +212,33 @@ export default function SettingsTab() {
         {/* Partner — Sun only */}
         {role === 'sun' && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>PARTNER</Text>
+            <Text style={styles.sectionLabel}>{t('partner')}</Text>
             <View style={styles.card}>
               {!isPartnerLinked ? (
                 <>
                   <Text style={styles.cardBody}>
-                    Connect with your Moon to see her cycle and receive Whispers.
+                    {t('connectWithMoon')}
                   </Text>
                   <TouchableOpacity
                     style={styles.generateButton}
                     onPress={() => router.replace('/(tabs)')}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.generateButtonText}>Connect Now</Text>
+                    <Text style={styles.generateButtonText}>{tCommon('connectNow')}</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <View style={styles.linkedBadge}>
                     <Feather name="check-circle" size={16} color="#4CAF50" />
-                    <Text style={styles.linkedBadgeText}>Moon connected</Text>
+                    <Text style={styles.linkedBadgeText}>{t('moonConnected')}</Text>
                   </View>
                   <Divider />
                   <View style={rowStyles.row}>
-                    <Text style={rowStyles.label}>Phase</Text>
+                    <Text style={rowStyles.label}>{t('phase')}</Text>
                     {partnerPhaseInfo ? (
-                      <Text style={[rowStyles.value, { color: partnerPhaseInfo.phaseInfo.color }]}>
-                        {partnerPhaseInfo.phaseInfo.name} · Day {partnerPhaseInfo.dayInCycle}
+                      <Text style={[rowStyles.value, { color: Colors.menstrual }]}>
+                        {tPhases(`${partnerPhaseInfo.phase}_name`)} · Day {partnerPhaseInfo.dayInCycle}
                       </Text>
                     ) : (
                       <Text style={rowStyles.value}>—</Text>
@@ -220,10 +246,10 @@ export default function SettingsTab() {
                   </View>
                   <Divider />
                   <View style={rowStyles.row}>
-                    <Text style={rowStyles.label}>Next period</Text>
+                    <Text style={rowStyles.label}>{t('nextPeriod')}</Text>
                     {partnerPhaseInfo ? (
                       <Text style={rowStyles.value}>
-                        In {partnerPhaseInfo.daysUntilPeriod} day{partnerPhaseInfo.daysUntilPeriod === 1 ? '' : 's'}
+                        {tCommon('in_days', { count: partnerPhaseInfo.daysUntilPeriod })}
                       </Text>
                     ) : (
                       <Text style={rowStyles.value}>—</Text>
@@ -231,7 +257,7 @@ export default function SettingsTab() {
                   </View>
                   <Divider />
                   <ToggleRow
-                    label="Whisper notifications"
+                    label={t('whisperNotifications')}
                     value={notificationPrefs.whisperAlerts}
                     onToggle={v => updateNotificationPrefs({ whisperAlerts: v })}
                   />
@@ -244,17 +270,17 @@ export default function SettingsTab() {
         {/* Partner Linking */}
         {role === 'moon' && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>PARTNER LINK</Text>
+            <Text style={styles.sectionLabel}>{t('partnerLink')}</Text>
             <View style={styles.card}>
               {isPartnerLinked ? (
                 <View style={styles.linkedBadge}>
                   <Feather name="check-circle" size={16} color="#4CAF50" />
-                  <Text style={styles.linkedBadgeText}>Your Sun is connected</Text>
+                  <Text style={styles.linkedBadgeText}>{t('sunConnected')}</Text>
                 </View>
               ) : (
                 <>
                   <Text style={styles.cardBody}>
-                    Share this 6-digit code with your Sun so they can join your cycle.
+                    {t('shareCodeWith')}
                   </Text>
                   <TouchableOpacity
                     style={[styles.generateButton, isGeneratingCode && { opacity: 0.6 }]}
@@ -269,25 +295,25 @@ export default function SettingsTab() {
                       <ActivityIndicator color={Colors.menstrual} />
                     ) : (
                       <Text style={styles.generateButtonText}>
-                        {linkCode ? 'Regenerate Code' : 'Generate Link Code'}
+                        {linkCode ? t('regenerateCode') : t('generateLinkCode')}
                       </Text>
                     )}
                   </TouchableOpacity>
                   {linkCode && (
                     <View style={styles.codeDisplay}>
                       <Text style={styles.codeText}>{linkCode}</Text>
-                      <Text style={styles.codeHint}>Tell him to enter this code in Easel</Text>
+                      <Text style={styles.codeHint}>{t('codeHint')}</Text>
                       <TouchableOpacity
                         style={styles.shareCodeButton}
                         onPress={() =>
                           Share.share({
-                            message: `My Easel partner code is: ${linkCode}\n\nDownload Easel and enter this code to connect with me.`,
+                            message: t('shareCodeMessage', { code: linkCode }),
                           })
                         }
                         activeOpacity={0.85}
                       >
                         <Feather name="share-2" size={14} color={Colors.menstrual} />
-                        <Text style={styles.shareCodeText}>Share code</Text>
+                        <Text style={styles.shareCodeText}>{tCommon('shareCode')}</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -300,10 +326,10 @@ export default function SettingsTab() {
         {/* Health Sync — Moon only */}
         {role === 'moon' && healthAvailable && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>HEALTH DATA</Text>
+            <Text style={styles.sectionLabel}>{t('healthData')}</Text>
             <View style={styles.card}>
               <Text style={styles.cardBody}>
-                Re-sync your cycle history from Apple Health to improve period predictions.
+                {t('healthSyncDescription')}
               </Text>
               <TouchableOpacity
                 style={[styles.generateButton, isSyncingHealth && { opacity: 0.6 }]}
@@ -314,7 +340,7 @@ export default function SettingsTab() {
                 {isSyncingHealth ? (
                   <ActivityIndicator color={Colors.menstrual} />
                 ) : (
-                  <Text style={styles.generateButtonText}>Sync Health Data</Text>
+                  <Text style={styles.generateButtonText}>{t('syncHealthData')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -324,24 +350,24 @@ export default function SettingsTab() {
         {/* Cycle settings — Moon only */}
         {role === 'moon' && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>CYCLE SETTINGS</Text>
+            <Text style={styles.sectionLabel}>{t('cycleSettings')}</Text>
             <View style={styles.card}>
               <SettingInput
-                label="Average Cycle Length (days)"
+                label={t('avgCycleLength')}
                 value={cycleLen}
                 onChangeText={setCycleLen}
                 keyboardType="number-pad"
               />
               <Divider />
               <SettingInput
-                label="Average Period Length (days)"
+                label={t('avgPeriodLength')}
                 value={periodLen}
                 onChangeText={setPeriodLen}
                 keyboardType="number-pad"
               />
               <Divider />
               <View style={settingStyles.row}>
-                <Text style={settingStyles.label}>Last Period Start</Text>
+                <Text style={settingStyles.label}>{t('lastPeriodStart')}</Text>
                 <TouchableOpacity
                   style={settingStyles.input}
                   onPress={() => setShowDatePicker(true)}
@@ -349,10 +375,10 @@ export default function SettingsTab() {
                 >
                   <Text style={{ ...Typography.body, color: Colors.textPrimary }}>
                     {lastPeriod
-                      ? new Date(lastPeriod + 'T12:00:00').toLocaleDateString('en-US', {
+                      ? new Date(lastPeriod + 'T12:00:00').toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
                           year: 'numeric', month: 'long', day: 'numeric',
                         })
-                      : 'Select date'}
+                      : tCommon('selectDate')}
                   </Text>
                 </TouchableOpacity>
                 {showDatePicker && (
@@ -379,12 +405,12 @@ export default function SettingsTab() {
                     style={[styles.saveButton, { marginTop: Spacing.xs }]}
                     onPress={() => setShowDatePicker(false)}
                   >
-                    <Text style={styles.saveButtonText}>Done</Text>
+                    <Text style={styles.saveButtonText}>{tCommon('done')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
               <TouchableOpacity style={styles.saveButton} onPress={handleSaveCycle}>
-                <Text style={styles.saveButtonText}>Save Cycle Settings</Text>
+                <Text style={styles.saveButtonText}>{t('saveCycleSettings')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -393,22 +419,22 @@ export default function SettingsTab() {
         {/* Notifications — Moon only */}
         {role === 'moon' && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>NOTIFICATIONS</Text>
+            <Text style={styles.sectionLabel}>{t('notifications')}</Text>
             <View style={styles.card}>
-              <ToggleRow label="Period approaching" value={notificationPrefs.periodApproaching} onToggle={v => updateNotificationPrefs({ periodApproaching: v })} />
+              <ToggleRow label={t('periodApproaching')} value={notificationPrefs.periodApproaching} onToggle={v => updateNotificationPrefs({ periodApproaching: v })} />
               <Divider />
-              <ToggleRow label="Period started" value={notificationPrefs.periodStarted} onToggle={v => updateNotificationPrefs({ periodStarted: v })} />
+              <ToggleRow label={t('periodStarted')} value={notificationPrefs.periodStarted} onToggle={v => updateNotificationPrefs({ periodStarted: v })} />
               <Divider />
-              <ToggleRow label="Period ended" value={notificationPrefs.periodEnded} onToggle={v => updateNotificationPrefs({ periodEnded: v })} />
+              <ToggleRow label={t('periodEnded')} value={notificationPrefs.periodEnded} onToggle={v => updateNotificationPrefs({ periodEnded: v })} />
               <Divider />
-              <ToggleRow label="Whisper alerts" value={notificationPrefs.whisperAlerts} onToggle={v => updateNotificationPrefs({ whisperAlerts: v })} />
+              <ToggleRow label={t('whisperAlerts')} value={notificationPrefs.whisperAlerts} onToggle={v => updateNotificationPrefs({ whisperAlerts: v })} />
               <Divider />
-              <ToggleRow label="Let AI decide timing" value={notificationPrefs.useAiTiming} onToggle={v => updateNotificationPrefs({ useAiTiming: v })} />
+              <ToggleRow label={t('letAiDecide')} value={notificationPrefs.useAiTiming} onToggle={v => updateNotificationPrefs({ useAiTiming: v })} />
               {!notificationPrefs.useAiTiming && (
                 <>
                   <Divider />
                   <View style={rowStyles.row}>
-                    <Text style={rowStyles.label}>Days before period</Text>
+                    <Text style={rowStyles.label}>{t('daysBeforePeriod')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <TouchableOpacity onPress={() => updateNotificationPrefs({ manualDaysBefore: Math.max(1, notificationPrefs.manualDaysBefore - 1) })}>
                         <Feather name="minus-circle" size={22} color={Colors.textHint} />
@@ -427,7 +453,7 @@ export default function SettingsTab() {
 
         {/* Sign Out */}
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.signOutText}>{tCommon('signOut')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -435,6 +461,7 @@ export default function SettingsTab() {
 }
 
 function AvatarPicker({ url, onPress, loading }: { url: string | null; onPress: () => void; loading: boolean }) {
+  const { t } = useTranslation('common');
   return (
     <TouchableOpacity
       style={{ alignItems: 'center', paddingVertical: Spacing.md }}
@@ -456,7 +483,7 @@ function AvatarPicker({ url, onPress, loading }: { url: string | null; onPress: 
         )}
       </View>
       <Text style={{ ...Typography.caption, color: Colors.textHint, marginTop: 6 }}>
-        {loading ? 'Uploading...' : 'Tap to change photo'}
+        {loading ? t('uploading') : t('tapToChangePhoto')}
       </Text>
     </TouchableOpacity>
   );
