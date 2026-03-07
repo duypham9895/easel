@@ -17,6 +17,15 @@ Versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.4.1] — 2026-03-07
+
+### Changed — Documentation & Project Hygiene
+- **README.md rewritten** — Comprehensive update reflecting current v1.4.0 state: added Features section (Moon/Sun/Shared), detailed monorepo structure with subdirectory descriptions, expanded tech stack table (HealthKit, i18n, landing page), environment variables reference, API endpoints table, database overview (10 tables), security summary, and all 4 CI/CD pipelines including GitHub Pages.
+- **GitHub Releases created** — Retroactively created detailed GitHub Releases for v1.3.0 and v1.4.0 with full changelog bodies (previously only lightweight git tags existed).
+- **Release workflow updated** — Future releases will include detailed change descriptions in GitHub Release notes, not just tag names.
+
+---
+
 ## [1.4.0] — 2026-03-07
 
 ### Added — Bilingual Support (Vietnamese + English)
