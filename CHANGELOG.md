@@ -11,16 +11,20 @@ Versioning: `MAJOR.MINOR.PATCH`
 
 ## [Unreleased]
 
+### Known Issues
+- **`DbCouple` type duplication** — The interface is defined in both `app/types/index.ts` and `app/lib/db/couples.ts`. The `types/index.ts` version is the canonical one; the `couples.ts` copy should be removed and imported instead.
+- **Local theme color duplication** — `MoonDashboard.tsx` and `SunDashboard.tsx` define local `MOON`/`SUN` color objects that partially duplicate `MoonColors`/`SunColors` exported from `constants/theme.ts`. Should be unified to use the canonical theme tokens.
+
+---
+
+## [1.3.0] — 2026-03-07
+
 ### Added
 - **Whisper success confirmation UI** — After Moon sends a whisper, the bottom sheet transforms into a celebration view with a pulsing check circle, the whisper option chip, and "Whispered to your Sun / He'll know what to do." Auto-dismisses after 2.5 s.
 - **Whisper-specific push notification copy** — `notify-sos` edge function now includes warm, phase-aware copy for all 16 whisper types (e.g., "Moon needs you — She needs a hug right now"). Custom whispers fall back to "Moon whispered to you".
 
 ### Fixed
 - **`sos_signals.type` CHECK constraint** — Migration `004_relax_sos_type_constraint.sql` drops the restrictive constraint that was silently blocking all whisper inserts and preventing Sun from receiving push notifications.
-
-### Known Issues
-- **`DbCouple` type duplication** — The interface is defined in both `app/types/index.ts` and `app/lib/db/couples.ts`. The `types/index.ts` version is the canonical one; the `couples.ts` copy should be removed and imported instead.
-- **Local theme color duplication** — `MoonDashboard.tsx` and `SunDashboard.tsx` define local `MOON`/`SUN` color objects that partially duplicate `MoonColors`/`SunColors` exported from `constants/theme.ts`. Should be unified to use the canonical theme tokens.
 
 ---
 
