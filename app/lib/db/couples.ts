@@ -102,7 +102,7 @@ export async function getMyCouple(): Promise<DbCouple | null> {
 
   const { data, error } = await supabase
     .from('couples')
-    .select('*')
+    .select('id, girlfriend_id, boyfriend_id, link_code, link_code_expires_at, status, created_at, linked_at')
     .or(`girlfriend_id.eq.${user.id},boyfriend_id.eq.${user.id}`)
     .single();
 

@@ -52,7 +52,17 @@ async function sendPush(messages: PushMessage[]): Promise<void> {
   if (!res.ok) throw new Error(`Expo Push error ${res.status}: ${await res.text()}`);
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
+  // Validate authorization — only pg_cron or admin should call this
+  const authHeader = req.headers.get('Authorization');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!authHeader || !serviceKey || authHeader !== `Bearer ${serviceKey}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -178,7 +188,7 @@ Deno.serve(async (_req: Request) => {
   } catch (err) {
     console.error('notify-cycle error:', err);
     return new Response(
-      JSON.stringify({ error: String(err) }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }

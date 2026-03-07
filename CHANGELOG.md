@@ -13,7 +13,47 @@ Versioning: `MAJOR.MINOR.PATCH`
 
 ### Known Issues
 - **`DbCouple` type duplication** — The interface is defined in both `app/types/index.ts` and `app/lib/db/couples.ts`. The `types/index.ts` version is the canonical one; the `couples.ts` copy should be removed and imported instead.
-- **Local theme color duplication** — `MoonDashboard.tsx` and `SunDashboard.tsx` define local `MOON`/`SUN` color objects that partially duplicate `MoonColors`/`SunColors` exported from `constants/theme.ts`. Should be unified to use the canonical theme tokens.
+
+### Fixed
+- **CRITICAL: Ovulation day formula** — Changed from `avgCycleLength / 2` to `avgCycleLength - 14` (medical standard: luteal phase is ~14 days). Previously off by 2+ days for non-28-day cycles, causing incorrect phase calculations, calendar markers, and fertility estimates.
+- **HIGH: DailyCheckIn dark theme** — Component used light-theme `Colors` tokens (white card, dark text) inside the dark MoonDashboard. Now uses `MoonColors` for proper contrast.
+- **HIGH: Theme color consolidation** — Removed duplicated `MOON`/`SUN` color objects from `MoonDashboard.tsx`, `SunDashboard.tsx`, `WhisperSheet.tsx`, `UnlinkedScreen.tsx`, `SOSSheet.tsx`, `InsightCard.tsx`. All now reference canonical `MoonColors`/`SunColors` from `constants/theme.ts`.
+- **MEDIUM: Profile upsert** — `upsertProfile()` in `lib/db/profiles.ts` used `.update()` which silently failed if the profile row didn't exist. Changed to `.upsert()` with `onConflict: 'id'` so role and display name are always persisted.
+- **LOW: Calendar date locale** — `DayDetailSheet` date format was hardcoded to `en-US`. Now respects the user's language setting (Vietnamese or English).
+
+---
+
+## [1.5.0] — 2026-03-07
+
+### Security Hardening (Pre-Publishing Audit)
+
+#### Database (migration 006)
+- **CRITICAL: Added `UNIQUE(boyfriend_id)` constraint** on `couples` table — prevents a Sun user from being linked to multiple Moon partners, which could leak health data between couples.
+- **CRITICAL: RLS policy optimization** — wrapped all `my_couple_id()` / `my_partner_id()` calls in `(SELECT ...)` subqueries so PostgreSQL executes them once per query instead of once per row. Prevents DoS on large tables.
+- **CRITICAL: `sos_signals.type` constraint restored** — regex pattern `^[a-z][a-z0-9_]{0,49}$` replaces the dropped CHECK, allowing whisper IDs while blocking arbitrary strings.
+- **HIGH: `sos_signals` UPDATE restriction** — new `guard_sos_update` trigger prevents modifying any column except `acknowledged_at`. Previously the UPDATE policy allowed changing `type`, `sender_id`, or `message`.
+- **MEDIUM: `SECURITY DEFINER` functions** — added `SET search_path = public` to `my_couple_id()`, `my_partner_id()`, `handle_new_user()`, `set_updated_at()` to prevent schema-poisoning attacks.
+- **MEDIUM: FK indexes added** — `sos_signals(couple_id)`, `sos_signals(sender_id)`, `period_logs(user_id)`, `daily_logs(user_id)`, `push_tokens(user_id)`, `couples(boyfriend_id)` for RLS and JOIN performance.
+- **MEDIUM: Couples link expiry guard** — new `guard_couple_link` trigger rejects linking if `link_code_expires_at < NOW()` at the database level, closing a TOCTOU race window.
+- **HIGH: `display_name` length constraint** — max 100 characters on `profiles.display_name`.
+
+#### Edge Functions
+- **CRITICAL: `notify-cycle` authentication** — added `Authorization: Bearer` header validation against `SUPABASE_SERVICE_ROLE_KEY`. Previously anyone who discovered the URL could trigger mass push notifications.
+- **HIGH: Error response sanitization** — both `notify-cycle` and `notify-sos` now return generic `"Internal server error"` instead of `String(err)` which could leak query context or stack traces.
+- **MEDIUM: Push token logging removed** — `notify-sos` no longer logs full Expo Push API response (which contained device tokens).
+
+#### App Code
+- **HIGH: Avatar URL persistence** — `updateAvatarUrl` now writes to `profiles.avatar_url` in Supabase, not just local Zustand state. Avatar survives re-login and multi-device use.
+- **HIGH: Avatar MIME type validation** — upload now reads actual `asset.mimeType` from image picker and validates against allowlist (`image/jpeg`, `image/png`, `image/webp`) instead of hardcoding `image/jpeg`.
+- **MEDIUM: Explicit `select()` columns** — replaced `select('*')` in `profiles.ts`, `couples.ts`, `cycle.ts` with named columns to prevent PII leakage from future column additions.
+- **MEDIUM: `avatarUrl` restored on session hydration** — `signIn` and `bootstrapSession` now set `avatarUrl` from the DB profile.
+- **MEDIUM: Deep link `verifyOtp` safety** — replaced unsafe `type as any` cast with an allowlist of valid OTP types (`recovery`, `signup`, `magiclink`, `invite`, `email`). Errors are now logged instead of silently ignored.
+- **CRITICAL: Removed real database password** from `app/.env.example` (was committed to git). Credential rotation required.
+
+### Changed
+- `app.json` version synced to `1.5.0` with `ios.buildNumber: "1"` and `android.versionCode: 1`.
+- Added `ITSAppUsesNonExemptEncryption: false` to iOS config (HTTPS only, no custom crypto).
+- Created `eas.json` with `development`, `preview`, and `production` build profiles for EAS Build.
 
 ---
 

@@ -33,15 +33,24 @@ export function useAvatarUpload() {
       return;
     }
 
+    const mimeType = asset.mimeType ?? 'image/jpeg';
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(mimeType)) {
+      Alert.alert('Unsupported format', 'Please choose a JPEG, PNG, or WebP image.');
+      return;
+    }
+
+    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+
     setIsUploading(true);
     try {
       const response = await fetch(asset.uri);
       const blob = await response.blob();
-      const path = `${userId}/${Date.now()}.jpg`;
+      const path = `${userId}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+        .upload(path, blob, { contentType: mimeType, upsert: true });
 
       if (uploadError) throw uploadError;
 

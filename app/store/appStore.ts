@@ -63,7 +63,7 @@ interface AppState {
   sendWhisper: (option: SOSOption) => Promise<void>;
   receiveWhisper: (option: SOSOption) => void;
   clearWhisper: () => void;
-  updateAvatarUrl: (url: string) => void;
+  updateAvatarUrl: (url: string) => Promise<void>;
   updateDisplayName: (name: string) => Promise<void>;
   updateNotificationPrefs: (prefs: Partial<NotificationPreferences>) => void;
 
@@ -148,6 +148,7 @@ export const useAppStore = create<AppState>()(
           cycleSettings,
           partnerCycleSettings,
           displayName: profile?.display_name ?? null,
+          avatarUrl: profile?.avatar_url ?? null,
         });
       },
 
@@ -188,6 +189,7 @@ export const useAppStore = create<AppState>()(
           cycleSettings: makeDefaultCycleSettings(),
           partnerCycleSettings: null,
           displayName: null,
+          avatarUrl: null,
           notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
           language: 'en',
         });
@@ -235,6 +237,7 @@ export const useAppStore = create<AppState>()(
           cycleSettings,
           partnerCycleSettings,
           displayName: profile?.display_name ?? null,
+          avatarUrl: profile?.avatar_url ?? null,
           // Restore a pending link code so GF can see it without regenerating.
           // Clear stale persisted code if the couple is already linked.
           linkCode: couple?.status === 'pending' ? (couple.link_code ?? null) : null,
@@ -327,7 +330,13 @@ export const useAppStore = create<AppState>()(
         if (_whisperTimer) { clearTimeout(_whisperTimer); _whisperTimer = null; }
         set({ activeWhisper: null });
       },
-      updateAvatarUrl: (url) => set({ avatarUrl: url }),
+      updateAvatarUrl: async (url) => {
+        set({ avatarUrl: url });
+        const { userId } = get();
+        if (userId) {
+          await upsertProfile(userId, { avatar_url: url });
+        }
+      },
       updateDisplayName: async (name) => {
         set({ displayName: name });
         const { userId } = get();

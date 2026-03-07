@@ -82,6 +82,16 @@ const WHISPER_COPY: Record<string, { title: string; body: string }> = {
 };
 
 Deno.serve(async (req: Request) => {
+  // Validate that the request comes from a Supabase Database Webhook
+  const authHeader = req.headers.get('Authorization');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!authHeader || !serviceKey || authHeader !== `Bearer ${serviceKey}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const payload: WebhookPayload = await req.json();
     const signal = payload.record;
@@ -148,8 +158,8 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Expo Push API error ${expoRes.status}: ${body}`);
     }
 
-    const result = await expoRes.json();
-    console.log('Push sent:', JSON.stringify(result));
+    await expoRes.json();
+    console.log(`notify-sos: sent ${messages.length} push messages`);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -157,7 +167,7 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('notify-sos error:', err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

@@ -15,7 +15,7 @@ export interface DbCycleSettings {
 export async function getCycleSettings(userId: string): Promise<CycleSettings | null> {
   const { data, error } = await supabase
     .from('cycle_settings')
-    .select('*')
+    .select('id, user_id, avg_cycle_length, avg_period_length, last_period_start_date, created_at, updated_at')
     .eq('user_id', userId)
     .single();
 

@@ -33,16 +33,18 @@ function AppWithHooks() {
       const token_hash = parsed.queryParams?.token_hash as string | undefined;
       const type = parsed.queryParams?.type as string | undefined;
       if (token_hash && type) {
-        if (type === 'recovery') {
-          // Verify OTP then send user to the reset-password screen to enter new password
-          const { error } = await supabase.auth.verifyOtp({ token_hash, type: 'recovery' });
-          if (!error) {
-            await bootstrapSession();
-            router.replace('/reset-password');
-          }
-        } else {
-          const { error } = await supabase.auth.verifyOtp({ token_hash, type: type as any });
-          if (!error) await bootstrapSession();
+        const validTypes = ['recovery', 'signup', 'magiclink', 'invite', 'email'] as const;
+        const otpType = validTypes.includes(type as any) ? (type as typeof validTypes[number]) : null;
+        if (!otpType) return;
+
+        const { error } = await supabase.auth.verifyOtp({ token_hash, type: otpType });
+        if (error) {
+          console.warn('[deep-link] verifyOtp failed:', error.message);
+          return;
+        }
+        await bootstrapSession();
+        if (otpType === 'recovery') {
+          router.replace('/reset-password');
         }
         return;
       }
