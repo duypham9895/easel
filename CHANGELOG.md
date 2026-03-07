@@ -15,6 +15,7 @@ Versioning: `MAJOR.MINOR.PATCH`
 - **`DbCouple` type duplication** — The interface is defined in both `app/types/index.ts` and `app/lib/db/couples.ts`. The `types/index.ts` version is the canonical one; the `couples.ts` copy should be removed and imported instead.
 
 ### Fixed
+- **MEDIUM: `notify-cycle` GitHub Actions workflow broken** — Supabase CLI removed `functions invoke` subcommand in newer versions, causing the daily notification cron to fail. Replaced CLI-based invocation with direct HTTP `curl` to the Edge Function URL. Removes CLI install step and eliminates future CLI version drift.
 - **CRITICAL: Ovulation day formula** — Changed from `avgCycleLength / 2` to `avgCycleLength - 14` (medical standard: luteal phase is ~14 days). Previously off by 2+ days for non-28-day cycles, causing incorrect phase calculations, calendar markers, and fertility estimates.
 - **HIGH: DailyCheckIn dark theme** — Component used light-theme `Colors` tokens (white card, dark text) inside the dark MoonDashboard. Now uses `MoonColors` for proper contrast.
 - **HIGH: Theme color consolidation** — Removed duplicated `MOON`/`SUN` color objects from `MoonDashboard.tsx`, `SunDashboard.tsx`, `WhisperSheet.tsx`, `UnlinkedScreen.tsx`, `SOSSheet.tsx`, `InsightCard.tsx`. All now reference canonical `MoonColors`/`SunColors` from `constants/theme.ts`.

@@ -8,9 +8,9 @@
 # Runs automatically every day. Can also be triggered manually from the
 # GitHub Actions tab (workflow_dispatch) for testing.
 #
-# Required GitHub Secrets (same as supabase.yml — no new secrets needed):
-#   SUPABASE_ACCESS_TOKEN  — Personal access token from supabase.com
-#   SUPABASE_PROJECT_ID    — Project reference ID (Dashboard → Project Settings)
+# Required GitHub Secrets:
+#   SUPABASE_PROJECT_ID        — Project reference ID (Dashboard → Project Settings)
+#   SUPABASE_SERVICE_ROLE_KEY  — Service role key (Dashboard → API → service_role)
 # =============================================================================
 
 name: Notify Cycle Daily
@@ -26,15 +26,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
       - name: Invoke notify-cycle edge function
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase functions invoke notify-cycle \
-            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" \
-            --body '{}'
+          HTTP_STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST "https://${{ secrets.SUPABASE_PROJECT_ID }}.supabase.co/functions/v1/notify-cycle" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            --data '{}')
+
+          echo "HTTP Status: $HTTP_STATUS"
+          cat /tmp/response.json
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "::error::Edge function returned HTTP $HTTP_STATUS"
+            exit 1
+          fi
