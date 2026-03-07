@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Easel — Cycle Awareness for Couples</title>
+  <meta name="description" content="Easel is a menstrual cycle tracking app built for both partners. Moon Whispers for her, Sun Whispers for him. Start understanding each other on a deeper level." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%239b7fc0'/%3E%3Cstop offset='100%25' stop-color='%23c97c84'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='36' font-style='italic' font-weight='400' fill='white' text-anchor='middle'%3Ee%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =============================================
+       CSS CUSTOM PROPERTIES
+    ============================================= */
+    :root {
+      --ivory: #fdf8f5;
+      --blush: #f5e6e8;
+      --rose: #e8b4b8;
+      --rose-deep: #c97c84;
+      --moon: #d4c5e2;
+      --moon-deep: #9b7fc0;
+      --sun: #f6d860;
+      --sun-warm: #f0a844;
+      --ink: #2a1f2d;
+      --sage: #a8d4b0;
+      --muted: #8a7490;
+      --menstrual: #c97c84;
+      --follicular: #f0a844;
+      --ovulation: #a8d4b0;
+      --luteal: #9b7fc0;
+
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', -apple-system, sans-serif;
+
+      --section-py: clamp(5rem, 9vw, 9rem);
+      --max-w: 1200px;
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 32px rgba(42, 31, 45, 0.08);
+      --shadow-hover: 0 12px 48px rgba(42, 31, 45, 0.16);
+    }
+
+    /* =============================================
+       RESET & BASE
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; cursor: none; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--ivory);
+      color: var(--ink);
+      line-height: 1.65;
+      overflow-x: hidden;
+    }
+
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: none; border: none; background: none; font-family: var(--font-body); }
+
+    /* =============================================
+       CUSTOM CURSOR
+    ============================================= */
+    #cursor-dot {
+      position: fixed;
+      top: 0; left: 0;
+      width: 8px; height: 8px;
+      background: var(--rose-deep);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, background 0.2s;
+    }
+
+    #cursor-ring {
+      position: fixed;
+      top: 0; left: 0;
+      width: 36px; height: 36px;
+      border: 1.5px solid rgba(201, 124, 132, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: width 0.35s ease, height 0.35s ease, border-color 0.35s ease;
+    }
+
+    body:has(a:hover) #cursor-dot,
+    body:has(button:hover) #cursor-dot { width: 12px; height: 12px; background: var(--moon-deep); }
+    body:has(a:hover) #cursor-ring,
+    body:has(button:hover) #cursor-ring { width: 52px; height: 52px; border-color: rgba(155, 127, 192, 0.6); }
+
+    @media (max-width: 768px) {
+      html { cursor: auto; }
+      #cursor-dot, #cursor-ring { display: none; }
+    }
+
+    /* =============================================
+       TYPOGRAPHY
+    ============================================= */
+    h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; line-height: 1.15; }
+
+    h1 { font-size: clamp(3rem, 7vw, 5.5rem); }
+    h2 { font-size: clamp(2.2rem, 4.5vw, 3.5rem); }
+    h3 { font-size: clamp(1.4rem, 2.5vw, 1.9rem); }
+    h4 { font-size: clamp(1.1rem, 1.8vw, 1.35rem); }
+
+    p { font-size: clamp(0.95rem, 1.5vw, 1.05rem); color: var(--muted); }
+
+    .eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--rose-deep);
+      margin-bottom: 1rem;
+    }
+
+    .eyebrow.moon-color { color: var(--moon-deep); }
+    .eyebrow.sun-color { color: var(--sun-warm); }
+
+    /* =============================================
+       LAYOUT UTILITIES
+    ============================================= */
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 clamp(1.5rem, 5vw, 3rem); }
+
+    section { padding: var(--section-py) 0; position: relative; overflow: hidden; }
+    section.bg-ivory { background: var(--ivory); }
+    section.bg-blush { background: var(--blush); }
+    section.bg-ink { background: var(--ink); color: white; }
+    section.bg-ink p { color: rgba(253, 248, 245, 0.7); }
+    section.bg-ink .eyebrow { color: var(--rose); }
+
+    /* =============================================
+       SCROLL ANIMATION
+    ============================================= */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+
+    /* =============================================
+       BACKGROUND BLOBS
+    ============================================= */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    /* =============================================
+       NAVIGATION
+    ============================================= */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0 clamp(1.5rem, 5vw, 3rem);
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(253, 248, 245, 0.85);
+      border-bottom: 1px solid rgba(232, 180, 184, 0.2);
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 500;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .nav-logo span { color: var(--rose-deep); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--ink); }
+
+    .nav-cta {
+      background: var(--ink);
+      color: white !important;
+      padding: 0.6rem 1.4rem;
+      border-radius: 100px;
+      font-size: 0.875rem !important;
+      font-weight: 600 !important;
+      transition: background 0.2s, transform 0.2s !important;
+    }
+
+    .nav-cta:hover { background: var(--rose-deep) !important; transform: translateY(-1px); }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--ink);
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 72px; left: 0; right: 0;
+      background: var(--ivory);
+      border-bottom: 1px solid rgba(232, 180, 184, 0.3);
+      padding: 2rem;
+      z-index: 99;
+      flex-direction: column;
+      gap: 1.5rem;
+      box-shadow: 0 12px 40px rgba(42, 31, 45, 0.12);
+    }
+
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { font-size: 1.1rem; color: var(--ink); font-weight: 500; }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+    }
+
+    /* =============================================
+       BUTTONS
+    ============================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.9rem 2rem;
+      border-radius: 100px;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.25s ease;
+      cursor: none;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: white;
+      box-shadow: 0 4px 16px rgba(42, 31, 45, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: var(--rose-deep);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(201, 124, 132, 0.35);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1.5px solid rgba(42, 31, 45, 0.2);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--rose-deep);
+      color: var(--rose-deep);
+      transform: translateY(-2px);
+    }
+
+    .btn-moon {
+      background: var(--moon-deep);
+      color: white;
+      box-shadow: 0 4px 16px rgba(155, 127, 192, 0.3);
+    }
+
+    .btn-moon:hover {
+      background: #8a6db0;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(155, 127, 192, 0.45);
+    }
+
+    .btn-sun {
+      background: var(--sun-warm);
+      color: var(--ink);
+      box-shadow: 0 4px 16px rgba(240, 168, 68, 0.3);
+    }
+
+    .btn-sun:hover {
+      background: #e09535;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(240, 168, 68, 0.45);
+    }
+
+    .btn-outline-white {
+      background: transparent;
+      color: white;
+      border: 1.5px solid rgba(255,255,255,0.35);
+    }
+
+    .btn-outline-white:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.7);
+      transform: translateY(-2px);
+    }
+
+    /* =============================================
+       SECTION 1: HERO
+    ============================================= */
+    #hero {
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      background: var(--ivory);
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+      width: 100%;
+    }
+
+    .hero-text { position: relative; z-index: 2; }
+
+    .hero-text h1 {
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-text h1 em {
+      font-style: italic;
+      color: var(--rose-deep);
+    }
+
+    .hero-subhead {
+      font-size: clamp(1rem, 1.8vw, 1.2rem);
+      color: var(--muted);
+      max-width: 480px;
+      margin-bottom: 2.5rem;
+      line-height: 1.75;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .hero-social-proof {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .avatar-stack {
+      display: flex;
+    }
+
+    .avatar-stack .av {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: white;
+      margin-left: -8px;
+    }
+
+    .avatar-stack .av:first-child { margin-left: 0; }
+    .av-1 { background: var(--rose-deep); }
+    .av-2 { background: var(--moon-deep); }
+    .av-3 { background: var(--sun-warm); }
+    .av-4 { background: var(--sage); }
+
+    .social-proof-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .social-proof-text strong { color: var(--ink); }
+
+    /* ORBIT VISUAL */
+    .hero-visual {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 520px;
+    }
+
+    .orbit-container {
+      position: relative;
+      width: 380px;
+      height: 380px;
+    }
+
+    .orbit-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .orbit-ring-1 {
+      width: 160px; height: 160px;
+      border-color: rgba(212, 197, 226, 0.5);
+      animation: orbitSpin 25s linear infinite;
+    }
+
+    .orbit-ring-2 {
+      width: 280px; height: 280px;
+      border-color: rgba(246, 216, 96, 0.35);
+      animation: orbitSpin 40s linear infinite reverse;
+    }
+
+    .orbit-ring-3 {
+      width: 370px; height: 370px;
+      border-color: rgba(201, 124, 132, 0.2);
+      animation: orbitSpin 60s linear infinite;
+    }
+
+    @keyframes orbitSpin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .orbit-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90px; height: 90px;
+      background: linear-gradient(135deg, var(--moon-deep), var(--rose-deep));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 60px rgba(155, 127, 192, 0.4);
+    }
+
+    .orbit-center-text {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: white;
+      font-style: italic;
+    }
+
+    /* Moon orbiting body */
+    .moon-body {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 52px; height: 52px;
+      margin-top: -26px; margin-left: -26px;
+      transform-origin: 0 0;
+      animation: moonOrbit 12s linear infinite;
+    }
+
+    @keyframes moonOrbit {
+      from { transform: rotate(0deg) translateX(140px) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(140px) rotate(-360deg); }
+    }
+
+    .moon-body-inner {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #c8b8e0, var(--moon-deep));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 0 20px rgba(155, 127, 192, 0.5);
+      animation: moonFloat 7s ease-in-out infinite;
+    }
+
+    @keyframes moonFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    /* Sun orbiting body */
+    .sun-body {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 48px; height: 48px;
+      margin-top: -24px; margin-left: -24px;
+      transform-origin: 0 0;
+      animation: sunOrbit 18s linear infinite reverse;
+    }
+
+    @keyframes sunOrbit {
+      from { transform: rotate(90deg) translateX(190px) rotate(-90deg); }
+      to { transform: rotate(450deg) translateX(190px) rotate(-450deg); }
+    }
+
+    .sun-body-inner {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--sun), var(--sun-warm));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      animation: sunPulse 5s ease-in-out infinite;
+    }
+
+    @keyframes sunPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(240, 168, 68, 0.4); }
+      50% { box-shadow: 0 0 40px rgba(240, 168, 68, 0.75), 0 0 70px rgba(246, 216, 96, 0.3); }
+    }
+
+    /* Phase dots floating */
+    .phase-float {
+      position: absolute;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      animation: phaseFloat 6s ease-in-out infinite;
+    }
+
+    .phase-float-1 { background: var(--menstrual); top: 8%; right: 15%; animation-delay: 0s; }
+    .phase-float-2 { background: var(--follicular); top: 70%; right: 5%; animation-delay: 1.5s; }
+    .phase-float-3 { background: var(--ovulation); bottom: 10%; left: 10%; animation-delay: 3s; }
+    .phase-float-4 { background: var(--luteal); top: 20%; left: 5%; animation-delay: 4.5s; }
+
+    @keyframes phaseFloat {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
+      50% { transform: translateY(-18px) scale(1.2); opacity: 1; }
+    }
+
+    /* Hero blobs */
+    .hero-blob-1 {
+      width: 500px; height: 500px;
+      background: var(--moon);
+      top: -100px; right: -100px;
+    }
+
+    .hero-blob-2 {
+      width: 300px; height: 300px;
+      background: var(--sun);
+      bottom: -50px; right: 200px;
+      opacity: 0.2;
+    }
+
+    @media (max-width: 768px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        text-align: center;
+      }
+      .hero-subhead { margin: 0 auto 2.5rem; }
+      .hero-buttons { justify-content: center; }
+      .hero-social-proof { justify-content: center; }
+      .hero-visual { height: 300px; }
+      .orbit-container { width: 260px; height: 260px; }
+      .orbit-ring-3 { width: 250px; height: 250px; }
+      .orbit-ring-2 { width: 200px; height: 200px; }
+      .orbit-ring-1 { width: 120px; height: 120px; }
+      @keyframes moonOrbit {
+        from { transform: rotate(0deg) translateX(100px) rotate(0deg); }
+        to { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+      }
+      @keyframes sunOrbit {
+        from { transform: rotate(90deg) translateX(130px) rotate(-90deg); }
+        to { transform: rotate(450deg) translateX(130px) rotate(-450deg); }
+      }
+    }
+
+    /* =============================================
+       SECTION 2: WHAT IS EASEL
+    ============================================= */
+    #what {
+      background: var(--blush);
+    }
+
+    .what-header { text-align: center; max-width: 680px; margin: 0 auto 4rem; }
+    .what-header h2 { margin-bottom: 1rem; }
+
+    /* STATS ROW */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+      margin-bottom: 5rem;
+    }
+
+    .stat-item { text-align: center; }
+
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-label { font-size: 0.85rem; font-weight: 500; color: var(--muted); letter-spacing: 0.05em; }
+
+    /* CYCLE WHEEL */
+    .cycle-wheel-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5rem;
+    }
+
+    .cycle-wheel-canvas {
+      position: relative;
+      flex-shrink: 0;
+      width: 320px;
+      height: 320px;
+    }
+
+    #cycleCanvas { border-radius: 50%; }
+
+    .wheel-center-label {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .wheel-center-label span {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .wheel-center-label small {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: var(--font-body);
+      letter-spacing: 0.05em;
+    }
+
+    .cycle-phases-list { flex: 1; }
+
+    .phase-item {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 1.2rem;
+      border-radius: var(--radius);
+      margin-bottom: 0.75rem;
+      background: white;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+
+    .phase-item:hover { transform: translateX(6px); box-shadow: var(--shadow-hover); }
+
+    .phase-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .phase-item-info h4 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 0.15rem;
+    }
+
+    .phase-item-info p { font-size: 0.85rem; }
+
+    @media (max-width: 768px) {
+      .cycle-wheel-wrap { flex-direction: column; align-items: center; gap: 2.5rem; }
+      .cycle-wheel-canvas { width: 260px; height: 260px; }
+      #cycleCanvas { width: 260px; height: 260px; }
+    }
+
+    /* =============================================
+       SECTION 3: BENEFITS
+    ============================================= */
+    #benefits {
+      background: var(--ink);
+    }
+
+    .benefits-header { text-align: center; max-width: 600px; margin: 0 auto 4rem; }
+    .benefits-header h2 { color: white; margin-bottom: 1rem; }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .benefit-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .benefit-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--rose-deep), var(--moon-deep));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+
+    .benefit-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.07); }
+    .benefit-card:hover::before { transform: scaleX(1); }
+
+    .benefit-icon {
+      font-size: 2rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .benefit-card h4 {
+      color: white;
+      margin-bottom: 0.6rem;
+      font-size: 1.15rem;
+    }
+
+    .benefit-card p { font-size: 0.9rem; color: rgba(253, 248, 245, 0.6); }
+
+    @media (max-width: 768px) {
+      .benefits-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .benefits-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* =============================================
+       SECTION 4: WHISPER SPLIT
+    ============================================= */
+    #whispers {
+      background: var(--ivory);
+      padding: var(--section-py) 0;
+    }
+
+    .whispers-header { text-align: center; max-width: 600px; margin: 0 auto 4rem; }
+    .whispers-header h2 { margin-bottom: 1rem; }
+
+    .whispers-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .whisper-panel {
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .moon-panel {
+      background: linear-gradient(160deg, #1a0f2e, #2d1f4a);
+    }
+
+    .sun-panel {
+      background: linear-gradient(160deg, #2d1a00, #4a2e00);
+    }
+
+    .whisper-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .moon-icon { background: rgba(155, 127, 192, 0.2); animation: moonFloat 7s ease-in-out infinite; }
+    .sun-icon { background: rgba(240, 168, 68, 0.2); animation: sunPulse 5s ease-in-out infinite; }
+
+    .whisper-panel h3 { color: white; margin-bottom: 0.75rem; }
+    .whisper-panel .eyebrow { margin-bottom: 0.5rem; }
+
+    .whisper-panel > p {
+      color: rgba(255,255,255,0.65);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .whisper-cards { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .whisper-card {
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      font-style: italic;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      position: relative;
+    }
+
+    .whisper-card::before {
+      content: '"';
+      font-size: 2rem;
+      font-family: var(--font-display);
+      position: absolute;
+      top: -2px; left: 10px;
+      line-height: 1;
+      opacity: 0.4;
+    }
+
+    .moon-card {
+      background: rgba(212, 197, 226, 0.12);
+      border: 1px solid rgba(212, 197, 226, 0.2);
+      color: var(--moon);
+      padding-left: 2rem;
+    }
+
+    .sun-card {
+      background: rgba(246, 216, 96, 0.1);
+      border: 1px solid rgba(246, 216, 96, 0.2);
+      color: var(--sun);
+      padding-left: 2rem;
+    }
+
+    .whisper-card-author {
+      font-style: normal;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      opacity: 0.6;
+      margin-top: 0.4rem;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .whispers-split { grid-template-columns: 1fr; }
+    }
+
+    /* =============================================
+       SECTION 5: WHY HE SHOULD CONVINCE HER
+    ============================================= */
+    #for-him {
+      background: var(--blush);
+    }
+
+    .for-him-inner {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .for-him-reasons { }
+
+    .reason-item {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2.2rem;
+      align-items: flex-start;
+    }
+
+    .reason-number {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      font-weight: 300;
+      color: var(--sun-warm);
+      line-height: 0.9;
+      flex-shrink: 0;
+      width: 3rem;
+    }
+
+    .reason-content h4 { margin-bottom: 0.4rem; font-size: 1.2rem; }
+    .reason-content p { font-size: 0.9rem; }
+
+    /* Mock phone with chat bubble */
+    .mock-phone {
+      background: var(--ink);
+      border-radius: 28px;
+      padding: 2rem 1.5rem;
+      max-width: 300px;
+      position: relative;
+      box-shadow: 0 24px 64px rgba(42, 31, 45, 0.25);
+    }
+
+    .mock-phone::before {
+      content: '';
+      display: block;
+      width: 60px; height: 6px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 4px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .phone-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .phone-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 600; color: white;
+    }
+
+    .phone-name { color: white; font-size: 0.9rem; font-weight: 600; }
+    .phone-status { color: rgba(255,255,255,0.4); font-size: 0.75rem; }
+
+    .chat-bubbles { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .easel-tip {
+      background: rgba(155, 127, 192, 0.2);
+      border: 1px solid rgba(155, 127, 192, 0.35);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      font-size: 0.8rem;
+      color: var(--moon);
+      line-height: 1.5;
+    }
+
+    .easel-tip-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--moon-deep);
+      margin-bottom: 0.35rem;
+    }
+
+    .chat-bubble-out {
+      background: var(--rose-deep);
+      border-radius: 16px 4px 16px 16px;
+      padding: 0.9rem 1rem;
+      font-size: 0.82rem;
+      color: white;
+      align-self: flex-end;
+      max-width: 85%;
+      line-height: 1.5;
+    }
+
+    .chat-bubble-in {
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px 16px 16px 16px;
+      padding: 0.9rem 1rem;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.85);
+      align-self: flex-start;
+      max-width: 85%;
+      line-height: 1.5;
+    }
+
+    .chat-time { font-size: 0.65rem; color: rgba(255,255,255,0.3); text-align: right; margin-top: 0.25rem; }
+
+    @media (max-width: 768px) {
+      .for-him-inner { grid-template-columns: 1fr; }
+      .mock-phone { max-width: 100%; }
+    }
+
+    /* =============================================
+       SECTION 6: WHY SHE SHOULD ASK HIM
+    ============================================= */
+    #for-her {
+      background: var(--ivory);
+    }
+
+    .for-her-inner {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .for-her-visual {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .her-quote-card {
+      background: linear-gradient(160deg, #1a0f2e, #2d1f4a);
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      position: relative;
+    }
+
+    .her-quote-card .big-quote {
+      font-family: var(--font-display);
+      font-size: 6rem;
+      color: var(--moon-deep);
+      opacity: 0.3;
+      line-height: 0.5;
+      margin-bottom: 0.5rem;
+    }
+
+    .her-quote-card blockquote {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+      font-style: italic;
+      color: white;
+      line-height: 1.45;
+      margin-bottom: 1.5rem;
+    }
+
+    .her-quote-card cite {
+      font-style: normal;
+      font-size: 0.85rem;
+      color: var(--moon);
+      font-family: var(--font-body);
+    }
+
+    .for-her-reasons h2 { margin-bottom: 2rem; }
+    .for-her-reasons h2 em { font-style: italic; color: var(--rose-deep); }
+
+    .her-reason-item {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      align-items: flex-start;
+    }
+
+    .her-reason-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--blush);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .her-reason-content h4 { margin-bottom: 0.3rem; font-size: 1.1rem; }
+    .her-reason-content p { font-size: 0.875rem; }
+
+    @media (max-width: 768px) {
+      .for-her-inner { grid-template-columns: 1fr; }
+    }
+
+    /* =============================================
+       SECTION 7: 4 PHASES
+    ============================================= */
+    #phases {
+      background: var(--blush);
+      overflow: visible;
+    }
+
+    .phases-header { text-align: center; max-width: 600px; margin: 0 auto 3rem; }
+    .phases-header h2 { margin-bottom: 1rem; }
+
+    .phases-scroll-wrap {
+      overflow-x: auto;
+      padding-bottom: 1rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--rose) transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .phases-scroll-wrap::-webkit-scrollbar { height: 4px; }
+    .phases-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+    .phases-scroll-wrap::-webkit-scrollbar-thumb { background: var(--rose); border-radius: 4px; }
+
+    .phases-track {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .phase-card {
+      border-radius: 20px;
+      padding: 2.5rem;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phase-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .phase-menstrual { background: linear-gradient(160deg, #8b3a45, #c97c84); }
+    .phase-follicular { background: linear-gradient(160deg, #8a5a00, #f0a844); }
+    .phase-ovulation { background: linear-gradient(160deg, #2a5a38, #a8d4b0); }
+    .phase-luteal { background: linear-gradient(160deg, #4a2a7a, #9b7fc0); }
+
+    .phase-card-emoji { font-size: 2.5rem; margin-bottom: 1rem; }
+
+    .phase-card h3 {
+      font-size: 1.6rem;
+      margin-bottom: 0.35rem;
+      color: white;
+    }
+
+    .phase-duration {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 1.5rem;
+    }
+
+    .phase-section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.3rem;
+    }
+
+    .phase-card p {
+      color: rgba(255,255,255,0.82);
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    .phase-card-divider {
+      width: 40px; height: 1px;
+      background: rgba(255,255,255,0.25);
+      margin: 0.75rem 0;
+    }
+
+    @media (max-width: 768px) {
+      .phases-track { grid-template-columns: repeat(4, 280px); }
+    }
+
+    /* =============================================
+       SECTION 8: RELATIONSHIP SCORE
+    ============================================= */
+    #score {
+      background: var(--ink);
+    }
+
+    .score-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .score-text h2 { color: white; margin-bottom: 1rem; }
+    .score-text > p { font-size: 1rem; margin-bottom: 2.5rem; }
+
+    .score-ways { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .score-way {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .score-way-icon {
+      width: 42px; height: 42px; flex-shrink: 0;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .score-way-text h4 { color: white; font-size: 1rem; margin-bottom: 0.25rem; }
+    .score-way-text p { font-size: 0.875rem; }
+
+    .score-widget {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .score-ring-wrap {
+      position: relative;
+      width: 240px; height: 240px;
+    }
+
+    #scoreCanvas { position: absolute; top: 0; left: 0; }
+
+    .score-ring-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-number {
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      color: white;
+      line-height: 1;
+    }
+
+    .score-denom { font-size: 1.2rem; color: rgba(255,255,255,0.4); }
+
+    .score-label {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+
+    .score-status {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-style: italic;
+      color: var(--sage);
+      text-align: center;
+    }
+
+    .score-bars { width: 100%; }
+
+    .score-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .score-bar-label {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.55);
+      width: 110px;
+      flex-shrink: 0;
+    }
+
+    .score-bar-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1.5s ease;
+      width: 0;
+    }
+
+    .score-bar-fill.fill-her { background: linear-gradient(90deg, var(--rose), var(--rose-deep)); }
+    .score-bar-fill.fill-him { background: linear-gradient(90deg, var(--sun), var(--sun-warm)); }
+    .score-bar-fill.fill-shared { background: linear-gradient(90deg, var(--sage), #7ab586); }
+
+    .score-bar-pct {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.4);
+      width: 30px;
+      text-align: right;
+    }
+
+    @media (max-width: 768px) {
+      .score-inner { grid-template-columns: 1fr; }
+    }
+
+    /* =============================================
+       SECTION 9: TESTIMONIALS
+    ============================================= */
+    #testimonials {
+      background: var(--ivory);
+    }
+
+    .testimonials-header { text-align: center; max-width: 520px; margin: 0 auto 4rem; }
+    .testimonials-header h2 { margin-bottom: 0.75rem; }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.75rem;
+    }
+
+    .testimonial-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2.25rem;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .testimonial-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+
+    .testimonial-card:nth-child(2) { background: var(--ink); }
+    .testimonial-card:nth-child(2) .testimonial-text { color: rgba(255,255,255,0.75); }
+    .testimonial-card:nth-child(2) .testimonial-name { color: white; }
+    .testimonial-card:nth-child(2) .testimonial-role { color: rgba(255,255,255,0.4); }
+    .testimonial-card:nth-child(2) .stars { color: var(--sun); }
+
+    .stars { color: var(--sun-warm); font-size: 1rem; margin-bottom: 1rem; letter-spacing: 0.1em; }
+
+    .testimonial-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+      font-style: italic;
+      color: var(--ink);
+      line-height: 1.55;
+      margin-bottom: 1.5rem;
+    }
+
+    .testimonial-footer { display: flex; align-items: center; gap: 1rem; }
+
+    .testimonial-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .testimonial-name { font-weight: 600; font-size: 0.9rem; color: var(--ink); }
+    .testimonial-role { font-size: 0.78rem; color: var(--muted); }
+
+    @media (max-width: 768px) {
+      .testimonials-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .testimonials-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* =============================================
+       SECTION 10: FINAL CTA
+    ============================================= */
+    #cta-final {
+      background: var(--ink);
+      text-align: center;
+      position: relative;
+    }
+
+    .cta-final-inner { position: relative; z-index: 2; }
+
+    .cta-final-inner h2 {
+      color: white;
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      max-width: 720px;
+      margin: 0 auto 1.25rem;
+    }
+
+    .cta-final-inner h2 em { color: var(--rose); font-style: italic; }
+
+    .cta-sub {
+      color: rgba(253,248,245,0.6) !important;
+      font-size: 1.1rem !important;
+      max-width: 500px;
+      margin: 0 auto 3rem !important;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .trust-line {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.05em;
+    }
+
+    /* Big moon/sun decoration */
+    .cta-moon-deco {
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(155,127,192,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+      top: 50%; left: -200px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .cta-sun-deco {
+      position: absolute;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(240,168,68,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      top: 50%; right: -150px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    footer {
+      background: var(--ink);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 3rem 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .footer-logo {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      color: white;
+    }
+
+    .footer-logo span { color: var(--rose); }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.4);
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: rgba(255,255,255,0.8); }
+
+    .footer-copy {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.25);
+    }
+
+    @media (max-width: 768px) {
+      .footer-inner { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot" aria-hidden="true"></div>
+<div id="cursor-ring" aria-hidden="true"></div>
+
+<!-- =============================================
+     NAVIGATION
+============================================= -->
+<nav role="navigation" aria-label="Main navigation">
+  <a href="#hero" class="nav-logo">Eas<span>el</span></a>
+  <ul class="nav-links">
+    <li><a href="#what">What is Easel</a></li>
+    <li><a href="#whispers">Whispers</a></li>
+    <li><a href="#phases">4 Phases</a></li>
+    <li><a href="#testimonials">Stories</a></li>
+    <li><a href="#cta-final" class="nav-cta">Start Together</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobile-menu" role="menu">
+  <a href="#what">What is Easel</a>
+  <a href="#whispers">Moon & Sun Whispers</a>
+  <a href="#phases">The 4 Phases</a>
+  <a href="#for-him">For Him</a>
+  <a href="#for-her">For Her</a>
+  <a href="#testimonials">Stories</a>
+  <a href="#cta-final" class="btn btn-primary" style="text-align:center">Start Together</a>
+</div>
+
+<!-- =============================================
+     SECTION 1: HERO
+============================================= -->
+<section id="hero" aria-label="Hero">
+  <div class="blob hero-blob-1" aria-hidden="true"></div>
+  <div class="blob hero-blob-2" aria-hidden="true"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <p class="eyebrow reveal">Cycle awareness, for two</p>
+        <h1 class="reveal reveal-delay-1">
+          When you <em>understand</em> her cycle, you understand her.
+        </h1>
+        <p class="hero-subhead reveal reveal-delay-2">
+          Easel is the first cycle tracking app built for both of you — not just to log periods, but to transform the way you connect, communicate, and care for each other every single day.
+        </p>
+        <div class="hero-buttons reveal reveal-delay-3">
+          <a href="#cta-final" class="btn btn-primary">Start Together</a>
+          <a href="#what" class="btn btn-secondary">See How It Works</a>
+        </div>
+        <div class="hero-social-proof reveal reveal-delay-4">
+          <div class="avatar-stack" aria-hidden="true">
+            <div class="av av-1">S</div>
+            <div class="av av-2">M</div>
+            <div class="av av-3">J</div>
+            <div class="av av-4">L</div>
+          </div>
+          <p class="social-proof-text">
+            Joined by <strong>4,200+ couples</strong> who chose to understand each other
+          </p>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal reveal-delay-2" aria-label="Moon and Sun orbit illustration">
+        <div class="orbit-container">
+          <div class="orbit-ring orbit-ring-3" aria-hidden="true"></div>
+          <div class="orbit-ring orbit-ring-2" aria-hidden="true"></div>
+          <div class="orbit-ring orbit-ring-1" aria-hidden="true"></div>
+
+          <div class="orbit-center" aria-hidden="true">
+            <span class="orbit-center-text">e</span>
+          </div>
+
+          <div class="moon-body" aria-hidden="true">
+            <div class="moon-body-inner">🌙</div>
+          </div>
+
+          <div class="sun-body" aria-hidden="true">
+            <div class="sun-body-inner">☀️</div>
+          </div>
+
+          <div class="phase-float phase-float-1" aria-hidden="true"></div>
+          <div class="phase-float phase-float-2" aria-hidden="true"></div>
+          <div class="phase-float phase-float-3" aria-hidden="true"></div>
+          <div class="phase-float phase-float-4" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 2: WHAT IS EASEL
+============================================= -->
+<section id="what" class="bg-blush" aria-labelledby="what-heading">
+  <div class="container">
+    <div class="what-header">
+      <p class="eyebrow reveal">The concept</p>
+      <h2 id="what-heading" class="reveal reveal-delay-1">A shared language for the 28-day rhythm of love</h2>
+      <p class="reveal reveal-delay-2">Easel maps the menstrual cycle's four phases into daily guidance — for her wellbeing, and for his understanding. When both partners see the same picture, everything gets easier.</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item reveal">
+        <div class="stat-number">28</div>
+        <div class="stat-label">Day cycle</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-1">
+        <div class="stat-number">4</div>
+        <div class="stat-label">Distinct phases</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-2">
+        <div class="stat-number">2</div>
+        <div class="stat-label">People, together</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-3">
+        <div class="stat-number">1</div>
+        <div class="stat-label">Stronger relationship</div>
+      </div>
+    </div>
+
+    <div class="cycle-wheel-wrap">
+      <div class="cycle-wheel-canvas reveal">
+        <canvas id="cycleCanvas" width="320" height="320" aria-label="Animated menstrual cycle wheel showing four phases"></canvas>
+        <div class="wheel-center-label" aria-hidden="true">
+          <span>Her cycle</span>
+          <small>28 days</small>
+        </div>
+      </div>
+
+      <div class="cycle-phases-list">
+        <div class="phase-item reveal">
+          <div class="phase-dot" style="background:var(--menstrual)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Menstrual — Days 1–5</h4>
+            <p>Rest, release, and renewal. Energy is lower, introspection is high. She needs comfort, warmth, and gentle presence.</p>
+          </div>
+        </div>
+        <div class="phase-item reveal reveal-delay-1">
+          <div class="phase-dot" style="background:var(--follicular)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Follicular — Days 6–13</h4>
+            <p>Rising energy and optimism. She's creative, social, and open to new ideas. A great time for plans and adventures.</p>
+          </div>
+        </div>
+        <div class="phase-item reveal reveal-delay-2">
+          <div class="phase-dot" style="background:var(--ovulation)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Ovulation — Days 14–16</h4>
+            <p>Peak confidence and connection. Communication is at its best — she feels most herself and most drawn to intimacy.</p>
+          </div>
+        </div>
+        <div class="phase-item reveal reveal-delay-3">
+          <div class="phase-dot" style="background:var(--luteal)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Luteal — Days 17–28</h4>
+            <p>Inward turn, heightened sensitivity. She may need more reassurance and quieter evenings. Small gestures matter most.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 3: BENEFITS
+============================================= -->
+<section id="benefits" class="bg-ink" aria-labelledby="benefits-heading">
+  <div class="container">
+    <div class="benefits-header">
+      <p class="eyebrow reveal">Why it works</p>
+      <h2 id="benefits-heading" class="reveal reveal-delay-1">Everything your relationship has been missing</h2>
+      <p class="reveal reveal-delay-2">Stop guessing. Start understanding. Easel gives both of you the tools to navigate the month with empathy, not confusion.</p>
+    </div>
+
+    <div class="benefits-grid">
+      <div class="benefit-card reveal">
+        <div class="benefit-icon" aria-hidden="true">🌀</div>
+        <h4>Deep Self-Awareness</h4>
+        <p>She gains a clear picture of her patterns — mood, energy, and symptoms — so she can predict and prepare, not just react.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-1">
+        <div class="benefit-icon" aria-hidden="true">🧘</div>
+        <h4>Emotional Regulation</h4>
+        <p>Understanding the "why" behind how she feels removes the shame spiral. Data becomes empowerment, not diagnosis.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-2">
+        <div class="benefit-icon" aria-hidden="true">🔥</div>
+        <h4>Intimacy Planning</h4>
+        <p>Know when desire peaks, when she craves closeness, and when she needs space — so every moment is better timed.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-3">
+        <div class="benefit-icon" aria-hidden="true">🕊️</div>
+        <h4>Fewer Arguments</h4>
+        <p>Most "mystery conflicts" happen in the luteal phase. When he knows this, tension dissolves before it starts.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-4">
+        <div class="benefit-icon" aria-hidden="true">📊</div>
+        <h4>Health Monitoring</h4>
+        <p>Track symptoms over time to spot irregularities early. Easel turns daily logs into meaningful health insights.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-5">
+        <div class="benefit-icon" aria-hidden="true">💞</div>
+        <h4>Couple Bonding</h4>
+        <p>Sharing something this personal deepens trust. It's an act of love to want to understand each other at this level.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 4: MOON & SUN WHISPERS
+============================================= -->
+<section id="whispers" aria-labelledby="whispers-heading">
+  <div class="container">
+    <div class="whispers-header">
+      <p class="eyebrow reveal">Signature features</p>
+      <h2 id="whispers-heading" class="reveal reveal-delay-1">Moon Whisper &amp; Sun Whisper</h2>
+      <p class="reveal reveal-delay-2">Every day, both partners receive a personalized message — one poetic, one practical — tuned to exactly where she is in her cycle.</p>
+    </div>
+
+    <div class="whispers-split">
+      <!-- MOON PANEL -->
+      <div class="moon-panel whisper-panel reveal">
+        <p class="eyebrow moon-color">For her</p>
+        <div class="whisper-icon moon-icon" aria-hidden="true">🌙</div>
+        <h3>Moon Whisper</h3>
+        <p>A gentle daily message delivered to her — poetic, warm, and deeply personal. Each Whisper is tuned to her current phase: affirming her when she's low, celebrating her when she soars, and reminding her to rest when she needs it most. Think of it as having a wise friend who always knows exactly what to say.</p>
+        <div class="whisper-cards">
+          <div class="whisper-card moon-card">
+            You are in the tender days of beginning. Rest is not retreat — it is the soil from which your next season grows. Let yourself be soft today.
+            <span class="whisper-card-author">— Menstrual phase, day 2</span>
+          </div>
+          <div class="whisper-card moon-card">
+            Something is waking up in you. Notice how ideas arrive more easily now, how the world feels lighter. This is your rising — lean into it.
+            <span class="whisper-card-author">— Follicular phase, day 8</span>
+          </div>
+          <div class="whisper-card moon-card">
+            This is your fullest self. You are luminous, magnetic, and unmistakably you. The world feels it, even if you cannot see it yet.
+            <span class="whisper-card-author">— Ovulation phase, day 14</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUN PANEL -->
+      <div class="sun-panel whisper-panel reveal reveal-delay-2">
+        <p class="eyebrow sun-color">For him</p>
+        <div class="whisper-icon sun-icon" aria-hidden="true">☀️</div>
+        <h3>Sun Whisper</h3>
+        <p>A clear, practical daily brief — written just for him. No guessing, no walking on eggshells. Sun Whisper translates the complexity of her cycle into simple, actionable insight: what she might be feeling today, what she might need, and one small thing he can do to show up as the partner she deserves. Understanding made effortless.</p>
+        <div class="whisper-cards">
+          <div class="whisper-card sun-card">
+            She's in her rest phase today. Skip the big plans. A warm meal, a quiet evening, and "I've got this tonight" will mean everything to her right now.
+            <span class="whisper-card-author">— Sun Whisper, day 2</span>
+          </div>
+          <div class="whisper-card sun-card">
+            Her energy is climbing. She may want to explore, try something new, or have a real conversation. Say yes to her ideas today — she's in her spark.
+            <span class="whisper-card-author">— Sun Whisper, day 8</span>
+          </div>
+          <div class="whisper-card sun-card">
+            She may feel more sensitive this week. It's not about you. Check in more, criticize less. A long hug before you leave in the morning? That's your move.
+            <span class="whisper-card-author">— Sun Whisper, day 22</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 5: FOR HIM (WHY CONVINCE HER)
+============================================= -->
+<section id="for-him" class="bg-blush" aria-labelledby="forhim-heading">
+  <div class="container">
+    <div class="for-him-inner">
+      <div class="for-him-reasons">
+        <p class="eyebrow reveal">For him</p>
+        <h2 id="forhim-heading" class="reveal reveal-delay-1">Stop guessing. Start being the partner she needs.</h2>
+        <p style="margin-bottom:2.5rem" class="reveal reveal-delay-2">You're not bad at relationships — you've just been operating without the manual. Easel is the manual.</p>
+
+        <div class="reason-item reveal reveal-delay-1">
+          <div class="reason-number" aria-hidden="true">01</div>
+          <div class="reason-content">
+            <h4>Stop guessing, start understanding</h4>
+            <p>That tension on Tuesday? The quietness on Friday? You'll finally know why — and you'll be able to respond with empathy instead of confusion.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-2">
+          <div class="reason-number" aria-hidden="true">02</div>
+          <div class="reason-content">
+            <h4>Know when to give space, when to show up</h4>
+            <p>Easel tells you exactly when she needs closeness and when she needs room. No more accidentally pushing when she needs space, or disappearing when she craves connection.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-3">
+          <div class="reason-number" aria-hidden="true">03</div>
+          <div class="reason-content">
+            <h4>Fewer arguments, more connection</h4>
+            <p>Most relationship conflicts aren't about what they seem to be about. When you understand her cycle, you understand what's underneath — and that defuses almost everything.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-4">
+          <div class="reason-number" aria-hidden="true">04</div>
+          <div class="reason-content">
+            <h4>Be the partner who actually gets it</h4>
+            <p>She's spent years wishing someone would just understand without her having to explain it all again. Easel makes that possible. That's not a small thing.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-5">
+          <div class="reason-number" aria-hidden="true">05</div>
+          <div class="reason-content">
+            <h4>Her feeling understood = deeper intimacy</h4>
+            <p>When she feels truly seen — emotionally, physically, cyclically — she opens up in ways that transform a good relationship into a great one.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-3">
+        <div class="mock-phone" aria-label="Example phone showing Easel Sun Whisper notification and chat">
+          <div class="phone-header">
+            <div class="phone-avatar" aria-hidden="true">S</div>
+            <div>
+              <div class="phone-name">Sofia</div>
+              <div class="phone-status">Active now</div>
+            </div>
+          </div>
+          <div class="chat-bubbles">
+            <div class="easel-tip">
+              <div class="easel-tip-label">Easel Sun Whisper</div>
+              She's entering her luteal phase today. She may feel more emotional than usual — it's hormonal, not personal. A little extra patience and one kind gesture will go a long way tonight.
+            </div>
+            <div class="chat-bubble-out">
+              Hey, I got us thai food from that place you like. Also cleared my evening — movie night?
+              <div class="chat-time">7:23 PM</div>
+            </div>
+            <div class="chat-bubble-in">
+              wait how did you know I needed exactly this tonight
+              <div class="chat-time">7:26 PM</div>
+            </div>
+            <div class="chat-bubble-out">
+              I just pay attention 😏
+              <div class="chat-time">7:27 PM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 6: FOR HER (WHY ASK HIM)
+============================================= -->
+<section id="for-her" aria-labelledby="forher-heading">
+  <div class="container">
+    <div class="for-her-inner">
+      <div class="for-her-visual reveal">
+        <div class="her-quote-card">
+          <div class="big-quote" aria-hidden="true">"</div>
+          <blockquote>"Feeling seen by the person you love — that's Easel."</blockquote>
+          <cite>— Every woman who's ever wished he just knew</cite>
+        </div>
+      </div>
+
+      <div class="for-her-reasons">
+        <p class="eyebrow reveal">For her</p>
+        <h2 id="forher-heading" class="reveal reveal-delay-1">You deserve to be truly <em>understood</em>.</h2>
+        <p style="margin-bottom:2.5rem" class="reveal reveal-delay-2">Not just tolerated. Not just accommodated. Truly, deeply understood — without having to explain yourself every single month.</p>
+
+        <div class="her-reason-item reveal reveal-delay-1">
+          <div class="her-reason-icon" aria-hidden="true">🔇</div>
+          <div class="her-reason-content">
+            <h4>No more explaining why you feel this way</h4>
+            <p>He'll have context before you have to find the words. Your cycle speaks for you when you don't have the energy to.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-2">
+          <div class="her-reason-icon" aria-hidden="true">🧿</div>
+          <div class="her-reason-content">
+            <h4>He'll know before you have to say anything</h4>
+            <p>Imagine him bringing you a heating pad before you even asked, or giving you space before you had to request it. That's what Easel makes possible.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-3">
+          <div class="her-reason-icon" aria-hidden="true">🌱</div>
+          <div class="her-reason-content">
+            <h4>Watch him become more patient, more attentive</h4>
+            <p>When he has understanding as context, his responses transform. Not because he changed — but because he finally has the right information.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-4">
+          <div class="her-reason-icon" aria-hidden="true">🗣️</div>
+          <div class="her-reason-content">
+            <h4>Your cycle becomes a shared language, not a mystery</h4>
+            <p>Instead of something that happens to you alone, your cycle becomes something you navigate together — openly, without shame or frustration.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-5">
+          <div class="her-reason-icon" aria-hidden="true">✨</div>
+          <div class="her-reason-content">
+            <h4>It's the most intimate thing you can do together (besides the obvious 😉)</h4>
+            <p>Letting him truly in — into the rhythms that shape you — is an act of profound vulnerability. And when he meets that with care, everything deepens.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 7: 4 PHASES
+============================================= -->
+<section id="phases" class="bg-blush" aria-labelledby="phases-heading">
+  <div class="container">
+    <div class="phases-header">
+      <p class="eyebrow reveal">The rhythm</p>
+      <h2 id="phases-heading" class="reveal reveal-delay-1">Her four seasons, every month</h2>
+      <p class="reveal reveal-delay-2">Each phase has its own energy, needs, and gifts. Understanding all four is the key to understanding her — and making every month smoother than the last.</p>
+    </div>
+
+    <div class="phases-scroll-wrap reveal">
+      <div class="phases-track">
+        <!-- Menstrual -->
+        <article class="phase-card phase-menstrual" aria-label="Menstrual phase details">
+          <div class="phase-card-emoji" aria-hidden="true">🌒</div>
+          <h3>Menstrual</h3>
+          <div class="phase-duration">Days 1–5 · Rest phase</div>
+          <div class="phase-section-label">How she feels</div>
+          <p>Inward, tender, and tired. Energy is low, sensitivity is high. She craves warmth, softness, and permission to slow down without guilt.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">How he can support</div>
+          <p>Take things off her plate. Bring the heating pad. Don't take her quietness personally — it's withdrawal to recharge, not withdrawal from you.</p>
+        </article>
+
+        <!-- Follicular -->
+        <article class="phase-card phase-follicular" aria-label="Follicular phase details">
+          <div class="phase-card-emoji" aria-hidden="true">🌤️</div>
+          <h3>Follicular</h3>
+          <div class="phase-duration">Days 6–13 · Rising phase</div>
+          <div class="phase-section-label">How she feels</div>
+          <p>Light, optimistic, and full of ideas. Energy climbs steadily. She's social, curious, and ready to say yes to things. This is her spark phase.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">How he can support</div>
+          <p>Match her energy. Plan something she's been wanting to try. Be curious with her. Suggest the trip, the restaurant, the idea — she's ready for it.</p>
+        </article>
+
+        <!-- Ovulation -->
+        <article class="phase-card phase-ovulation" aria-label="Ovulation phase details">
+          <div class="phase-card-emoji" aria-hidden="true">🌕</div>
+          <h3>Ovulation</h3>
+          <div class="phase-duration">Days 14–16 · Full bloom</div>
+          <div class="phase-section-label">How she feels</div>
+          <p>Confident, magnetic, and radiant. Peak communication and connection. She's at her most extroverted, most open, and most drawn to intimacy.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">How he can support</div>
+          <p>Be present. Tell her she's beautiful (she'll believe it today). Plan date night here. Deep conversations happen naturally now — lean into them.</p>
+        </article>
+
+        <!-- Luteal -->
+        <article class="phase-card phase-luteal" aria-label="Luteal phase details">
+          <div class="phase-card-emoji" aria-hidden="true">🌘</div>
+          <h3>Luteal</h3>
+          <div class="phase-duration">Days 17–28 · Winding down</div>
+          <div class="phase-section-label">How she feels</div>
+          <p>Sensitive, introspective, and easily overwhelmed. The inner critic gets loud. Small things feel big. She needs reassurance more than solutions.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">How he can support</div>
+          <p>Hold space without trying to fix. Less criticism, more validation. "I see you and you're doing great" goes further than any advice right now.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 8: RELATIONSHIP SCORE
+============================================= -->
+<section id="score" class="bg-ink" aria-labelledby="score-heading">
+  <div class="container">
+    <div class="score-inner">
+      <div class="score-text">
+        <p class="eyebrow reveal">Gamification</p>
+        <h2 id="score-heading" class="reveal reveal-delay-1">Your Relationship Score</h2>
+        <p class="reveal reveal-delay-2">Love needs tending. The Relationship Score turns daily small acts of understanding into a shared metric of connection — making growth visible, and consistency rewarding.</p>
+
+        <div class="score-ways reveal reveal-delay-3">
+          <div class="score-way">
+            <div class="score-way-icon" aria-hidden="true">📝</div>
+            <div class="score-way-text">
+              <h4>She logs her day</h4>
+              <p>Mood, energy, symptoms — takes 30 seconds. Every log earns points and gives him better insight.</p>
+            </div>
+          </div>
+          <div class="score-way">
+            <div class="score-way-icon" aria-hidden="true">☀️</div>
+            <div class="score-way-text">
+              <h4>He reads his Sun Whisper</h4>
+              <p>Opening and reading his daily brief earns points — and signals to her that he's showing up with intention.</p>
+            </div>
+          </div>
+          <div class="score-way">
+            <div class="score-way-icon" aria-hidden="true">📅</div>
+            <div class="score-way-text">
+              <h4>Both check the shared calendar</h4>
+              <p>Using the shared view together unlocks bonus points — because awareness is the ultimate act of love.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-widget reveal reveal-delay-2">
+        <div class="score-ring-wrap" aria-label="Relationship score: 87 out of 100">
+          <canvas id="scoreCanvas" width="240" height="240" aria-hidden="true"></canvas>
+          <div class="score-ring-center">
+            <div class="score-number">87<span class="score-denom">/100</span></div>
+            <div class="score-label">This month</div>
+          </div>
+        </div>
+
+        <div class="score-status" aria-label="Status: You're thriving">You're thriving 🌙</div>
+
+        <div class="score-bars" aria-label="Engagement breakdown">
+          <div class="score-bar-item">
+            <div class="score-bar-label">Her logs</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill fill-her" data-fill="92" style="width:0%"></div>
+            </div>
+            <div class="score-bar-pct">92%</div>
+          </div>
+          <div class="score-bar-item">
+            <div class="score-bar-label">His whispers read</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill fill-him" data-fill="85" style="width:0%"></div>
+            </div>
+            <div class="score-bar-pct">85%</div>
+          </div>
+          <div class="score-bar-item">
+            <div class="score-bar-label">Shared calendar</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill fill-shared" data-fill="78" style="width:0%"></div>
+            </div>
+            <div class="score-bar-pct">78%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 9: TESTIMONIALS
+============================================= -->
+<section id="testimonials" aria-labelledby="testimonials-heading">
+  <div class="container">
+    <div class="testimonials-header">
+      <p class="eyebrow reveal">Real couples</p>
+      <h2 id="testimonials-heading" class="reveal reveal-delay-1">What they're saying</h2>
+      <p class="reveal reveal-delay-2">From first download to daily ritual — these are the stories that remind us why Easel exists.</p>
+    </div>
+
+    <div class="testimonials-grid">
+      <article class="testimonial-card reveal" aria-label="Testimonial from Mia">
+        <div class="stars" aria-label="5 stars">★★★★★</div>
+        <p class="testimonial-text">"I used to dread the week before my period because Marcus never understood why I was different. Now he checks Easel before we talk in the evenings. The fights have practically disappeared. He just... gets it now."</p>
+        <div class="testimonial-footer">
+          <div class="testimonial-avatar" style="background: var(--rose-deep)" aria-hidden="true">MK</div>
+          <div>
+            <div class="testimonial-name">Mia K.</div>
+            <div class="testimonial-role">Her perspective · Together 3 years</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="testimonial-card reveal reveal-delay-2" aria-label="Testimonial from Daniel">
+        <div class="stars" aria-label="5 stars">★★★★★</div>
+        <p class="testimonial-text">"Honestly? I was skeptical. But the Sun Whispers changed how I show up every day. Last month I brought her flowers exactly when she needed them most — not because I guessed. Because Easel told me it was that time. She cried. I cried. We're better than ever."</p>
+        <div class="testimonial-footer">
+          <div class="testimonial-avatar" style="background: var(--sun-warm)" aria-hidden="true">DT</div>
+          <div>
+            <div class="testimonial-name">Daniel T.</div>
+            <div class="testimonial-role">His perspective · Together 2 years</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="testimonial-card reveal reveal-delay-4" aria-label="Testimonial from Priya and Arjun">
+        <div class="stars" aria-label="5 stars">★★★★★</div>
+        <p class="testimonial-text">"We started using Easel six months ago and it's become part of our morning ritual. I log, he reads his Whisper, we do a 5-minute check-in. Our relationship score is 94 right now. I think it's the most connected we've ever been."</p>
+        <div class="testimonial-footer">
+          <div class="testimonial-avatar" style="background: var(--moon-deep)" aria-hidden="true">P&A</div>
+          <div>
+            <div class="testimonial-name">Priya &amp; Arjun</div>
+            <div class="testimonial-role">Together · Using Easel 6 months</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 10: FINAL CTA
+============================================= -->
+<section id="cta-final" class="bg-ink" aria-labelledby="cta-heading">
+  <div class="cta-moon-deco" aria-hidden="true"></div>
+  <div class="cta-sun-deco" aria-hidden="true"></div>
+  <div class="container">
+    <div class="cta-final-inner">
+      <p class="eyebrow reveal" style="color:var(--rose)">Begin together</p>
+      <h2 id="cta-heading" class="reveal reveal-delay-1">Your relationship deserves this kind of <em>understanding</em>.</h2>
+      <p class="cta-sub reveal reveal-delay-2">Join couples who've turned cycle awareness into connection. It starts with one download — and a small act of love.</p>
+      <div class="cta-buttons reveal reveal-delay-3">
+        <a href="#" class="btn btn-moon">Download for Her 🌙</a>
+        <a href="#" class="btn btn-sun">Share with Him ☀️</a>
+        <a href="#" class="btn btn-outline-white">Learn More</a>
+      </div>
+      <p class="trust-line reveal reveal-delay-4">Free to start &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Built with love</p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     FOOTER
+============================================= -->
+<footer role="contentinfo">
+  <div class="container">
+    <div class="footer-inner">
+      <a href="#hero" class="footer-logo">Eas<span>el</span></a>
+      <ul class="footer-links">
+        <li><a href="#what">How It Works</a></li>
+        <li><a href="#phases">4 Phases</a></li>
+        <li><a href="#">Privacy</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+      <p class="footer-copy">© 2026 Easel. Made with love, for love.</p>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+  /* =============================================
+     CUSTOM CURSOR
+  ============================================= */
+  const dot = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    dot.style.left = mouseX + 'px';
+    dot.style.top = mouseY + 'px';
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.12;
+    ringY += (mouseY - ringY) * 0.12;
+    ring.style.left = ringX + 'px';
+    ring.style.top = ringY + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  /* =============================================
+     HAMBURGER MENU
+  ============================================= */
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  hamburger.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.toggle('open');
+    hamburger.classList.toggle('open', isOpen);
+    hamburger.setAttribute('aria-expanded', isOpen.toString());
+  });
+
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      hamburger.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  /* =============================================
+     INTERSECTION OBSERVER — SCROLL ANIMATIONS
+  ============================================= */
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        // Trigger score bars when score section is visible
+        if (entry.target.closest('#score')) {
+          setTimeout(animateBars, 400);
+        }
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  /* =============================================
+     ANIMATED CYCLE WHEEL (CANVAS)
+  ============================================= */
+  function drawCycleWheel() {
+    const canvas = document.getElementById('cycleCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const cx = w / 2, cy = h / 2;
+    const outerR = Math.min(w, h) / 2 - 12;
+    const innerR = outerR * 0.52;
+
+    const phases = [
+      { label: 'Menstrual', days: 5,  color: '#c97c84', textColor: '#fff', startAngle: -Math.PI / 2 },
+      { label: 'Follicular', days: 8,  color: '#f0a844', textColor: '#fff' },
+      { label: 'Ovulation', days: 3,  color: '#a8d4b0', textColor: '#fff' },
+      { label: 'Luteal',    days: 12, color: '#9b7fc0', textColor: '#fff' },
+    ];
+
+    const total = phases.reduce((s, p) => s + p.days, 0);
+    let currentAngle = -Math.PI / 2;
+    let rotation = 0;
+
+    function draw(rot) {
+      ctx.clearRect(0, 0, w, h);
+      let angle = -Math.PI / 2 + rot;
+
+      phases.forEach(phase => {
+        const sweep = (phase.days / total) * Math.PI * 2;
+
+        // Arc segment
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, outerR, angle, angle + sweep);
+        ctx.closePath();
+        ctx.fillStyle = phase.color;
+        ctx.fill();
+
+        // Gap line
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, outerR, angle, angle + sweep);
+        ctx.closePath();
+        ctx.strokeStyle = '#fdf8f5';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Label
+        const midAngle = angle + sweep / 2;
+        const labelR = (outerR + innerR) / 2;
+        const lx = cx + Math.cos(midAngle) * labelR;
+        const ly = cy + Math.sin(midAngle) * labelR;
+
+        ctx.save();
+        ctx.translate(lx, ly);
+        ctx.rotate(midAngle + Math.PI / 2);
+        ctx.fillStyle = phase.textColor;
+        ctx.font = '600 11px DM Sans, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(phase.label, 0, 0);
+        ctx.restore();
+
+        angle += sweep;
+      });
+
+      // Inner white circle (donut hole)
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.fillStyle = '#f5e6e8';
+      ctx.fill();
+    }
+
+    // Slow auto-rotation
+    let raf;
+    function animate() {
+      rotation += 0.003;
+      draw(rotation);
+      raf = requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  drawCycleWheel();
+
+  /* =============================================
+     SCORE RING (CANVAS)
+  ============================================= */
+  function drawScoreRing() {
+    const canvas = document.getElementById('scoreCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const cx = w / 2, cy = h / 2;
+    const r = Math.min(w, h) / 2 - 16;
+    const score = 87;
+    const progress = score / 100;
+
+    let currentProgress = 0;
+    const target = progress;
+
+    function draw(p) {
+      ctx.clearRect(0, 0, w, h);
+
+      // Track
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 12;
+      ctx.stroke();
+
+      // Progress arc
+      const startAngle = -Math.PI / 2;
+      const endAngle = startAngle + p * Math.PI * 2;
+
+      const gradient = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+      gradient.addColorStop(0, '#a8d4b0');
+      gradient.addColorStop(1, '#9b7fc0');
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 12;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Animate in when visible
+    const scoreSection = document.getElementById('score');
+    const scoreObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        let start = null;
+        function animateScore(ts) {
+          if (!start) start = ts;
+          const elapsed = ts - start;
+          const duration = 1500;
+          currentProgress = Math.min(target, target * (elapsed / duration));
+          draw(currentProgress);
+          if (currentProgress < target) requestAnimationFrame(animateScore);
+        }
+        requestAnimationFrame(animateScore);
+        scoreObserver.disconnect();
+      }
+    }, { threshold: 0.3 });
+
+    scoreObserver.observe(scoreSection);
+    draw(0);
+  }
+
+  drawScoreRing();
+
+  /* =============================================
+     SCORE BARS ANIMATION
+  ============================================= */
+  function animateBars() {
+    document.querySelectorAll('.score-bar-fill').forEach(bar => {
+      const pct = bar.getAttribute('data-fill');
+      bar.style.width = pct + '%';
+    });
+  }
+
+  /* =============================================
+     SMOOTH SCROLL (polyfill for older browsers)
+  ============================================= */
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', (e) => {
+      const target = document.querySelector(anchor.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  /* =============================================
+     NAV SCROLL STYLE
+  ============================================= */
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.boxShadow = window.scrollY > 40
+      ? '0 4px 32px rgba(42, 31, 45, 0.08)'
+      : 'none';
+  }, { passive: true });
+</script>
+</body>
+</html>
