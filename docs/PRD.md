@@ -23,12 +23,17 @@
 - **Shared Calendar:** View important cycle dates to avoid planning stressful events during sensitive days.
 
 ## 4. Technical Requirements
-- **Platform:** Native iOS (Swift/SwiftUI).
-- **Minimum OS:** iOS 17.0+ (utilizing SwiftData).
-- **Data Privacy:** 
-  - HealthKit for health data.
-  - End-to-end encryption for partner communication via CloudKit/Firebase.
-- **Apple Watch:** Companion app for quick status checks.
+
+> **Note:** The initial concept targeted Swift/SwiftUI. The production implementation uses React Native / Expo for cross-platform coverage.
+
+- **Platform:** Expo SDK 52 / React Native 0.76 (iOS + Android).
+- **Minimum OS:** iOS 16+ / Android 8+.
+- **State:** Zustand + AsyncStorage for offline-first persistence.
+- **Backend:** Supabase (PostgreSQL + Row Level Security + Realtime WebSocket + Edge Functions).
+- **AI layer:** MiniMax M2.5 LLM accessed via a Vercel serverless proxy (API key never in app binary).
+- **Push notifications:** Expo Push API + Supabase Edge Functions (Deno runtime).
+- **Health data:** Apple HealthKit integration (`react-native-health`) on iOS.
+- **Partner communication:** Supabase Realtime WebSocket (in-app) + Expo Push (background).
 
 ## 5. User Journey
 - **Onboarding:** Gf signs up -> Connects HealthKit -> Generates Link Code -> Bf joins via Code -> Sync starts.

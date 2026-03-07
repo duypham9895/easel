@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateClientToken } from '../lib/auth';
 import { isRateLimited, maybePrune } from '../lib/rateLimit';
 import { generateCyclePrediction } from '../lib/minimax';
+import { sanitizeInput } from '../lib/sanitize';
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const MIN_HISTORY = 1;
@@ -55,8 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  const sanitizedHistory = cycleHistory.map((entry: { startDate: string; endDate?: string | null; length?: number | null }) => ({
+    ...entry,
+    startDate: sanitizeInput(entry.startDate, 10),
+    endDate: entry.endDate != null ? sanitizeInput(entry.endDate, 10) : entry.endDate,
+  }));
+
   try {
-    const prediction = await generateCyclePrediction(cycleHistory);
+    const prediction = await generateCyclePrediction(sanitizedHistory);
     return res.status(200).json(prediction);
   } catch (err) {
     console.error('[predict-cycle] error:', err);

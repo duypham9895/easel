@@ -92,6 +92,25 @@ function makeDefaultCycleSettings(): CycleSettings {
 let _sosTimer: ReturnType<typeof setTimeout> | null = null;
 let _whisperTimer: ReturnType<typeof setTimeout> | null = null;
 
+async function retryAsync<T>(
+  fn: () => Promise<T> | PromiseLike<T>,
+  maxRetries = 3,
+  baseDelay = 500,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -175,6 +194,8 @@ export const useAppStore = create<AppState>()(
       },
 
       signOut: async () => {
+        if (_sosTimer) { clearTimeout(_sosTimer); _sosTimer = null; }
+        if (_whisperTimer) { clearTimeout(_whisperTimer); _whisperTimer = null; }
         await supabase.auth.signOut();
         set({
           isLoggedIn: false,
@@ -369,23 +390,25 @@ export const useAppStore = create<AppState>()(
       updateNotificationPrefs: (partial) => {
         const merged = { ...get().notificationPrefs, ...partial };
         set({ notificationPrefs: merged });
-        // Background sync to DB
+        // Background sync to DB with retry
         const { userId } = get();
         if (userId) {
-          supabase
-            .from('notification_preferences')
-            .upsert({
-              user_id: userId,
-              period_approaching: merged.periodApproaching,
-              period_started: merged.periodStarted,
-              period_ended: merged.periodEnded,
-              whisper_alerts: merged.whisperAlerts,
-              use_ai_timing: merged.useAiTiming,
-              manual_days_before: merged.manualDaysBefore,
-            }, { onConflict: 'user_id' })
-            .then(({ error }) => {
-              if (error) console.warn('[updateNotificationPrefs] sync failed:', error.message);
-            });
+          retryAsync(async () => {
+            const { error } = await supabase
+              .from('notification_preferences')
+              .upsert({
+                user_id: userId,
+                period_approaching: merged.periodApproaching,
+                period_started: merged.periodStarted,
+                period_ended: merged.periodEnded,
+                whisper_alerts: merged.whisperAlerts,
+                use_ai_timing: merged.useAiTiming,
+                manual_days_before: merged.manualDaysBefore,
+              }, { onConflict: 'user_id' });
+            if (error) throw error;
+          }).catch((err) => {
+            console.error('[updateNotificationPrefs] sync failed after retries:', err);
+          });
         }
       },
 
@@ -405,15 +428,17 @@ export const useAppStore = create<AppState>()(
       setLanguage: (lang) => {
         set({ language: lang });
         i18n.changeLanguage(lang);
-        // Background sync to Supabase
+        // Background sync to Supabase with retry
         const { userId } = get();
         if (userId) {
-          supabase
-            .from('user_preferences')
-            .upsert({ user_id: userId, language: lang }, { onConflict: 'user_id' })
-            .then(({ error }) => {
-              if (error) console.warn('[setLanguage] sync failed:', error.message);
-            });
+          retryAsync(async () => {
+            const { error } = await supabase
+              .from('user_preferences')
+              .upsert({ user_id: userId, language: lang }, { onConflict: 'user_id' });
+            if (error) throw error;
+          }).catch((err) => {
+            console.error('[setLanguage] sync failed after retries:', err);
+          });
         }
       },
     }),

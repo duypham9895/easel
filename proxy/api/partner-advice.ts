@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateClientToken } from '../lib/auth';
 import { isRateLimited, maybePrune } from '../lib/rateLimit';
 import { generatePartnerAdvice } from '../lib/minimax';
+import { sanitizeInput } from '../lib/sanitize';
 
 const VALID_PHASES = new Set(['menstrual', 'follicular', 'ovulatory', 'luteal']);
 
@@ -34,8 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid phaseTagline' });
   }
 
+  const cleanTagline = sanitizeInput(phaseTagline, 50);
+
   try {
-    const advice = await generatePartnerAdvice(phase, dayInCycle, phaseTagline);
+    const advice = await generatePartnerAdvice(phase, dayInCycle, cleanTagline);
     return res.status(200).json({ advice });
   } catch (err) {
     console.error('[partner-advice] error:', err);

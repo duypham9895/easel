@@ -11,7 +11,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.easel.app",
+      "bundleIdentifier": "com.duypham.easel",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

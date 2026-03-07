@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,8 +26,9 @@ export function SunDashboard() {
   const { t } = useTranslation('dashboard');
   const { t: tPhases } = useTranslation('phases');
   const { t: tCommon } = useTranslation('common');
-  const { isPartnerLinked, linkToPartner } = useAppStore();
-  const displayName = useAppStore((s) => s.displayName);
+  const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
+  const linkToPartner = useAppStore(s => s.linkToPartner);
+  const displayName = useAppStore(s => s.displayName);
   // Use girlfriend's real cycle data when linked; fall back to defaults only if unavailable
   const partnerCycleSettings = useAppStore((s) => s.partnerCycleSettings);
   const cycleSettings = useAppStore((s) => s.cycleSettings);
@@ -56,11 +58,11 @@ export function SunDashboard() {
     isLoading: adviceLoading,
   } = useAIPartnerAdvice(phase, dayInCycle);
 
-  function shareInvite() {
+  const shareInvite = useCallback(() => {
     Share.share({
       message: i18n.t('dashboard:inviteShareMessage'),
     });
-  }
+  }, []);
 
   if (!isPartnerLinked) {
     return (

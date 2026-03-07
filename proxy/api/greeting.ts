@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateClientToken } from '../lib/auth';
 import { isRateLimited, maybePrune } from '../lib/rateLimit';
 import { generateGreeting } from '../lib/minimax';
+import { sanitizeInput } from '../lib/sanitize';
 
 const VALID_PHASES = new Set(['menstrual', 'follicular', 'ovulatory', 'luteal']);
 
@@ -46,8 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // — Layer 5: Call MiniMax (HTTPS is handled by Vercel / fetch)
+  const cleanTagline = sanitizeInput(phaseTagline, 50);
+
   try {
-    const greeting = await generateGreeting(phase, dayInCycle, phaseTagline);
+    const greeting = await generateGreeting(phase, dayInCycle, cleanTagline);
     return res.status(200).json({ greeting });
   } catch (err) {
     console.error('[greeting] MiniMax error:', err);

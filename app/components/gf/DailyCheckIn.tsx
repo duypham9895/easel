@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { MoonColors, Spacing, Radii, Typography } from '@/constants/theme';
+import { MoonColors, SharedColors, Spacing, Radii, Typography } from '@/constants/theme';
 import { CyclePhase } from '@/types';
 import { useAIDailyInsight } from '@/hooks/useAIDailyInsight';
 import { useAppStore } from '@/store/appStore';
@@ -127,6 +127,9 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
                 ]}
                 onPress={() => setMood(opt.value)}
                 activeOpacity={0.8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessible={true}
+                accessibilityRole="radio"
               >
                 <Text style={styles.moodValue}>{opt.value}</Text>
                 <Text style={styles.moodLabel}>{opt.label}</Text>
@@ -147,6 +150,8 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
                   ]}
                   onPress={() => toggleSymptom(s.key)}
                   activeOpacity={0.8}
+                  accessible={true}
+                  accessibilityRole="checkbox"
                 >
                   <Text
                     style={[styles.symptomText, active && { color: accentColor, fontWeight: '700' }]}
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: MoonColors.inputBg,
     borderRadius: Radii.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xs,
     flex: 1,
     marginHorizontal: 2,
@@ -297,7 +302,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     ...Typography.caption,
-    color: '#EF5350',
+    color: SharedColors.error,
     textAlign: 'center',
   },
 });

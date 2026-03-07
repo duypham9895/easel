@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n/config';
-import { SunColors } from '@/constants/theme';
+import { SunColors, SharedColors } from '@/constants/theme';
 
 const SUN = SunColors;
 
@@ -127,6 +127,7 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
             keyboardType="number-pad"
             placeholder="000000"
             placeholderTextColor={SUN.textHint}
+            accessibilityLabel={t('enterCode')}
           />
           <Text style={styles.codeHint}>
             {t('codeHint')}
@@ -143,12 +144,14 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
           onPress={handleConnect}
           activeOpacity={0.85}
           disabled={code.length !== 6 || linking}
+          accessible={true}
+          accessibilityRole="button"
         >
           {linking ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={SUN.white} />
           ) : (
             <>
-              <Feather name="link-2" size={16} color="#FFFFFF" />
+              <Feather name="link-2" size={16} color={SUN.white} />
               <Text style={styles.connectButtonText}>{t('connectToHer')}</Text>
             </>
           )}
@@ -163,6 +166,8 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
             style={styles.inviteButton}
             onPress={handleInvite}
             activeOpacity={0.85}
+            accessible={true}
+            accessibilityRole="button"
           >
             <Feather name="user-plus" size={16} color={SUN.accentPrimary} />
             <Text style={styles.inviteButtonText}>{t('inviteHer')}</Text>
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 14,
-    shadowColor: '#000',
+    shadowColor: SUN.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -303,7 +308,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#EF5350',
+    color: SharedColors.error,
     textAlign: 'center',
   },
   connectButton: {
@@ -321,7 +326,7 @@ const styles = StyleSheet.create({
   connectButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: SUN.white,
   },
   inviteSection: {
     alignItems: 'center',

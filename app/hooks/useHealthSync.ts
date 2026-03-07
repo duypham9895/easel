@@ -71,9 +71,20 @@ function buildHealthKitSync(
     return { isAvailable: false, sync: async () => [] };
   }
 
+  const menstrualFlowPermission = AppleHealthKit.Constants.Permissions.MenstrualFlow;
+  if (!menstrualFlowPermission) {
+    console.warn('[useHealthSync] MenstrualFlow permission not supported by this react-native-health version');
+    return { isAvailable: false, sync: async () => [] };
+  }
+
+  if (typeof AppleHealthKit.getMenstrualFlowSamples !== 'function') {
+    console.warn('[useHealthSync] getMenstrualFlowSamples not supported by this react-native-health version');
+    return { isAvailable: false, sync: async () => [] };
+  }
+
   const permissions = {
     permissions: {
-      read: [AppleHealthKit.Constants.Permissions.MenstrualFlow],
+      read: [menstrualFlowPermission],
       write: [],
     },
   };

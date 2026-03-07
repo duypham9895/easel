@@ -228,7 +228,7 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: MOON.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
     paddingBottom: 40,
-    shadowColor: '#000000',
+    shadowColor: MOON.black,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.4,
     shadowRadius: 32,

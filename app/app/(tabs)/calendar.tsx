@@ -12,10 +12,11 @@ import { PHASE_INFO } from '@/constants/phases';
 import type { CyclePhase } from '@/types';
 
 export default function CalendarTab() {
-  const { cycleSettings, role, isPartnerLinked } = useAppStore();
+  const cycleSettings = useAppStore(s => s.cycleSettings);
+  const role = useAppStore(s => s.role);
+  const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const { t } = useTranslation('calendar');
-  const { t: tPhases } = useTranslation('phases');
 
   // Unauthenticated / onboarding-incomplete users have no cycle yet
   if (!role) {

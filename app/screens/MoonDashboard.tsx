@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -33,10 +33,14 @@ const MOON = MoonColors;
 export function MoonDashboard() {
   const { t } = useTranslation('dashboard');
   const { t: tPhases } = useTranslation('phases');
-  const { cycleSettings } = useAppStore();
-  const sendWhisper = useAppStore((s) => s.sendWhisper ?? s.sendSOS);
-  const isPartnerLinked = useAppStore((s) => s.isPartnerLinked);
+  const cycleSettings = useAppStore(s => s.cycleSettings);
+  const sendWhisper = useAppStore(s => s.sendWhisper ?? s.sendSOS);
+  const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
   const [whisperVisible, setWhisperVisible] = useState(false);
+  const openWhisper = useCallback(() => setWhisperVisible(true), []);
+  const closeWhisper = useCallback(() => setWhisperVisible(false), []);
+  const navigateSettings = useCallback(() => router.navigate('/(tabs)/settings'), []);
+  const navigateSettingsFromBanner = useCallback(() => router.navigate('/(tabs)/settings'), []);
 
   // Real-time: update GF's store the moment BF links
   useCoupleLinkedListener();
@@ -94,7 +98,7 @@ export function MoonDashboard() {
           </View>
           <TouchableOpacity
             style={styles.settingsBtn}
-            onPress={() => router.navigate('/(tabs)/settings')}
+            onPress={navigateSettings}
             activeOpacity={0.75}
           >
             <Feather name="settings" size={20} color={MOON.textPrimary} />
@@ -117,7 +121,7 @@ export function MoonDashboard() {
         {!isPartnerLinked && (
           <TouchableOpacity
             style={styles.inviteBanner}
-            onPress={() => router.navigate('/(tabs)/settings')}
+            onPress={navigateSettingsFromBanner}
             activeOpacity={0.85}
           >
             <Feather name="link-2" size={16} color={MOON.accentPrimary} />
@@ -139,7 +143,7 @@ export function MoonDashboard() {
         {/* Whisper CTA button */}
         <TouchableOpacity
           style={[styles.whisperButton, { backgroundColor: phaseInfo.color }]}
-          onPress={() => setWhisperVisible(true)}
+          onPress={openWhisper}
           activeOpacity={0.85}
         >
           <Text style={styles.whisperButtonText}>{t('whisperToSun')}</Text>
@@ -179,7 +183,7 @@ export function MoonDashboard() {
       {/* Whisper bottom sheet */}
       <WhisperSheet
         visible={whisperVisible}
-        onClose={() => setWhisperVisible(false)}
+        onClose={closeWhisper}
         onSend={sendWhisper}
         phase={phase}
         dayInCycle={dayInCycle}

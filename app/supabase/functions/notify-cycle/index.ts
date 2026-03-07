@@ -98,6 +98,36 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // --- Batch queries to avoid N+1 ---
+    const moonIds = moonUsers.map((m) => m.id);
+
+    // Batch 1: Get all couple records for Moon users
+    const { data: couplesData } = await supabase
+      .from('couples')
+      .select('girlfriend_id, boyfriend_id')
+      .eq('status', 'linked')
+      .in('girlfriend_id', moonIds);
+
+    const partnerByMoon = new Map<string, string>();
+    for (const c of couplesData ?? []) {
+      partnerByMoon.set(c.girlfriend_id, c.boyfriend_id);
+    }
+
+    // Batch 2: Get ALL push tokens for Moon users AND their partners
+    const partnerIds = Array.from(partnerByMoon.values());
+    const allUserIds = [...new Set([...moonIds, ...partnerIds])];
+    const { data: allTokensData } = await supabase
+      .from('push_tokens')
+      .select('user_id, token')
+      .in('user_id', allUserIds);
+
+    const tokensByUser = new Map<string, string[]>();
+    for (const { user_id, token } of allTokensData ?? []) {
+      if (!tokensByUser.has(user_id)) tokensByUser.set(user_id, []);
+      tokensByUser.get(user_id)!.push(token);
+    }
+
+    // --- Build notification messages using lookup maps ---
     const allMessages: PushMessage[] = [];
 
     for (const moon of moonUsers) {
@@ -144,10 +174,9 @@ Deno.serve(async (req: Request) => {
 
       if (!moonTitle) continue;
 
-      const { data: moonTokens } = await supabase
-        .from('push_tokens').select('token').eq('user_id', moon.id);
-
-      for (const { token } of moonTokens ?? []) {
+      // Use batch lookup instead of per-user query
+      const moonTokens = tokensByUser.get(moon.id) ?? [];
+      for (const token of moonTokens) {
         allMessages.push({
           to: token, sound: 'default',
           title: moonTitle, body: moonBody,
@@ -156,18 +185,11 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      const { data: couple } = await supabase
-        .from('couples')
-        .select('boyfriend_id')
-        .eq('girlfriend_id', moon.id)
-        .eq('status', 'linked')
-        .maybeSingle();
-
-      if (couple?.boyfriend_id) {
-        const { data: sunTokens } = await supabase
-          .from('push_tokens').select('token').eq('user_id', couple.boyfriend_id);
-
-        for (const { token } of sunTokens ?? []) {
+      // Use batch lookup instead of per-user query
+      const partnerId = partnerByMoon.get(moon.id);
+      if (partnerId) {
+        const sunTokens = tokensByUser.get(partnerId) ?? [];
+        for (const token of sunTokens) {
           allMessages.push({
             to: token, sound: 'default',
             title: sunTitle, body: sunBody,

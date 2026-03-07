@@ -1,4 +1,5 @@
 import { CyclePhase } from '@/types';
+import { getOvulationDay } from '@/constants/cycle';
 
 export function getCurrentDayInCycle(
   lastPeriodStartDate: string,
@@ -23,8 +24,7 @@ export function getCurrentPhase(
   avgCycleLength: number,
   avgPeriodLength: number,
 ): CyclePhase {
-  // Luteal phase is ~14 days; ovulation = cycle length minus luteal phase
-  const ovulationDay = Math.max(avgPeriodLength + 1, avgCycleLength - 14);
+  const ovulationDay = getOvulationDay(avgCycleLength, avgPeriodLength);
 
   if (dayInCycle <= avgPeriodLength) return 'menstrual';
   if (dayInCycle <= ovulationDay - 3) return 'follicular';
@@ -74,8 +74,7 @@ export function buildCalendarMarkers(
       markers[toDateString(date)] = { type: 'period' };
     }
 
-    // Ovulation day — luteal phase is ~14 days
-    const ovulationDay = Math.max(avgPeriodLength + 1, avgCycleLength - 14);
+    const ovulationDay = getOvulationDay(avgCycleLength, avgPeriodLength);
     const ovulationDate = new Date(cycleStart.getTime());
     ovulationDate.setDate(ovulationDate.getDate() + ovulationDay - 1);
     markers[toDateString(ovulationDate)] = { type: 'ovulation' };

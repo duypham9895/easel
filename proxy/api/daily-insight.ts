@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateClientToken } from '../lib/auth';
 import { isRateLimited, maybePrune } from '../lib/rateLimit';
 import { generateDailyInsight } from '../lib/minimax';
+import { sanitizeInput } from '../lib/sanitize';
 
 const VALID_PHASES = new Set(['menstrual', 'follicular', 'ovulatory', 'luteal']);
 
@@ -45,12 +46,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  const cleanSymptoms = symptoms ? symptoms.map((s: string) => sanitizeInput(s, 30)) : [];
+
   try {
     const insight = await generateDailyInsight(
       phase,
       dayInCycle,
       mood ?? null,
-      (symptoms as string[]) ?? []
+      cleanSymptoms
     );
     return res.status(200).json({ insight });
   } catch (err) {

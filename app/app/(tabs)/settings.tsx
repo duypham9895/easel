@@ -19,21 +19,28 @@ export default function SettingsTab() {
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
   const { t: tPhases } = useTranslation('phases');
-  const { email, role, cycleSettings, updateCycleSettings, signOut, generateLinkCode, linkCode,
-    isPartnerLinked, partnerCycleSettings,
-    notificationPrefs: rawNotificationPrefs, updateNotificationPrefs } =
-    useAppStore();
+  const email = useAppStore(s => s.email);
+  const role = useAppStore(s => s.role);
+  const cycleSettings = useAppStore(s => s.cycleSettings);
+  const updateCycleSettings = useAppStore(s => s.updateCycleSettings);
+  const signOut = useAppStore(s => s.signOut);
+  const generateLinkCode = useAppStore(s => s.generateLinkCode);
+  const linkCode = useAppStore(s => s.linkCode);
+  const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
+  const partnerCycleSettings = useAppStore(s => s.partnerCycleSettings);
+  const rawNotificationPrefs = useAppStore(s => s.notificationPrefs);
+  const updateNotificationPrefs = useAppStore(s => s.updateNotificationPrefs);
   // Guard against legacy persisted store missing this field
   const notificationPrefs = rawNotificationPrefs ?? {
     periodApproaching: true, periodStarted: true, periodEnded: true,
     whisperAlerts: true, useAiTiming: true, manualDaysBefore: 3,
   };
-  const avatarUrl = useAppStore((s) => s.avatarUrl);
+  const avatarUrl = useAppStore(s => s.avatarUrl);
   const { upload, isUploading } = useAvatarUpload();
-  const displayName = useAppStore((s) => s.displayName);
-  const updateDisplayName = useAppStore((s) => s.updateDisplayName);
-  const language = useAppStore((s) => s.language);
-  const setLanguage = useAppStore((s) => s.setLanguage);
+  const displayName = useAppStore(s => s.displayName);
+  const updateDisplayName = useAppStore(s => s.updateDisplayName);
+  const language = useAppStore(s => s.language);
+  const setLanguage = useAppStore(s => s.setLanguage);
   const { sync: syncHealth, isAvailable: healthAvailable } = useHealthSync();
   const [displayNameInput, setDisplayNameInput] = useState(displayName ?? '');
   const [isSavingName, setIsSavingName] = useState(false);

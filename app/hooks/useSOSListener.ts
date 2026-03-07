@@ -20,7 +20,9 @@ const ALL_WHISPER_OPTIONS: SOSOption[] = Object.values(WHISPER_OPTIONS).flat();
  * Only active when: role === 'sun' AND coupleId is set (partner linked).
  */
 export function useSOSListener() {
-  const { role, coupleId, receiveWhisper } = useAppStore();
+  const role = useAppStore(s => s.role);
+  const coupleId = useAppStore(s => s.coupleId);
+  const receiveWhisper = useAppStore(s => s.receiveWhisper);
 
   useEffect(() => {
     if (role !== 'sun' || !coupleId) return;

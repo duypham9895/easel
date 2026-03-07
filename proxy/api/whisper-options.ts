@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateClientToken } from '../lib/auth';
 import { isRateLimited, maybePrune } from '../lib/rateLimit';
 import { generateWhisperOptions } from '../lib/minimax';
+import { sanitizeInput } from '../lib/sanitize';
 
 const VALID_PHASES = new Set(['menstrual', 'follicular', 'ovulatory', 'luteal']);
 const MAX_SELECTIONS = 10;
@@ -47,8 +48,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  const cleanSelections = selections.map((s: string) => sanitizeInput(s, 50));
+
   try {
-    const options = await generateWhisperOptions(phase, dayInCycle, selections);
+    const options = await generateWhisperOptions(phase, dayInCycle, cleanSelections);
     return res.status(200).json({ options });
   } catch (err) {
     console.error('[whisper-options] error:', err);

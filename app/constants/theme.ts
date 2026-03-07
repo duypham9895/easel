@@ -52,8 +52,8 @@ export const Typography = {
 export const MoonColors = {
   background: '#0D1B2A', surface: '#1A2B3C',
   accentPrimary: '#B39DDB', accentSecondary: '#E0E0F0',
-  textPrimary: '#F0F0FF', textSecondary: '#8899AA',
-  textHint: '#4A5568', card: '#162233', inputBg: '#1E3045',
+  textPrimary: '#F0F0FF', textSecondary: '#A8BAC8',
+  textHint: '#6B7A8C', card: '#162233', inputBg: '#1E3045',
   border: '#2D4A6B', overlay: 'rgba(0,0,0,0.6)',
   white: '#FFFFFF', black: '#000000',
 } as const;
@@ -65,6 +65,13 @@ export const SunColors = {
   textHint: '#9C8B7A', card: '#FFFFFF', inputBg: '#FFF3E0',
   border: '#FFE0B2', overlay: 'rgba(0,0,0,0.35)',
   white: '#FFFFFF', black: '#000000',
+} as const;
+
+export const SharedColors = {
+  error: '#EF5350',
+  success: '#4CAF50',
+  warning: '#FFB347',
+  info: '#42A5F5',
 } as const;
 
 export function getTheme(role: 'moon' | 'sun' | null) {

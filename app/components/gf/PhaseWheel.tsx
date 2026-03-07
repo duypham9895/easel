@@ -82,7 +82,10 @@ export function PhaseWheel({ phase, dayInCycle, daysUntilPeriod, totalCycleDays 
       </View>
 
       {/* Inner filled circle */}
-      <View style={[styles.innerCircle, { backgroundColor: phaseInfo.color }]}>
+      <View
+        style={[styles.innerCircle, { backgroundColor: phaseInfo.color }]}
+        accessibilityLabel={`Current phase: ${tPhases(`${phase}_name`)}, day ${dayInCycle}`}
+      >
         <Text style={styles.phaseLabel}>{tPhases(`${phase}_name`)}</Text>
         <Text style={styles.dayNumber}>{dayInCycle}</Text>
         <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
@@ -152,7 +155,7 @@ const styles = StyleSheet.create({
   },
   pillBadge: {
     paddingHorizontal: 14,
-    paddingVertical: 5,
+    paddingVertical: 10,
     borderRadius: 999,
   },
   pillText: {

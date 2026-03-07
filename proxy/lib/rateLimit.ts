@@ -6,6 +6,8 @@
 
 const WINDOW_MS = 60_000; // 1 minute
 const MAX_REQUESTS = 30;
+const PRUNE_INTERVAL_MS = 10_000; // 10 seconds
+const MAX_STORE_SIZE = 10_000;
 
 // Map from IP → array of request timestamps within the current window
 const store = new Map<string, number[]>();
@@ -18,6 +20,18 @@ export function isRateLimited(ip: string): boolean {
   timestamps.push(now);
   store.set(ip, timestamps);
 
+  // Cap store size: if exceeded, delete oldest entries
+  if (store.size > MAX_STORE_SIZE) {
+    let oldest: { ip: string; time: number } | null = null;
+    for (const [key, ts] of store.entries()) {
+      const minTime = ts[0] ?? 0;
+      if (oldest === null || minTime < oldest.time) {
+        oldest = { ip: key, time: minTime };
+      }
+    }
+    if (oldest) store.delete(oldest.ip);
+  }
+
   return timestamps.length > MAX_REQUESTS;
 }
 
@@ -27,13 +41,16 @@ let lastPrune = Date.now();
 
 export function maybePrune(): void {
   const now = Date.now();
-  if (now - lastPrune < WINDOW_MS) return;
+  if (now - lastPrune < PRUNE_INTERVAL_MS) return;
   lastPrune = now;
 
   const cutoff = now - WINDOW_MS;
   for (const [ip, timestamps] of store.entries()) {
-    if (timestamps.every((t) => t <= cutoff)) {
+    const valid = timestamps.filter((t) => t > cutoff);
+    if (valid.length === 0) {
       store.delete(ip);
+    } else {
+      store.set(ip, valid);
     }
   }
 }
