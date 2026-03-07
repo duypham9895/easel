@@ -213,7 +213,10 @@ export const useAppStore = create<AppState>()(
        */
       bootstrapSession: async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+        if (!session) {
+          set({ isLoggedIn: false, role: null, email: '', isPartnerLinked: false, linkCode: null });
+          return;
+        }
 
         const userId = session.user.id;
         const profile = await getProfile(userId);
@@ -226,6 +229,17 @@ export const useAppStore = create<AppState>()(
           profile?.role === 'sun' && couple?.status === 'linked' && couple.girlfriend_id
             ? await getCycleSettings(couple.girlfriend_id) ?? null
             : null;
+
+        // Restore language preference from DB
+        const { data: prefData } = await supabase
+          .from('user_preferences')
+          .select('language')
+          .eq('user_id', userId)
+          .maybeSingle();
+        const dbLang = (prefData?.language as SupportedLanguage) ?? undefined;
+        if (dbLang && dbLang !== i18n.language) {
+          i18n.changeLanguage(dbLang);
+        }
 
         set({
           isLoggedIn: true,
@@ -241,6 +255,7 @@ export const useAppStore = create<AppState>()(
           // Restore a pending link code so GF can see it without regenerating.
           // Clear stale persisted code if the couple is already linked.
           linkCode: couple?.status === 'pending' ? (couple.link_code ?? null) : null,
+          ...(dbLang ? { language: dbLang } : {}),
         });
       },
 
@@ -266,6 +281,13 @@ export const useAppStore = create<AppState>()(
 
         const coupleId = await linkToPartnerByCode(userId, code);
         set({ isPartnerLinked: true, coupleId });
+
+        // Fetch partner's cycle settings so Sun sees correct phase immediately
+        const couple = await getMyCouple();
+        if (couple?.girlfriend_id) {
+          const partnerCycle = await getCycleSettings(couple.girlfriend_id);
+          if (partnerCycle) set({ partnerCycleSettings: partnerCycle });
+        }
       },
 
       // -----------------------------------------------------------------------
@@ -344,9 +366,28 @@ export const useAppStore = create<AppState>()(
           await upsertProfile(userId, { display_name: name });
         }
       },
-      updateNotificationPrefs: (partial) => set(state => ({
-        notificationPrefs: { ...state.notificationPrefs, ...partial },
-      })),
+      updateNotificationPrefs: (partial) => {
+        const merged = { ...get().notificationPrefs, ...partial };
+        set({ notificationPrefs: merged });
+        // Background sync to DB
+        const { userId } = get();
+        if (userId) {
+          supabase
+            .from('notification_preferences')
+            .upsert({
+              user_id: userId,
+              period_approaching: merged.periodApproaching,
+              period_started: merged.periodStarted,
+              period_ended: merged.periodEnded,
+              whisper_alerts: merged.whisperAlerts,
+              use_ai_timing: merged.useAiTiming,
+              manual_days_before: merged.manualDaysBefore,
+            }, { onConflict: 'user_id' })
+            .then(({ error }) => {
+              if (error) console.warn('[updateNotificationPrefs] sync failed:', error.message);
+            });
+        }
+      },
 
       // -----------------------------------------------------------------------
       // Push notifications

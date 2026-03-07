@@ -9,6 +9,8 @@ const FALLBACK_TIPS: Record<string, string> = {
   pain: 'Fill a hot water bottle and bring it to her with something warm to drink.',
   quiet: 'Give her space right now. Check in with a gentle message in an hour.',
   // Whisper options
+  whisper_hug: 'Put down your phone, go to her, and just hold her. No words needed.',
+  whisper_quiet: 'Give her space right now. Check in with a gentle message in an hour.',
   warmth: 'Get her a hot water bottle or warm blanket right away.',
   chocolate: 'Bring her favourite sweet treat — no questions asked.',
   plan: 'Surprise her with a fun outing or activity today.',

@@ -4,7 +4,7 @@ import { isRateLimited, maybePrune } from '../lib/rateLimit';
 import { generateSOSTip } from '../lib/minimax';
 
 const VALID_PHASES = new Set(['menstrual', 'follicular', 'ovulatory', 'luteal']);
-const VALID_SOS_TYPES = new Set(['sweet_tooth', 'need_a_hug', 'cramps_alert', 'quiet_time']);
+const VALID_SOS_TYPES = new Set(['sweet', 'hug', 'pain', 'quiet']);
 
 function getClientIP(req: VercelRequest): string {
   const forwarded = req.headers['x-forwarded-for'];

@@ -23,7 +23,8 @@ export function getCurrentPhase(
   avgCycleLength: number,
   avgPeriodLength: number,
 ): CyclePhase {
-  const ovulationDay = Math.round(avgCycleLength / 2);
+  // Luteal phase is ~14 days; ovulation = cycle length minus luteal phase
+  const ovulationDay = Math.max(avgPeriodLength + 1, avgCycleLength - 14);
 
   if (dayInCycle <= avgPeriodLength) return 'menstrual';
   if (dayInCycle <= ovulationDay - 3) return 'follicular';
@@ -73,8 +74,8 @@ export function buildCalendarMarkers(
       markers[toDateString(date)] = { type: 'period' };
     }
 
-    // Ovulation day
-    const ovulationDay = Math.round(avgCycleLength / 2);
+    // Ovulation day — luteal phase is ~14 days
+    const ovulationDay = Math.max(avgPeriodLength + 1, avgCycleLength - 14);
     const ovulationDate = new Date(cycleStart.getTime());
     ovulationDate.setDate(ovulationDate.getDate() + ovulationDay - 1);
     markers[toDateString(ovulationDate)] = { type: 'ovulation' };

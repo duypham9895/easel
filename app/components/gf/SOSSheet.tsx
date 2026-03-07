@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { SOS_OPTIONS } from '@/constants/sos';
 import { SOSOption } from '@/types';
-import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { MoonColors, Spacing, Radii, Typography } from '@/constants/theme';
 
 interface Props {
   visible: boolean;
@@ -90,15 +90,15 @@ export function SOSSheet({ visible, onClose, onSend }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: Colors.overlay,
+    backgroundColor: MoonColors.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.background,
+    backgroundColor: MoonColors.background,
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
     paddingBottom: 40,
-    shadowColor: Colors.black,
+    shadowColor: MoonColors.black,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.12,
     shadowRadius: 32,
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.textHint + '60',
+    backgroundColor: MoonColors.textHint + '60',
     alignSelf: 'center',
     marginTop: 12,
     marginBottom: 24,
@@ -122,12 +122,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: MoonColors.textPrimary,
     textAlign: 'center',
   },
   subtitle: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: MoonColors.textSecondary,
     textAlign: 'center',
   },
   grid: {
@@ -139,12 +139,12 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     width: '47%',
-    backgroundColor: Colors.card,
+    backgroundColor: MoonColors.card,
     borderRadius: Radii.lg,
     padding: Spacing.lg,
     alignItems: 'center',
     gap: Spacing.md,
-    shadowColor: Colors.black,
+    shadowColor: MoonColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 12,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   optionTitle: {
     ...Typography.bodyBold,
-    color: Colors.textPrimary,
+    color: MoonColors.textPrimary,
     textAlign: 'center',
   },
   cancelButton: {
@@ -168,6 +168,6 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     ...Typography.body,
-    color: Colors.textHint,
+    color: MoonColors.textHint,
   },
 });

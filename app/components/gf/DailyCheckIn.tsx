@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { MoonColors, Spacing, Radii, Typography } from '@/constants/theme';
 import { CyclePhase } from '@/types';
 import { useAIDailyInsight } from '@/hooks/useAIDailyInsight';
 import { useAppStore } from '@/store/appStore';
@@ -165,7 +165,7 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
             activeOpacity={0.85}
           >
             {saving ? (
-              <ActivityIndicator color={Colors.white} />
+              <ActivityIndicator color={MoonColors.white} />
             ) : (
               <Text style={styles.submitText}>{t('logAndInsight')}</Text>
             )}
@@ -199,19 +199,19 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.card,
+    backgroundColor: MoonColors.card,
     borderRadius: Radii.lg,
     padding: Spacing.lg,
     gap: Spacing.md,
-    shadowColor: Colors.black,
+    shadowColor: MoonColors.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 2,
   },
   title: {
     ...Typography.bodyBold,
-    color: Colors.textPrimary,
+    color: MoonColors.textPrimary,
   },
   moodRow: {
     flexDirection: 'row',
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   moodButton: {
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.inputBg,
+    backgroundColor: MoonColors.inputBg,
     borderRadius: Radii.md,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.xs,
@@ -232,11 +232,11 @@ const styles = StyleSheet.create({
   moodValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: MoonColors.textPrimary,
   },
   moodLabel: {
     ...Typography.tiny,
-    color: Colors.textHint,
+    color: MoonColors.textHint,
   },
   symptomsGrid: {
     flexDirection: 'row',
@@ -247,13 +247,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
     borderRadius: Radii.full,
-    backgroundColor: Colors.inputBg,
+    backgroundColor: MoonColors.inputBg,
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
   symptomText: {
     ...Typography.tiny,
-    color: Colors.textSecondary,
+    color: MoonColors.textSecondary,
     letterSpacing: 0.3,
   },
   submitButton: {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   },
   submitText: {
     ...Typography.bodyBold,
-    color: Colors.white,
+    color: MoonColors.white,
   },
   disabled: {
     opacity: 0.4,
@@ -278,16 +278,16 @@ const styles = StyleSheet.create({
   },
   insightLoadingText: {
     ...Typography.caption,
-    color: Colors.textHint,
+    color: MoonColors.textHint,
   },
   insightLabel: {
     ...Typography.tiny,
-    color: Colors.textHint,
+    color: MoonColors.textHint,
     letterSpacing: 1,
   },
   insightText: {
     ...Typography.body,
-    color: Colors.textPrimary,
+    color: MoonColors.textPrimary,
     lineHeight: 24,
   },
   relogText: {

@@ -9,7 +9,7 @@ Versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
-## [Unreleased]
+## [1.5.1] — 2026-03-07
 
 ### Known Issues
 - **`DbCouple` type duplication** — The interface is defined in both `app/types/index.ts` and `app/lib/db/couples.ts`. The `types/index.ts` version is the canonical one; the `couples.ts` copy should be removed and imported instead.
@@ -17,6 +17,12 @@ Versioning: `MAJOR.MINOR.PATCH`
 ### Fixed
 - **MEDIUM: `notify-cycle` GitHub Actions workflow broken** — Supabase CLI removed `functions invoke` subcommand in newer versions, causing the daily notification cron to fail. Replaced CLI-based invocation with direct HTTP `curl` to the Edge Function URL. Removes CLI install step and eliminates future CLI version drift.
 - **CRITICAL: Ovulation day formula** — Changed from `avgCycleLength / 2` to `avgCycleLength - 14` (medical standard: luteal phase is ~14 days). Previously off by 2+ days for non-28-day cycles, causing incorrect phase calculations, calendar markers, and fertility estimates.
+- **CRITICAL: SOS AI tip always failing (400)** — App sends SOS type IDs `'sweet'`/`'hug'`/`'pain'`/`'quiet'` but proxy validated against `'sweet_tooth'`/`'need_a_hug'`/`'cramps_alert'`/`'quiet_time'`. Every SOS tip request was rejected. Aligned proxy validation and MiniMax labels to match app constants.
+- **CRITICAL: Stale login state after session expiry** — `bootstrapSession()` returned early when no session existed but did not clear `isLoggedIn`. Persisted Zustand state kept users appearing logged in after JWT expired, causing broken navigation and API failures.
+- **HIGH: Sun sees wrong phase after linking** — `linkToPartner()` set `isPartnerLinked: true` but never fetched partner's cycle settings. Sun dashboard showed default 28-day cycle instead of Moon's real data. Now fetches `partnerCycleSettings` immediately after linking.
+- **HIGH: Whisper/SOS ID collision** — Whisper option `id: 'hug'` and SOS option `id: 'hug'` collided, causing potential DB query confusion and wrong fallback tips. Renamed whisper IDs to `'whisper_hug'` and `'whisper_quiet'`.
+- **HIGH: Notification preferences not persisted** — `updateNotificationPrefs()` only updated local Zustand state. Preferences were lost on reinstall and ignored by the `notify-cycle` Edge Function. Now syncs to `notification_preferences` table via background upsert.
+- **MEDIUM: Language not restored on bootstrap** — `bootstrapSession()` did not read language preference from `user_preferences` table. After reinstall, language reverted to English even if user had set Vietnamese. Now restores language from DB.
 - **HIGH: DailyCheckIn dark theme** — Component used light-theme `Colors` tokens (white card, dark text) inside the dark MoonDashboard. Now uses `MoonColors` for proper contrast.
 - **HIGH: Theme color consolidation** — Removed duplicated `MOON`/`SUN` color objects from `MoonDashboard.tsx`, `SunDashboard.tsx`, `WhisperSheet.tsx`, `UnlinkedScreen.tsx`, `SOSSheet.tsx`, `InsightCard.tsx`. All now reference canonical `MoonColors`/`SunColors` from `constants/theme.ts`.
 - **MEDIUM: Profile upsert** — `upsertProfile()` in `lib/db/profiles.ts` used `.update()` which silently failed if the profile row didn't exist. Changed to `.upsert()` with `onConflict: 'id'` so role and display name are always persisted.

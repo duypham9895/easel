@@ -13,21 +13,10 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { CyclePhase, SOSOption } from '@/types';
-import { Spacing, Radii, Typography } from '@/constants/theme';
+import { MoonColors, Spacing, Radii, Typography } from '@/constants/theme';
 import { useAIWhisperOptions } from '@/hooks/useAIWhisperOptions';
 
-const MOON = {
-  background: '#0D1B2A',
-  surface: '#1A2B3C',
-  accentPrimary: '#B39DDB',
-  accentSecondary: '#E0E0F0',
-  textPrimary: '#F0F0FF',
-  textSecondary: '#8899AA',
-  textHint: '#4A5568',
-  card: '#162233',
-  inputBg: '#1E3045',
-  border: '#2D4A6B',
-};
+const MOON = MoonColors;
 
 interface Props {
   visible: boolean;

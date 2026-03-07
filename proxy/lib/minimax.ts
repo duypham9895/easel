@@ -97,10 +97,10 @@ Respond with ONLY the advice text.`;
 // 3. BF SOS action tip
 // ---------------------------------------------------------------------------
 const SOS_LABELS: Record<string, string> = {
-  sweet_tooth: 'craving something sweet',
-  need_a_hug: 'needing a hug and comfort',
-  cramps_alert: 'having cramps and pain',
-  quiet_time: 'needing quiet and alone time',
+  sweet: 'craving something sweet',
+  hug: 'needing a hug and comfort',
+  pain: 'having cramps and pain',
+  quiet: 'needing quiet and alone time',
 };
 
 export async function generateSOSTip(

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { MoonColors, Spacing, Radii, Typography } from '@/constants/theme';
 
 interface Props {
   icon: string; // Feather icon name
@@ -9,7 +9,7 @@ interface Props {
   accent?: string;
 }
 
-export function InsightCard({ icon, label, value, accent = Colors.menstrual }: Props) {
+export function InsightCard({ icon, label, value, accent = MoonColors.accentPrimary }: Props) {
   return (
     <View style={styles.card}>
       <View style={[styles.iconBg, { backgroundColor: accent + '14' }]}>
@@ -24,11 +24,11 @@ export function InsightCard({ icon, label, value, accent = Colors.menstrual }: P
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: Colors.card,
+    backgroundColor: MoonColors.card,
     borderRadius: Radii.lg,
     padding: Spacing.md,
     gap: Spacing.xs,
-    shadowColor: Colors.black,
+    shadowColor: MoonColors.black,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.04,
     shadowRadius: 12,
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.caption,
-    color: Colors.textSecondary,
+    color: MoonColors.textSecondary,
   },
   value: {
     ...Typography.bodyBold,

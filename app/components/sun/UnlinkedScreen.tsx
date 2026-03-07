@@ -14,19 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n/config';
+import { SunColors } from '@/constants/theme';
 
-const SUN = {
-  background: '#FFF8F0',
-  surface: '#FFFFFF',
-  accentPrimary: '#F59E0B',
-  accentSecondary: '#FF7043',
-  textPrimary: '#1A1008',
-  textSecondary: '#6B5B45',
-  textHint: '#9C8B7A',
-  card: '#FFFFFF',
-  inputBg: '#FFF3E0',
-  border: '#FFE0B2',
-};
+const SUN = SunColors;
 
 interface Props {
   onLink: (code: string) => Promise<void>;

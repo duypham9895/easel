@@ -16,7 +16,7 @@ import { PhaseWheel } from '@/components/gf/PhaseWheel';
 import { InsightCard } from '@/components/gf/InsightCard';
 import { DailyCheckIn } from '@/components/gf/DailyCheckIn';
 import { PHASE_INFO } from '@/constants/phases';
-import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { MoonColors, Spacing, Radii, Typography } from '@/constants/theme';
 import {
   getCurrentDayInCycle,
   getCurrentPhase,
@@ -28,18 +28,7 @@ import { WhisperSheet } from '@/components/moon/WhisperSheet';
 import { useCoupleLinkedListener } from '@/hooks/useCoupleLinkedListener';
 import { useTranslation } from 'react-i18next';
 
-const MOON = {
-  background: '#0D1B2A',
-  surface: '#1A2B3C',
-  accentPrimary: '#B39DDB',
-  accentSecondary: '#E0E0F0',
-  textPrimary: '#F0F0FF',
-  textSecondary: '#8899AA',
-  textHint: '#4A5568',
-  card: '#162233',
-  inputBg: '#1E3045',
-  border: '#2D4A6B',
-};
+const MOON = MoonColors;
 
 export function MoonDashboard() {
   const { t } = useTranslation('dashboard');
@@ -286,7 +275,7 @@ const styles = StyleSheet.create({
   },
   whisperButtonText: {
     ...Typography.bodyBold,
-    color: Colors.white,
+    color: MOON.white,
   },
   insightRow: {
     flexDirection: 'row',

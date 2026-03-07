@@ -6,7 +6,7 @@ import { GuideCard } from '@/components/bf/GuideCard';
 import { WhisperAlert } from '@/components/sun/WhisperAlert';
 import { UnlinkedScreen } from '@/components/sun/UnlinkedScreen';
 import { PHASE_INFO } from '@/constants/phases';
-import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { Colors, SunColors, Spacing, Radii, Typography } from '@/constants/theme';
 import {
   getCurrentDayInCycle,
   getCurrentPhase,
@@ -17,18 +17,7 @@ import { useSOSListener } from '@/hooks/useSOSListener';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n/config';
 
-const SUN = {
-  background: '#FFF8F0',
-  surface: '#FFFFFF',
-  accentPrimary: '#F59E0B',
-  accentSecondary: '#FF7043',
-  textPrimary: '#1A1008',
-  textSecondary: '#6B5B45',
-  textHint: '#9C8B7A',
-  card: '#FFFFFF',
-  inputBg: '#FFF3E0',
-  border: '#FFE0B2',
-};
+const SUN = SunColors;
 
 const PHASE_KEYS = ['menstrual', 'follicular', 'ovulatory', 'luteal'] as const;
 

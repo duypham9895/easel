@@ -3,7 +3,7 @@ import { SOSOption } from '@/types';
 export const WHISPER_OPTIONS: Record<string, SOSOption[]> = {
   menstrual: [
     {
-      id: 'hug',
+      id: 'whisper_hug',
       title: 'Need a hug',
       icon: 'heart',
       color: '#FF5F7E',
@@ -24,7 +24,7 @@ export const WHISPER_OPTIONS: Record<string, SOSOption[]> = {
       description: 'I am craving something sweet.',
     },
     {
-      id: 'quiet',
+      id: 'whisper_quiet',
       title: 'Quiet time',
       icon: 'moon',
       color: '#546E7A',

@@ -199,9 +199,10 @@ function computeDayInfo(
   return { dayInCycle, phase };
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString: string, locale: string): string {
   const date = new Date(dateString + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const loc = locale === 'vi' ? 'vi-VN' : 'en-US';
+  return date.toLocaleDateString(loc, { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 function markerLabel(type: 'period' | 'ovulation' | 'fertile'): string {
@@ -244,7 +245,7 @@ function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLeng
         {/* Header row */}
         <View style={sheetStyles.headerRow}>
           <View>
-            <Text style={sheetStyles.dateText}>{formatDate(dateString)}</Text>
+            <Text style={sheetStyles.dateText}>{formatDate(dateString, i18n.language)}</Text>
             <Text style={sheetStyles.cycleDayText}>{tCal('cycleDay', { day: dayInCycle })}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
