@@ -140,6 +140,7 @@ export function ManualCycleInput({ onSubmit, prefill }: Props) {
               maximumDate={maxDate}
               minimumDate={minDate}
               onChange={handleDateChange}
+              themeVariant="dark"
             />
           )}
           {showDatePicker && Platform.OS === 'ios' && (
