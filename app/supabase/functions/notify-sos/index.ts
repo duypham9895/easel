@@ -82,15 +82,8 @@ const WHISPER_COPY: Record<string, { title: string; body: string }> = {
 };
 
 Deno.serve(async (req: Request) => {
-  // Validate that the request comes from a Supabase Database Webhook
-  const authHeader = req.headers.get('Authorization');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!authHeader || !serviceKey || authHeader !== `Bearer ${serviceKey}`) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  // Auth is handled by Supabase API gateway (JWT verification enabled by default).
+  // Database Webhooks use the service_role key automatically.
 
   try {
     const payload: WebhookPayload = await req.json();

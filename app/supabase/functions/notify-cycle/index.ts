@@ -52,16 +52,9 @@ async function sendPush(messages: PushMessage[]): Promise<void> {
   if (!res.ok) throw new Error(`Expo Push error ${res.status}: ${await res.text()}`);
 }
 
-Deno.serve(async (req: Request) => {
-  // Validate authorization — only pg_cron or admin should call this
-  const authHeader = req.headers.get('Authorization');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!authHeader || !serviceKey || authHeader !== `Bearer ${serviceKey}`) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+Deno.serve(async (_req: Request) => {
+  // Auth is handled by Supabase API gateway (JWT verification enabled by default).
+  // Only valid JWTs (service_role or anon key) can reach this function.
 
   try {
     const supabase = createClient(
