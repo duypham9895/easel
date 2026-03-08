@@ -152,9 +152,9 @@ export default function SettingsTab() {
             <Divider />
             <View style={rowStyles.row}>
               <Text style={rowStyles.label}>{t('displayName')}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, maxWidth: 200 }}>
                 <TextInput
-                  style={[settingStyles.input, { width: 120, padding: 6 }]}
+                  style={[settingStyles.input, { flex: 1, padding: 6, textAlign: 'right' }]}
                   value={displayNameInput}
                   onChangeText={setDisplayNameInput}
                   onSubmitEditing={handleSaveName}
