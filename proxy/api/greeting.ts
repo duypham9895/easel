@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // — Layer 4: Input validation (whitelist)
-  const { phase, dayInCycle, phaseTagline } = req.body ?? {};
+  const { phase, dayInCycle, phaseTagline, language } = req.body ?? {};
 
   if (typeof phase !== 'string' || !VALID_PHASES.has(phase)) {
     return res.status(400).json({ error: 'Invalid phase' });
@@ -50,7 +50,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cleanTagline = sanitizeInput(phaseTagline, 50);
 
   try {
-    const greeting = await generateGreeting(phase, dayInCycle, cleanTagline);
+    const lang = typeof language === 'string' ? language : 'en';
+    const greeting = await generateGreeting(phase, dayInCycle, cleanTagline, lang);
     return res.status(200).json({ greeting });
   } catch (err) {
     console.error('[greeting] MiniMax error:', err);

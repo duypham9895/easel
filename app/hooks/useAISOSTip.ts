@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import i18n from '@/i18n/config';
 import { CyclePhase, SOSOption } from '@/types';
 
 /** Per-type static fallbacks shown while AI loads. Keys match SOSOption.id values. */
@@ -73,7 +74,7 @@ export function useAISOSTip(
             'Content-Type': 'application/json',
             'X-Client-Token': clientToken,
           },
-          body: JSON.stringify({ sosType: sos.id, phase, dayInCycle }),
+          body: JSON.stringify({ sosType: sos.id, phase, dayInCycle, language: i18n.language }),
           signal: controller.signal,
         });
 

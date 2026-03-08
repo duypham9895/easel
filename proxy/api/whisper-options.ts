@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   maybePrune();
   if (isRateLimited(getClientIP(req))) return res.status(429).json({ error: 'Too many requests' });
 
-  const { phase, dayInCycle, topSelections } = req.body ?? {};
+  const { phase, dayInCycle, topSelections, language } = req.body ?? {};
 
   if (typeof phase !== 'string' || !VALID_PHASES.has(phase)) {
     return res.status(400).json({ error: 'Invalid phase' });
@@ -51,7 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cleanSelections = selections.map((s: string) => sanitizeInput(s, 50));
 
   try {
-    const options = await generateWhisperOptions(phase, dayInCycle, cleanSelections);
+    const lang = typeof language === 'string' ? language : 'en';
+    const options = await generateWhisperOptions(phase, dayInCycle, cleanSelections, lang);
     return res.status(200).json({ options });
   } catch (err) {
     console.error('[whisper-options] error:', err);

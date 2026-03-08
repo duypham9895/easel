@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import i18n from '@/i18n/config';
 import { CyclePhase, SOSOption } from '@/types';
 import { WHISPER_OPTIONS } from '@/constants/whisper';
 
@@ -39,7 +40,7 @@ export function useAIWhisperOptions(
             'Content-Type': 'application/json',
             'X-Client-Token': clientToken,
           },
-          body: JSON.stringify({ phase, dayInCycle }),
+          body: JSON.stringify({ phase, dayInCycle, language: i18n.language }),
           signal: controller.signal,
         });
 

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import i18n from '@/i18n/config';
 import { CyclePhase } from '@/types';
 
 interface UseAIDailyInsightResult {
@@ -38,7 +39,7 @@ export function useAIDailyInsight(
             'Content-Type': 'application/json',
             'X-Client-Token': clientToken,
           },
-          body: JSON.stringify({ phase, dayInCycle, mood, symptoms }),
+          body: JSON.stringify({ phase, dayInCycle, mood, symptoms, language: i18n.language }),
         });
 
         if (!res.ok) throw new Error(`Proxy ${res.status}`);

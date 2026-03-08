@@ -1,5 +1,16 @@
 const MINIMAX_API_URL = 'https://api.minimax.io/v1/chat/completions';
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  vi: 'Vietnamese',
+};
+
+/** Returns the language instruction to append to system prompts. */
+function langInstruction(lang: string): string {
+  const name = LANGUAGE_NAMES[lang] ?? 'English';
+  return `\nIMPORTANT: You MUST respond entirely in ${name}.`;
+}
+
 /** Shared low-level call — keeps request boilerplate in one place. */
 async function callMinimax(
   systemPrompt: string,
@@ -55,7 +66,8 @@ async function callMinimax(
 export async function generateGreeting(
   phase: string,
   dayInCycle: number,
-  phaseTagline: string
+  phaseTagline: string,
+  language = 'en'
 ): Promise<string> {
   const system = `You are a warm, empathetic companion inside a period-tracking app for couples called Easel.
 Write a single short greeting (1–2 sentences, max 25 words) that:
@@ -64,7 +76,7 @@ Write a single short greeting (1–2 sentences, max 25 words) that:
 - Matches the emotional tone of the phase
 - Never uses medical jargon or prescriptive health advice
 - Ends on a gentle, uplifting note
-Respond with ONLY the greeting text — no quotes, no label, no extra explanation.`;
+Respond with ONLY the greeting text — no quotes, no label, no extra explanation.${langInstruction(language)}`;
 
   const user = `Phase: ${phase} | Day: ${dayInCycle} | Theme: ${phaseTagline}\nWrite the greeting.`;
 
@@ -77,7 +89,8 @@ Respond with ONLY the greeting text — no quotes, no label, no extra explanatio
 export async function generatePartnerAdvice(
   phase: string,
   dayInCycle: number,
-  phaseTagline: string
+  phaseTagline: string,
+  language = 'en'
 ): Promise<string> {
   const system = `You are an empathy coach advising a caring boyfriend whose girlfriend is tracking her cycle using Easel.
 Write 2–3 warm, specific, actionable sentences (max 45 words) telling him what to do or say TODAY.
@@ -86,7 +99,7 @@ Rules:
 - Match the energy of her phase (quiet during menstrual, adventurous during follicular, etc.)
 - Sound like a wise friend, not a self-help book
 - No medical advice
-Respond with ONLY the advice text.`;
+Respond with ONLY the advice text.${langInstruction(language)}`;
 
   const user = `Her phase: ${phase} | Day ${dayInCycle} of cycle | Theme: ${phaseTagline}\nWhat should he do today?`;
 
@@ -106,7 +119,8 @@ const SOS_LABELS: Record<string, string> = {
 export async function generateSOSTip(
   sosType: string,
   phase: string,
-  dayInCycle: number
+  dayInCycle: number,
+  language = 'en'
 ): Promise<string> {
   const sosLabel = SOS_LABELS[sosType] ?? 'needing support';
 
@@ -116,7 +130,7 @@ Rules:
 - Be concrete and physical — something he can do in the next 10 minutes
 - Warm, not clinical
 - Acknowledge her current phase context
-Respond with ONLY the action tip — no intro, no label.`;
+Respond with ONLY the action tip — no intro, no label.${langInstruction(language)}`;
 
   const user = `SOS: she is ${sosLabel}.\nHer phase: ${phase} (day ${dayInCycle}).\nWhat is the ONE thing he should do right now?`;
 
@@ -130,7 +144,8 @@ export async function generateDailyInsight(
   phase: string,
   dayInCycle: number,
   mood: number | null,
-  symptoms: string[]
+  symptoms: string[],
+  language = 'en'
 ): Promise<string> {
   const moodLabel = mood
     ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
@@ -143,7 +158,7 @@ The user just logged how she feels today. Write 1–2 supportive sentences (max 
 - Connect her symptoms/mood to her current cycle phase in a normalizing way
 - Offer one gentle, practical suggestion (not medical advice)
 - Sound like a caring friend, not a health app
-Respond with ONLY the insight text.`;
+Respond with ONLY the insight text.${langInstruction(language)}`;
 
   const user = `Phase: ${phase} | Day: ${dayInCycle}\nMood today: ${moodLabel}\nSymptoms: ${symptomText}\nWrite the insight.`;
 
@@ -156,7 +171,8 @@ Respond with ONLY the insight text.`;
 export async function generateWhisperOptions(
   phase: string,
   dayInCycle: number,
-  topSelections: string[]
+  topSelections: string[],
+  language = 'en'
 ): Promise<string[]> {
   const selectionContext = topSelections.length > 0
     ? `Her most frequent requests: ${topSelections.slice(0, 5).join(', ')}.`
@@ -168,7 +184,7 @@ Rules:
 - Each option is 2-5 words maximum (e.g. "Need a hug", "Bring me chocolate")
 - Match phase energy: quiet/gentle for menstrual, curious for follicular, vibrant for ovulatory, cosy for luteal
 - Sound personal and intimate, never clinical
-- Return ONLY a valid JSON array of exactly 4 strings, no other text`;
+- Return ONLY a valid JSON array of exactly 4 strings, no other text${langInstruction(language)}`;
 
   const user = `Phase: ${phase} | Day ${dayInCycle}
 ${selectionContext}

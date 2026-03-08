@@ -1,36 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n/config';
 import { CyclePhase } from '@/types';
 import { PHASE_INFO } from '@/constants/phases';
 
-/** Fallback greeting shown immediately while AI loads (or if AI fails). */
-function getFallbackGreeting(phase: CyclePhase, dayInCycle: number): string {
-  const fallbacks: Record<CyclePhase, string[]> = {
-    menstrual: [
-      'Rest is productive. Let today be gentle.',
-      'Your body is working hard — honour it.',
-      'Slow down and let yourself be held by the day.',
-    ],
-    follicular: [
-      'Fresh energy is on the way. You\'ve got this.',
-      'A new chapter is beginning — step into it.',
-      'Feel the spark? The world is ready for you.',
-    ],
-    ovulatory: [
-      'You\'re glowing. Let that light out today.',
-      'This is your moment to connect and create.',
-      'Peak energy — go do something you love.',
-    ],
-    luteal: [
-      'Slow and steady. You don\'t have to do it all.',
-      'Trust your feelings — they know what they need.',
-      'Cosy mode activated. You\'ve earned some peace.',
-    ],
-  };
-
-  const list = fallbacks[phase];
-  // Rotate through fallbacks deterministically by day so it feels fresh each day
-  return list[dayInCycle % list.length];
-}
+/** i18n keys for fallback greetings, 3 per phase. */
+const GREETING_KEYS: Record<CyclePhase, string[]> = {
+  menstrual: ['greetingMenstrual1', 'greetingMenstrual2', 'greetingMenstrual3'],
+  follicular: ['greetingFollicular1', 'greetingFollicular2', 'greetingFollicular3'],
+  ovulatory: ['greetingOvulatory1', 'greetingOvulatory2', 'greetingOvulatory3'],
+  luteal: ['greetingLuteal1', 'greetingLuteal2', 'greetingLuteal3'],
+};
 
 interface UseAIGreetingResult {
   greeting: string;
@@ -42,11 +22,14 @@ export function useAIGreeting(
   phase: CyclePhase,
   dayInCycle: number
 ): UseAIGreetingResult {
+  const { t } = useTranslation('dashboard');
   const proxyUrl = process.env.EXPO_PUBLIC_PROXY_URL;
   const clientToken = process.env.EXPO_PUBLIC_CLIENT_TOKEN;
   const phaseTagline = PHASE_INFO[phase].tagline;
 
-  const fallback = getFallbackGreeting(phase, dayInCycle);
+  // Rotate through translated fallbacks deterministically by day
+  const keys = GREETING_KEYS[phase];
+  const fallback = t(keys[dayInCycle % keys.length]);
 
   const [greeting, setGreeting] = useState(fallback);
   const [isAI, setIsAI] = useState(false);
@@ -73,7 +56,7 @@ export function useAIGreeting(
             'Content-Type': 'application/json',
             'X-Client-Token': clientToken,
           },
-          body: JSON.stringify({ phase, dayInCycle, phaseTagline }),
+          body: JSON.stringify({ phase, dayInCycle, phaseTagline, language: i18n.language }),
           signal: controller.signal,
         });
 

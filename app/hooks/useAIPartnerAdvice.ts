@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import i18n from '@/i18n/config';
 import { CyclePhase } from '@/types';
 import { PHASE_INFO } from '@/constants/phases';
 
@@ -52,7 +53,7 @@ export function useAIPartnerAdvice(
             'Content-Type': 'application/json',
             'X-Client-Token': clientToken,
           },
-          body: JSON.stringify({ phase, dayInCycle, phaseTagline }),
+          body: JSON.stringify({ phase, dayInCycle, phaseTagline, language: i18n.language }),
           signal: controller.signal,
         });
 

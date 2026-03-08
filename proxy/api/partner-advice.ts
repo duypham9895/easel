@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   maybePrune();
   if (isRateLimited(getClientIP(req))) return res.status(429).json({ error: 'Too many requests' });
 
-  const { phase, dayInCycle, phaseTagline } = req.body ?? {};
+  const { phase, dayInCycle, phaseTagline, language } = req.body ?? {};
 
   if (typeof phase !== 'string' || !VALID_PHASES.has(phase)) {
     return res.status(400).json({ error: 'Invalid phase' });
@@ -38,7 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cleanTagline = sanitizeInput(phaseTagline, 50);
 
   try {
-    const advice = await generatePartnerAdvice(phase, dayInCycle, cleanTagline);
+    const lang = typeof language === 'string' ? language : 'en';
+    const advice = await generatePartnerAdvice(phase, dayInCycle, cleanTagline, lang);
     return res.status(200).json({ advice });
   } catch (err) {
     console.error('[partner-advice] error:', err);

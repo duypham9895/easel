@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   maybePrune();
   if (isRateLimited(getClientIP(req))) return res.status(429).json({ error: 'Too many requests' });
 
-  const { sosType, phase, dayInCycle } = req.body ?? {};
+  const { sosType, phase, dayInCycle, language } = req.body ?? {};
 
   if (typeof sosType !== 'string' || !VALID_SOS_TYPES.has(sosType)) {
     return res.status(400).json({ error: 'Invalid sosType' });
@@ -36,7 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const tip = await generateSOSTip(sosType, phase, dayInCycle);
+    const lang = typeof language === 'string' ? language : 'en';
+    const tip = await generateSOSTip(sosType, phase, dayInCycle, lang);
     return res.status(200).json({ tip });
   } catch (err) {
     console.error('[sos-tip] error:', err);

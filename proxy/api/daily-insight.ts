@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   maybePrune();
   if (isRateLimited(getClientIP(req))) return res.status(429).json({ error: 'Too many requests' });
 
-  const { phase, dayInCycle, mood, symptoms } = req.body ?? {};
+  const { phase, dayInCycle, mood, symptoms, language } = req.body ?? {};
 
   if (typeof phase !== 'string' || !VALID_PHASES.has(phase)) {
     return res.status(400).json({ error: 'Invalid phase' });
@@ -49,11 +49,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cleanSymptoms = symptoms ? symptoms.map((s: string) => sanitizeInput(s, 30)) : [];
 
   try {
+    const lang = typeof language === 'string' ? language : 'en';
     const insight = await generateDailyInsight(
       phase,
       dayInCycle,
       mood ?? null,
-      cleanSymptoms
+      cleanSymptoms,
+      lang
     );
     return res.status(200).json({ insight });
   } catch (err) {
