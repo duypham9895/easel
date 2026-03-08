@@ -335,25 +335,33 @@ export default function SettingsTab() {
         )}
 
         {/* Health Sync — Moon only */}
-        {role === 'moon' && healthAvailable && (
+        {role === 'moon' && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('healthData')}</Text>
             <View style={styles.card}>
-              <Text style={styles.cardBody}>
-                {t('healthSyncDescription')}
-              </Text>
-              <TouchableOpacity
-                style={[styles.generateButton, isSyncingHealth && { opacity: 0.6 }]}
-                onPress={handleHealthSync}
-                activeOpacity={0.85}
-                disabled={isSyncingHealth}
-              >
-                {isSyncingHealth ? (
-                  <ActivityIndicator color={Colors.menstrual} />
-                ) : (
-                  <Text style={styles.generateButtonText}>{t('syncHealthData')}</Text>
-                )}
-              </TouchableOpacity>
+              {healthAvailable ? (
+                <>
+                  <Text style={styles.cardBody}>
+                    {t('healthSyncDescription')}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.generateButton, isSyncingHealth && { opacity: 0.6 }]}
+                    onPress={handleHealthSync}
+                    activeOpacity={0.85}
+                    disabled={isSyncingHealth}
+                  >
+                    {isSyncingHealth ? (
+                      <ActivityIndicator color={Colors.menstrual} />
+                    ) : (
+                      <Text style={styles.generateButtonText}>{t('syncHealthData')}</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <Text style={styles.cardBody}>
+                  {t('healthUnavailable')}
+                </Text>
+              )}
             </View>
           </View>
         )}
