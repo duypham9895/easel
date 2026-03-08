@@ -52,8 +52,8 @@ export function useAIPhaseInsight(
 
         if (!res.ok) throw new Error(`Proxy ${res.status}`);
 
-        const data = (await res.json()) as { phaseInsight?: string };
-        if (data.phaseInsight) setPhaseInsight(data.phaseInsight);
+        const data = (await res.json()) as { insight?: string };
+        if (data.insight) setPhaseInsight(data.insight);
       } catch (err) {
         console.warn('[useAIPhaseInsight] failed to fetch:', err);
       } finally {
