@@ -3,5 +3,99 @@
   "body": "We can read your cycle history from Apple Health to predict your next period more accurately — right away.\n\nWe never write to or share your health data.",
   "syncButton": "Sync with Apple Health",
   "skip": "Skip for now",
-  "privacy": "Read-only · Never shared · Change anytime in Settings"
+  "privacy": "Read-only · Never shared · Change anytime in Settings",
+
+  "education": {
+    "headline": "Better predictions\nstart with your data",
+    "body": "Easel can read your past cycle data from Apple Health to give you accurate predictions from day one.",
+    "bullet1": "We only read menstrual cycle data",
+    "bullet2": "Your data stays on your device",
+    "bullet3": "You can disconnect anytime in Settings",
+    "continueButton": "Continue with Apple Health",
+    "manualButton": "Enter manually instead",
+    "privacyBadge": "Read-only · Private · Your data, your choice"
+  },
+
+  "syncing": {
+    "title": "Syncing your cycle data...",
+    "subtitle": "This only takes a moment"
+  },
+
+  "importSummary": {
+    "headline": "We found your data",
+    "periodsFound": "{{count}} period found",
+    "periodsFound_plural": "{{count}} periods found",
+    "dateRange": "{{start}} – {{end}}",
+    "avgCycle": "~{{days}} day cycle",
+    "continueButton": "Continue",
+    "rejectLink": "This doesn't look right"
+  },
+
+  "emptyState": {
+    "headline": "No cycle data found",
+    "body": "We couldn't find any period records in Apple Health. No worries — you can enter your cycle info manually.",
+    "ctaButton": "Enter manually"
+  },
+
+  "manualInput": {
+    "headline": "Tell us about your cycle",
+    "lastPeriodLabel": "When did your last period start?",
+    "lastPeriodPlaceholder": "Tap to select a date",
+    "cycleLengthLabel": "Average cycle length",
+    "cycleLengthHelper": "Days from the start of one period to the start of the next",
+    "periodLengthLabel": "Average period length",
+    "periodLengthHelper": "How many days your period usually lasts",
+    "notSureToggle": "I'm not sure about my cycle",
+    "notSureExplanation": "No worries! We'll use typical averages (28-day cycle, 5-day period) and improve predictions as you log more data.",
+    "predictionPreview": "Next period expected around {{date}}",
+    "continueButton": "Continue",
+    "daysUnit": "days",
+    "validation": {
+      "dateRequired": "Please select when your last period started",
+      "dateFuture": "The date can't be in the future",
+      "dateTooOld": "Please select a date within the last 90 days"
+    }
+  },
+
+  "review": {
+    "headline": "Your cycle summary",
+    "sourceHealthKit": "From Apple Health",
+    "sourceManual": "Entered manually",
+    "lastPeriod": "Last period",
+    "cycleLength": "Cycle length",
+    "periodLength": "Period length",
+    "daysUnit": "{{count}} days",
+    "prediction": "Next period expected around",
+    "confidenceHigh": "High confidence",
+    "confidenceHighDesc": "Based on {{count}} cycles of data",
+    "confidenceMedium": "Medium confidence",
+    "confidenceMediumDesc": "Based on {{count}} cycles — accuracy improves with more data",
+    "confidenceLow": "Low confidence",
+    "confidenceLowDesc": "Based on limited data — predictions improve as you log more periods",
+    "editButton": "Edit",
+    "confirmButton": "Looks good, let's go!",
+    "predictionExplanation": "Your prediction is based on your average cycle length of {{cycleLength}} days. We calculate when your next period is likely to start based on when your last one began. The more data we have, the more accurate your predictions become."
+  },
+
+  "permissionDenied": {
+    "headline": "No problem!",
+    "body": "You can still get great predictions by entering your cycle info manually. You can always connect Apple Health later in Settings.",
+    "ctaButton": "Enter manually"
+  },
+
+  "settings": {
+    "sectionTitle": "Health Data",
+    "connected": "Connected to Apple Health",
+    "notConnected": "Not connected",
+    "lastSynced": "Last synced: {{date}}",
+    "resyncButton": "Re-sync from Apple Health",
+    "updateCycleButton": "Update cycle info"
+  },
+
+  "tooltips": {
+    "cycleLength": "Your cycle length is the number of days from the first day of one period to the first day of the next. Most cycles are 21-35 days.",
+    "periodLength": "Your period length is how many days you typically bleed. Most periods last 3-7 days.",
+    "howPredictionWorks": "Easel predicts your next period based on your cycle history. With more data, predictions become more accurate. We use your average cycle length to estimate when your next period will start.",
+    "whatIsConfidence": "Confidence shows how reliable the prediction is. More cycle data means higher confidence. High confidence predictions are typically accurate within 1-2 days."
+  }
 }

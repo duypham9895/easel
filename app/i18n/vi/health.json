@@ -3,5 +3,99 @@
   "body": "Chúng tôi có thể đọc lịch sử chu kỳ từ Apple Health để dự đoán kỳ kinh tiếp theo chính xác hơn — ngay lập tức.\n\nChúng tôi không bao giờ ghi hoặc chia sẻ dữ liệu sức khoẻ của bạn.",
   "syncButton": "Đồng bộ với Apple Health",
   "skip": "Bỏ qua",
-  "privacy": "Chỉ đọc · Không chia sẻ · Đổi bất cứ lúc nào trong Cài đặt"
+  "privacy": "Chỉ đọc · Không chia sẻ · Đổi bất cứ lúc nào trong Cài đặt",
+
+  "education": {
+    "headline": "Dự đoán chính xác hơn\nbắt đầu từ dữ liệu của bạn",
+    "body": "Easel có thể đọc dữ liệu chu kỳ từ Apple Health để đưa ra dự đoán chính xác ngay từ ngày đầu tiên.",
+    "bullet1": "Chỉ đọc dữ liệu chu kỳ kinh nguyệt",
+    "bullet2": "Dữ liệu luôn ở trên thiết bị của bạn",
+    "bullet3": "Bạn có thể ngắt kết nối bất cứ lúc nào trong Cài đặt",
+    "continueButton": "Tiếp tục với Apple Health",
+    "manualButton": "Nhập thủ công",
+    "privacyBadge": "Chỉ đọc · Riêng tư · Dữ liệu của bạn, quyền của bạn"
+  },
+
+  "syncing": {
+    "title": "Đang đồng bộ dữ liệu chu kỳ...",
+    "subtitle": "Chỉ mất một chút thời gian"
+  },
+
+  "importSummary": {
+    "headline": "Đã tìm thấy dữ liệu",
+    "periodsFound": "Tìm thấy {{count}} kỳ kinh",
+    "periodsFound_plural": "Tìm thấy {{count}} kỳ kinh",
+    "dateRange": "{{start}} – {{end}}",
+    "avgCycle": "Chu kỳ ~{{days}} ngày",
+    "continueButton": "Tiếp tục",
+    "rejectLink": "Dữ liệu này không chính xác"
+  },
+
+  "emptyState": {
+    "headline": "Không tìm thấy dữ liệu",
+    "body": "Chúng tôi không tìm thấy dữ liệu kinh nguyệt trong Apple Health. Không sao — bạn có thể nhập thông tin chu kỳ thủ công.",
+    "ctaButton": "Nhập thủ công"
+  },
+
+  "manualInput": {
+    "headline": "Chia sẻ về chu kỳ của bạn",
+    "lastPeriodLabel": "Kỳ kinh gần nhất bắt đầu khi nào?",
+    "lastPeriodPlaceholder": "Nhấn để chọn ngày",
+    "cycleLengthLabel": "Độ dài chu kỳ trung bình",
+    "cycleLengthHelper": "Số ngày từ ngày đầu kỳ kinh này đến ngày đầu kỳ tiếp theo",
+    "periodLengthLabel": "Độ dài kỳ kinh trung bình",
+    "periodLengthHelper": "Kỳ kinh thường kéo dài bao nhiêu ngày",
+    "notSureToggle": "Tôi không chắc về chu kỳ",
+    "notSureExplanation": "Không sao! Chúng tôi sẽ dùng giá trị trung bình (chu kỳ 28 ngày, kinh 5 ngày) và cải thiện dự đoán khi bạn ghi nhận thêm.",
+    "predictionPreview": "Kỳ kinh tiếp theo dự kiến khoảng {{date}}",
+    "continueButton": "Tiếp tục",
+    "daysUnit": "ngày",
+    "validation": {
+      "dateRequired": "Vui lòng chọn ngày bắt đầu kỳ kinh gần nhất",
+      "dateFuture": "Ngày không thể trong tương lai",
+      "dateTooOld": "Vui lòng chọn ngày trong 90 ngày gần đây"
+    }
+  },
+
+  "review": {
+    "headline": "Tóm tắt chu kỳ",
+    "sourceHealthKit": "Từ Apple Health",
+    "sourceManual": "Nhập thủ công",
+    "lastPeriod": "Kỳ kinh gần nhất",
+    "cycleLength": "Độ dài chu kỳ",
+    "periodLength": "Độ dài kỳ kinh",
+    "daysUnit": "{{count}} ngày",
+    "prediction": "Kỳ kinh tiếp theo dự kiến khoảng",
+    "confidenceHigh": "Độ tin cậy cao",
+    "confidenceHighDesc": "Dựa trên {{count}} chu kỳ dữ liệu",
+    "confidenceMedium": "Độ tin cậy trung bình",
+    "confidenceMediumDesc": "Dựa trên {{count}} chu kỳ — độ chính xác cải thiện khi có thêm dữ liệu",
+    "confidenceLow": "Độ tin cậy thấp",
+    "confidenceLowDesc": "Dựa trên dữ liệu hạn chế — dự đoán cải thiện khi bạn ghi nhận thêm kỳ kinh",
+    "editButton": "Chỉnh sửa",
+    "confirmButton": "Đúng rồi, bắt đầu thôi!",
+    "predictionExplanation": "Dự đoán dựa trên độ dài chu kỳ trung bình {{cycleLength}} ngày của bạn. Chúng tôi tính toán thời điểm kỳ kinh tiếp theo dựa trên ngày bắt đầu kỳ kinh gần nhất. Càng nhiều dữ liệu, dự đoán càng chính xác."
+  },
+
+  "permissionDenied": {
+    "headline": "Không vấn đề!",
+    "body": "Bạn vẫn có thể nhận dự đoán tốt bằng cách nhập thông tin chu kỳ thủ công. Bạn luôn có thể kết nối Apple Health sau trong Cài đặt.",
+    "ctaButton": "Nhập thủ công"
+  },
+
+  "settings": {
+    "sectionTitle": "Dữ liệu sức khoẻ",
+    "connected": "Đã kết nối Apple Health",
+    "notConnected": "Chưa kết nối",
+    "lastSynced": "Đồng bộ lần cuối: {{date}}",
+    "resyncButton": "Đồng bộ lại từ Apple Health",
+    "updateCycleButton": "Cập nhật thông tin chu kỳ"
+  },
+
+  "tooltips": {
+    "cycleLength": "Độ dài chu kỳ là số ngày từ ngày đầu kỳ kinh này đến ngày đầu kỳ kinh tiếp theo. Hầu hết chu kỳ từ 21-35 ngày.",
+    "periodLength": "Độ dài kỳ kinh là số ngày bạn thường có kinh. Hầu hết kỳ kinh kéo dài 3-7 ngày.",
+    "howPredictionWorks": "Easel dự đoán kỳ kinh tiếp theo dựa trên lịch sử chu kỳ. Càng nhiều dữ liệu, dự đoán càng chính xác. Chúng tôi sử dụng độ dài chu kỳ trung bình để ước tính ngày bắt đầu kỳ kinh tiếp theo.",
+    "whatIsConfidence": "Độ tin cậy cho biết mức độ đáng tin của dự đoán. Càng nhiều dữ liệu chu kỳ thì độ tin cậy càng cao. Dự đoán độ tin cậy cao thường chính xác trong 1-2 ngày."
+  }
 }
