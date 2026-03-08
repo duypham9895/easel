@@ -82,11 +82,11 @@ Rationale: The previous onboarding flow was functionally broken for prediction a
 - [x] All new copy available in EN and VI (`i18n/en/`, `i18n/vi/`)
 - [x] Accessibility roles on all interactive elements (buttons, steppers, toggles)
 - [x] No changes to existing Zustand store schema, database schema, or proxy endpoints
-- [x] PRD created and reviewed (`docs/PRD_ios_health_sync_period_prediction.md`)
-- [x] UX research completed (`docs/UX_research_ios_health_sync.md`)
-- [x] UI design spec completed (`docs/UI_design_spec_ios_health_sync.md`)
-- [x] Copy document completed (`docs/copy_ios_health_sync.md`)
-- [x] QA test plan written (`docs/QA_test_plan_ios_health_sync.md`)
+- [x] PRD created and reviewed (`docs/features/ios-health-sync/PRD.md`)
+- [x] UX research completed (`docs/features/ios-health-sync/UX_research.md`)
+- [x] UI design spec completed (`docs/features/ios-health-sync/UI_design_spec.md`)
+- [x] Copy document completed (`docs/features/ios-health-sync/copy.md`)
+- [x] QA test plan written (`docs/features/ios-health-sync/QA_test_plan.md`)
 - [x] Implementation complete
 - [x] QA execution report generated
 - [ ] Jest/test runner setup (deferred to v1.6.1)
@@ -94,4 +94,4 @@ Rationale: The previous onboarding flow was functionally broken for prediction a
 
 ---
 
-*Report generated 2026-03-08. For implementation details, see `docs/SWE_implementation_notes.md`.*
+*Report generated 2026-03-08. For implementation details, see `docs/features/ios-health-sync/SWE_implementation_notes.md`.*
