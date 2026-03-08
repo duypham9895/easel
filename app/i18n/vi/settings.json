@@ -30,7 +30,7 @@
   "healthSynced": "Dữ liệu sức khoẻ đã được cập nhật.",
   "healthSyncError": "Không thể đồng bộ dữ liệu. Vui lòng thử lại.",
   "healthUnavailable": "Đồng bộ sức khoẻ không khả dụng trên thiết bị này. Bạn vẫn có thể theo dõi chu kỳ thủ công bằng cài đặt bên dưới.",
-  "manualEntry": "Nhập thủ công",
+  "manualEntry": "Nhập chu kỳ thủ công",
   "cycleSettings": "CÀI ĐẶT CHU KỲ",
   "avgCycleLength": "Độ dài chu kỳ trung bình (ngày)",
   "avgPeriodLength": "Độ dài kỳ kinh trung bình (ngày)",

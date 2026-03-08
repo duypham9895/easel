@@ -30,7 +30,7 @@
   "healthSynced": "Health data updated successfully.",
   "healthSyncError": "Could not sync health data. Please try again.",
   "healthUnavailable": "Health sync is not available on this device. You can still track your cycle manually using the settings below.",
-  "manualEntry": "Enter Manually",
+  "manualEntry": "Enter Cycle Manually",
   "cycleSettings": "CYCLE SETTINGS",
   "avgCycleLength": "Average Cycle Length (days)",
   "avgPeriodLength": "Average Period Length (days)",
