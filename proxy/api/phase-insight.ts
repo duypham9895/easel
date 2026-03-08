@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (typeof dayInCycle !== 'number' || dayInCycle < 1 || dayInCycle > 45) {
     return res.status(400).json({ error: 'Invalid dayInCycle' });
   }
-  if (mood !== undefined && (typeof mood !== 'number' || mood < 1 || mood > 5)) {
+  if (mood != null && (typeof mood !== 'number' || mood < 1 || mood > 5)) {
     return res.status(400).json({ error: 'Invalid mood' });
   }
   if (symptoms !== undefined) {
@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       cleanSymptoms,
       lang
     );
-    return res.status(200).json({ insight });
+    return res.status(200).json({ phaseInsight: insight });
   } catch (err) {
     console.error('[phase-insight] error:', err);
     return res.status(502).json({ error: 'AI service unavailable' });

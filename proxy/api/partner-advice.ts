@@ -35,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid phaseTagline' });
   }
   // mood is optional (1–5) — Moon's latest check-in mood
-  if (mood !== undefined && (typeof mood !== 'number' || mood < 1 || mood > 5)) {
+  if (mood != null && (typeof mood !== 'number' || mood < 1 || mood > 5)) {
     return res.status(400).json({ error: 'Invalid mood' });
   }
   // symptoms is optional — Moon's latest check-in symptoms
