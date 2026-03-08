@@ -3,7 +3,8 @@
 #
 # migrate job: runs on EVERY push to `main` (supabase db push is idempotent —
 #   it only applies migrations not yet in the schema_migrations table).
-# deploy-functions job: only runs when app/supabase/functions/** changes.
+# deploy-functions job: runs on EVERY push to `main` (supabase functions deploy
+#   is idempotent — it only re-deploys functions whose source has changed).
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   SUPABASE_ACCESS_TOKEN  — Personal access token from supabase.com/dashboard/account/tokens
@@ -49,15 +50,12 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Job 2: Deploy Supabase Edge Functions to production.
-  # Only runs when function source files are changed.
+  # Runs on every push to main. supabase functions deploy is idempotent —
+  # it only re-deploys functions whose source has changed.
   # ---------------------------------------------------------------------------
   deploy-functions:
     name: Edge Functions
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      contains(toJson(github.event.commits.*.modified), 'app/supabase/functions/') ||
-      contains(toJson(github.event.commits.*.added), 'app/supabase/functions/')
 
     steps:
       - name: Checkout code
