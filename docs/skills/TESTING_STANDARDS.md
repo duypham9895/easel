@@ -4,6 +4,7 @@
 > - `docs/skills/BUG_FIX_PIPELINE.md`
 > - `docs/skills/FEATURE_DEVELOPMENT_PIPELINE.md`
 > - `docs/skills/CHANGE_REQUEST_PIPELINE.md`
+> - `docs/skills/USER_PERSONA_TESTING_PIPELINE.md`
 
 ---
 

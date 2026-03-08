@@ -4,6 +4,7 @@
 > **Related Skills:**
 > - `docs/skills/BUG_FIX_PIPELINE.md`
 > - `docs/skills/CHANGE_REQUEST_PIPELINE.md`
+> - `docs/skills/USER_PERSONA_TESTING_PIPELINE.md`
 > - `docs/skills/TESTING_STANDARDS.md` — **MANDATORY** testing standards for all pipelines
 
 ---
@@ -467,3 +468,4 @@ LOOP END
 | Something is **broken** | `BUG_FIX_PIPELINE` | Reproduce the bug |
 | Something **doesn't exist** yet | `FEATURE_DEVELOPMENT_PIPELINE` | Write PRD |
 | Something **exists but needs to change** | `CHANGE_REQUEST_PIPELINE` | Define current vs desired |
+| Does the app **matter to real people**? | `USER_PERSONA_TESTING_PIPELINE` | Define personas + scenarios |

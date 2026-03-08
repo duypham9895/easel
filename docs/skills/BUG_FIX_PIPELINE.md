@@ -4,6 +4,7 @@
 > **Related Skills:**
 > - `docs/skills/FEATURE_DEVELOPMENT_PIPELINE.md`
 > - `docs/skills/CHANGE_REQUEST_PIPELINE.md`
+> - `docs/skills/USER_PERSONA_TESTING_PIPELINE.md`
 > - `docs/skills/TESTING_STANDARDS.md` — **MANDATORY** testing standards for all pipelines
 
 ---
@@ -446,10 +447,11 @@ When fixing bugs, SWE MUST follow this hierarchy:
 
 ---
 
-## Related Skills
+## All Four Pipelines — Quick Reference
 
-- **Feature Development Pipeline:** `docs/skills/FEATURE_DEVELOPMENT_PIPELINE.md`  
-  Trigger when: building new functionality, adding new features
-
-- **Bug Fix Pipeline:** `docs/skills/BUG_FIX_PIPELINE.md`  
-  Trigger when: existing feature is broken, something not working as expected
+| Trigger | Pipeline | Starting Point |
+|---|---|---|
+| Something is **broken** | `BUG_FIX_PIPELINE` | Reproduce the bug |
+| Something **doesn't exist** yet | `FEATURE_DEVELOPMENT_PIPELINE` | Write PRD |
+| Something **exists but needs to change** | `CHANGE_REQUEST_PIPELINE` | Define current vs desired |
+| Does the app **matter to real people**? | `USER_PERSONA_TESTING_PIPELINE` | Define personas + scenarios |
