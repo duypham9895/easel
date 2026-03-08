@@ -112,6 +112,12 @@ Migrations in `app/supabase/migrations/` (001-006, applied sequentially).
 - **SOS** = urgent signal (sweet_tooth, need_a_hug, cramps_alert, quiet_time)
 - **Phases**: menstrual → follicular → ovulatory → luteal
 
+### Product Design Rules
+- **Whisper/SOS alerts are ALWAYS ON** — core feature, never toggleable. This is why the app exists.
+- **Sun notifications are ALWAYS ON** — boyfriend must stay informed, no option to disable.
+- **Moon notifications are OPTIONAL** — she can toggle cycle reminders (period approaching/started/ended).
+- **No AI terminology in UI** — use "Smart timing" not "Let AI decide", "Personalized" not "AI-generated". Keep labels warm and human.
+
 ### Commit Style
 `<type>: <description>` — types: feat, fix, refactor, docs, test, chore, perf, ci
 
