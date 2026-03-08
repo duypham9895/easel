@@ -5,6 +5,8 @@ const LANGUAGE_NAMES: Record<string, string> = {
   vi: 'Vietnamese',
 };
 
+/** Mood value → label mapping. Must match app UI labels in i18n/en/checkin.json. */
+const MOOD_LABELS = ['low', 'meh', 'okay', 'good', 'great'] as const;
 /** Returns the language instruction to append to system prompts. */
 function langInstruction(lang: string): string {
   const name = LANGUAGE_NAMES[lang] ?? 'English';
@@ -96,7 +98,7 @@ export async function generatePartnerAdvice(
 ): Promise<string> {
   const hasMoodData = mood != null || (symptoms && symptoms.length > 0);
   const moodLabel = mood
-    ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
+    ? MOOD_LABELS[mood - 1]
     : null;
   const symptomText = symptoms && symptoms.length > 0 ? symptoms.join(', ') : null;
 
@@ -163,7 +165,7 @@ export async function generateDailyInsight(
   language = 'en'
 ): Promise<string> {
   const moodLabel = mood
-    ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
+    ? MOOD_LABELS[mood - 1]
     : 'not rated';
   const symptomText = symptoms.length > 0 ? symptoms.join(', ') : 'none logged';
 
@@ -191,7 +193,7 @@ export async function generatePersonalizedPhaseInsight(
   language = 'en'
 ): Promise<string> {
   const moodLabel = mood
-    ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
+    ? MOOD_LABELS[mood - 1]
     : 'not rated';
   const symptomText = symptoms.length > 0 ? symptoms.join(', ') : 'none logged';
 
@@ -220,7 +222,7 @@ export async function generatePersonalizedSelfCare(
   language = 'en'
 ): Promise<string> {
   const moodLabel = mood
-    ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
+    ? MOOD_LABELS[mood - 1]
     : 'not rated';
   const symptomText = symptoms.length > 0 ? symptoms.join(', ') : 'none logged';
 

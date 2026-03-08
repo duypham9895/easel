@@ -149,3 +149,9 @@ Migrations in `app/supabase/migrations/` (001-006, applied sequentially).
 - Never mutate state outside of `appStore.ts`
 - Never hardcode secrets — use environment variables
 - Never skip RLS testing — test queries as both Moon and Sun roles
+
+### Skill ↔ Paperclip Sync (MANDATORY)
+Whenever a file in `docs/skills/` is created, edited, renamed, or deleted, you MUST sync the change to the relevant Paperclip agent `TOOLS.md` files in `agents/*/TOOLS.md`. See `.claude/rules/skill-sync.md` for the full mapping and procedure. This also applies in reverse — if an agent's skill references change, ensure `docs/skills/` stays consistent.
+
+### Paperclip-First (MANDATORY)
+ALL features, bugs, change requests, and non-trivial tasks MUST go through Paperclip. Never do work directly — create a Paperclip issue first, assign it to the right agent, then let the agent team execute. See `.claude/rules/paperclip-first.md` for the full workflow, agent IDs, issue templates, and delegation patterns. The user talks to you in chat; you translate into Paperclip issues.
