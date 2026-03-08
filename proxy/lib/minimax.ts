@@ -90,18 +90,33 @@ export async function generatePartnerAdvice(
   phase: string,
   dayInCycle: number,
   phaseTagline: string,
-  language = 'en'
+  language = 'en',
+  mood?: number | null,
+  symptoms?: string[]
 ): Promise<string> {
+  const hasMoodData = mood != null || (symptoms && symptoms.length > 0);
+  const moodLabel = mood
+    ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
+    : null;
+  const symptomText = symptoms && symptoms.length > 0 ? symptoms.join(', ') : null;
+
+  const moodAwareness = hasMoodData
+    ? `\n- She checked in today: ${moodLabel ? `mood is "${moodLabel}"` : ''}${moodLabel && symptomText ? ', ' : ''}${symptomText ? `experiencing: ${symptomText}` : ''} — weave awareness of how she ACTUALLY feels into your advice`
+    : '';
+
   const system = `You are an empathy coach advising a caring boyfriend whose girlfriend is tracking her cycle using Easel.
 Write 2–3 warm, specific, actionable sentences (max 45 words) telling him what to do or say TODAY.
 Rules:
 - Be concrete — not "be supportive" but "send her a voice note tonight instead of texting"
 - Match the energy of her phase (quiet during menstrual, adventurous during follicular, etc.)
 - Sound like a wise friend, not a self-help book
-- No medical advice
+- No medical advice${moodAwareness}
 Respond with ONLY the advice text.${langInstruction(language)}`;
 
-  const user = `Her phase: ${phase} | Day ${dayInCycle} of cycle | Theme: ${phaseTagline}\nWhat should he do today?`;
+  const userMoodLine = hasMoodData
+    ? `\nHer mood today: ${moodLabel ?? 'not rated'} | Symptoms: ${symptomText ?? 'none'}`
+    : '';
+  const user = `Her phase: ${phase} | Day ${dayInCycle} of cycle | Theme: ${phaseTagline}${userMoodLine}\nWhat should he do today?`;
 
   return callMinimax(system, user, 100, 0.8);
 }
@@ -166,7 +181,66 @@ Respond with ONLY the insight text.${langInstruction(language)}`;
 }
 
 // ---------------------------------------------------------------------------
-// 5. Moon Whisper options — AI-generated per cycle phase
+// 5. GF personalized phase insight (replaces static "About this Phase")
+// ---------------------------------------------------------------------------
+export async function generatePersonalizedPhaseInsight(
+  phase: string,
+  dayInCycle: number,
+  mood: number | null,
+  symptoms: string[],
+  language = 'en'
+): Promise<string> {
+  const moodLabel = mood
+    ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
+    : 'not rated';
+  const symptomText = symptoms.length > 0 ? symptoms.join(', ') : 'none logged';
+
+  const system = `You are a warm, knowledgeable companion inside a period-tracking app called Easel.
+The user just checked in and wants to understand what her body is going through today. Write 1–2 sentences (max 50 words) that:
+- Explain what is happening in her body during this phase in a warm, normalizing way
+- Personalize the explanation based on her mood and symptoms — connect what she is experiencing to what is typical for this phase
+- Make her feel understood and informed, not anxious
+- Sound like a caring friend who knows biology, not a textbook
+- No medical advice
+Respond with ONLY the insight text.${langInstruction(language)}`;
+
+  const user = `Phase: ${phase} | Day: ${dayInCycle}\nMood today: ${moodLabel}\nSymptoms: ${symptomText}\nExplain what her body is doing today.`;
+
+  return callMinimax(system, user, 100, 0.8);
+}
+
+// ---------------------------------------------------------------------------
+// 6. GF personalized self-care advice (replaces static "Self-Care" tips)
+// ---------------------------------------------------------------------------
+export async function generatePersonalizedSelfCare(
+  phase: string,
+  dayInCycle: number,
+  mood: number | null,
+  symptoms: string[],
+  language = 'en'
+): Promise<string> {
+  const moodLabel = mood
+    ? ['terrible', 'low', 'okay', 'good', 'great'][mood - 1]
+    : 'not rated';
+  const symptomText = symptoms.length > 0 ? symptoms.join(', ') : 'none logged';
+
+  const system = `You are a warm self-care companion inside a period-tracking app called Easel.
+Based on the user's current cycle phase, mood, and symptoms, suggest ONE specific, actionable self-care activity in 1–2 sentences (max 50 words).
+Rules:
+- Be concrete — not "take care of yourself" but "try a 10-minute warm bath with lavender tonight"
+- Match the activity to her current state: gentle for low energy, active for high energy
+- Personalize based on her reported symptoms and mood
+- Sound like a thoughtful friend, not a wellness app
+- No medical advice
+Respond with ONLY the self-care suggestion.${langInstruction(language)}`;
+
+  const user = `Phase: ${phase} | Day: ${dayInCycle}\nMood today: ${moodLabel}\nSymptoms: ${symptomText}\nSuggest one self-care activity.`;
+
+  return callMinimax(system, user, 100, 0.8);
+}
+
+// ---------------------------------------------------------------------------
+// 7. Moon Whisper options — AI-generated per cycle phase
 // ---------------------------------------------------------------------------
 export async function generateWhisperOptions(
   phase: string,
