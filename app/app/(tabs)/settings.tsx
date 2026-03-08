@@ -358,9 +358,18 @@ export default function SettingsTab() {
                   </TouchableOpacity>
                 </>
               ) : (
-                <Text style={styles.cardBody}>
-                  {t('healthUnavailable')}
-                </Text>
+                <>
+                  <Text style={styles.cardBody}>
+                    {t('healthUnavailable')}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.generateButton}
+                    onPress={() => router.push('/health-sync')}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.generateButtonText}>{t('manualEntry')}</Text>
+                  </TouchableOpacity>
+                </>
               )}
             </View>
           </View>
