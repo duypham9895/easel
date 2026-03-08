@@ -13,9 +13,10 @@ interface Props {
   phase: CyclePhase;
   dayInCycle: number;
   accentColor: string;
+  onCheckInSubmit?: (mood: number | null, symptoms: string[]) => void;
 }
 
-export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
+export function DailyCheckIn({ phase, dayInCycle, accentColor, onCheckInSubmit }: Props) {
   const { t } = useTranslation('checkin');
   const { userId } = useAppStore();
 
@@ -63,6 +64,8 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
         setMood(data.mood ?? null);
         setSymptoms(data.symptoms ?? []);
         setSubmitted(true);
+        // Notify parent so dashboard can refresh AI cards with restored data
+        onCheckInSubmit?.(data.mood ?? null, data.symptoms ?? []);
         // Fetch insight for the restored log so returning users see it too
         await fetchInsight(data.mood ?? null, data.symptoms ?? []);
       }
@@ -100,6 +103,8 @@ export function DailyCheckIn({ phase, dayInCycle, accentColor }: Props) {
       if (error) throw error;
 
       setSubmitted(true);
+      // Notify parent so dashboard can refresh AI cards
+      onCheckInSubmit?.(mood, symptoms);
       // Fetch AI insight immediately after saving
       await fetchInsight(mood, symptoms);
     } catch (err) {

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,10 +17,42 @@ import { useAIPartnerAdvice } from '@/hooks/useAIPartnerAdvice';
 import { useSOSListener } from '@/hooks/useSOSListener';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n/config';
+import { fetchPartnerDailyLog, PartnerDailyLog } from '@/lib/db/dailyLogs';
+import { getMyCouple } from '@/lib/db/couples';
 
 const SUN = SunColors;
 
 const PHASE_KEYS = ['menstrual', 'follicular', 'ovulatory', 'luteal'] as const;
+
+const MOOD_KEYS: Record<number, string> = {
+  1: 'moodLevel1',
+  2: 'moodLevel2',
+  3: 'moodLevel3',
+  4: 'moodLevel4',
+  5: 'moodLevel5',
+};
+
+/** Build a human-readable mood + symptoms summary for Sun's GuideCard. */
+function formatPartnerMood(
+  log: PartnerDailyLog | null,
+  t: (key: string, opts?: Record<string, string>) => string,
+  tPhases: (key: string) => string,
+  phase: string,
+): string {
+  if (!log?.mood) {
+    return `${tPhases(`${phase}_mood`)}\n\n${t('moonNoCheckIn')}`;
+  }
+
+  const moodLabel = t(MOOD_KEYS[log.mood] ?? 'moodLevel3');
+  let text = t('moonFeeling', { mood: moodLabel });
+
+  if (log.symptoms && log.symptoms.length > 0) {
+    const symptomList = log.symptoms.join(', ').toLowerCase();
+    text += ` ${t('moonSymptomsPrefix')} ${symptomList}`;
+  }
+
+  return text;
+}
 
 export function SunDashboard() {
   const { t } = useTranslation('dashboard');
@@ -36,6 +68,27 @@ export function SunDashboard() {
   const activeWhisper = useAppStore((s) => s.activeWhisper);
 
   useSOSListener();
+
+  // Fetch Moon's daily log so Sun sees her actual mood and symptoms
+  const [partnerLog, setPartnerLog] = useState<PartnerDailyLog | null>(null);
+
+  useEffect(() => {
+    if (!isPartnerLinked) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const couple = await getMyCouple();
+        if (cancelled || !couple?.girlfriend_id) return;
+        const log = await fetchPartnerDailyLog(couple.girlfriend_id);
+        if (!cancelled) setPartnerLog(log);
+      } catch (err) {
+        console.warn('[SunDashboard] failed to fetch partner daily log:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isPartnerLinked]);
 
   const dayInCycle = getCurrentDayInCycle(
     activeCycle.lastPeriodStartDate,
@@ -55,7 +108,7 @@ export function SunDashboard() {
   const {
     advice,
     isLoading: adviceLoading,
-  } = useAIPartnerAdvice(phase, dayInCycle);
+  } = useAIPartnerAdvice(phase, dayInCycle, partnerLog?.mood, partnerLog?.symptoms);
 
   const shareInvite = useCallback(() => {
     Share.share({
@@ -147,7 +200,7 @@ export function SunDashboard() {
           <GuideCard
             icon="activity"
             title={t('moonMoodNow')}
-            text={tPhases(`${phase}_mood`)}
+            text={formatPartnerMood(partnerLog, t, tPhases, phase)}
             accent={phaseInfo.color}
           />
           <GuideCard

@@ -17,11 +17,16 @@ interface UseAIPartnerAdviceResult {
 /**
  * Fetches AI-generated, phase-aware partner advice for the boyfriend.
  * Shows static fallback immediately; replaces with AI text once fetched.
- * Re-fetches when phase or dayInCycle changes (i.e. day rollover).
+ * Re-fetches when phase, dayInCycle, or Moon's mood/symptoms change.
+ *
+ * When mood/symptoms are provided, the AI generates advice that accounts
+ * for how Moon actually feels today — not just generic phase guidance.
  */
 export function useAIPartnerAdvice(
   phase: CyclePhase,
-  dayInCycle: number
+  dayInCycle: number,
+  partnerMood?: number | null,
+  partnerSymptoms?: string[] | null,
 ): UseAIPartnerAdviceResult {
   const proxyUrl = process.env.EXPO_PUBLIC_PROXY_URL;
   const clientToken = process.env.EXPO_PUBLIC_CLIENT_TOKEN;
@@ -32,6 +37,9 @@ export function useAIPartnerAdvice(
   const [advice, setAdvice] = useState(fallback);
   const [isAI, setIsAI] = useState(false);
   const [isLoading, setIsLoading] = useState(!!proxyUrl);
+
+  // Stable serialization for dependency tracking
+  const symptomsKey = partnerSymptoms ? partnerSymptoms.join(',') : '';
 
   useEffect(() => {
     setAdvice(fallback);
@@ -47,13 +55,23 @@ export function useAIPartnerAdvice(
 
     (async () => {
       try {
+        const body: Record<string, unknown> = {
+          phase,
+          dayInCycle,
+          phaseTagline,
+          language: i18n.language,
+        };
+        // Include mood/symptoms when available so AI can personalize
+        if (partnerMood != null) body.mood = partnerMood;
+        if (partnerSymptoms && partnerSymptoms.length > 0) body.symptoms = partnerSymptoms;
+
         const res = await fetch(`${proxyUrl}/api/partner-advice`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Client-Token': clientToken,
           },
-          body: JSON.stringify({ phase, dayInCycle, phaseTagline, language: i18n.language }),
+          body: JSON.stringify(body),
           signal: controller.signal,
         });
 
@@ -74,7 +92,7 @@ export function useAIPartnerAdvice(
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, dayInCycle]);
+  }, [phase, dayInCycle, partnerMood, symptomsKey]);
 
   return { advice, isAI, isLoading };
 }

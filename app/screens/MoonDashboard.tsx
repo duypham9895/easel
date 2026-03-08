@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -24,6 +25,8 @@ import {
   getConceptionChance,
 } from '@/utils/cycleCalculator';
 import { useAIGreeting } from '@/hooks/useAIGreeting';
+import { useAIPhaseInsight } from '@/hooks/useAIPhaseInsight';
+import { useAISelfCare } from '@/hooks/useAISelfCare';
 import { WhisperSheet } from '@/components/moon/WhisperSheet';
 import { useCoupleLinkedListener } from '@/hooks/useCoupleLinkedListener';
 import { useTranslation } from 'react-i18next';
@@ -69,6 +72,26 @@ export function MoonDashboard() {
   const { greeting, isLoading: greetingLoading } = useAIGreeting(
     phase,
     dayInCycle,
+  );
+
+  const {
+    phaseInsight,
+    isLoading: phaseInsightLoading,
+    fetchPhaseInsight,
+  } = useAIPhaseInsight(phase, dayInCycle);
+
+  const {
+    selfCare,
+    isLoading: selfCareLoading,
+    fetchSelfCare,
+  } = useAISelfCare(phase, dayInCycle);
+
+  const handleCheckInSubmit = useCallback(
+    (mood: number | null, symptoms: string[]) => {
+      fetchPhaseInsight(mood, symptoms);
+      fetchSelfCare(mood, symptoms);
+    },
+    [fetchPhaseInsight, fetchSelfCare],
   );
 
   return (
@@ -163,7 +186,7 @@ export function MoonDashboard() {
           <InsightCard
             icon="heart"
             label={t('selfCare')}
-            value={tPhases(`${phase}_selfCare`)}
+            value={selfCareLoading ? '…' : (selfCare ?? tPhases(`${phase}_selfCare`))}
             accent={phaseInfo.color}
           />
         </View>
@@ -171,7 +194,15 @@ export function MoonDashboard() {
         {/* Phase description card */}
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionTitle}>{t('aboutPhase')}</Text>
-          <Text style={styles.descriptionText}>{tPhases(`${phase}_moonMood`)}</Text>
+          {phaseInsightLoading ? (
+            <ActivityIndicator size="small" color={phaseInfo.color} style={styles.cardLoader} />
+          ) : phaseInsight ? (
+            <Animated.Text entering={FadeIn.duration(400)} style={styles.descriptionText}>
+              {phaseInsight}
+            </Animated.Text>
+          ) : (
+            <Text style={styles.descriptionText}>{tPhases(`${phase}_moonMood`)}</Text>
+          )}
         </View>
 
         {/* Daily check-in */}
@@ -179,6 +210,7 @@ export function MoonDashboard() {
           phase={phase}
           dayInCycle={dayInCycle}
           accentColor={phaseInfo.color}
+          onCheckInSubmit={handleCheckInSubmit}
         />
       </ScrollView>
 
@@ -301,6 +333,10 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: MOON.textSecondary,
     lineHeight: 24,
+  },
+  cardLoader: {
+    alignSelf: 'flex-start',
+    marginVertical: 4,
   },
   inviteBanner: {
     flexDirection: 'row',
