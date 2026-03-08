@@ -3,7 +3,7 @@
 ## Monorepo Overview
 Easel is a couples menstrual cycle tracking app. **Moon** (girlfriend) tracks her cycle, mood, and symptoms; **Sun** (boyfriend) receives phase-aware guidance, whisper signals, and SOS alerts. The app emphasizes empathy, privacy, and AI personalization. Built with Expo/React Native, Supabase, and MiniMax AI via a Vercel proxy.
 
-**Current version:** v1.5.1 | **Languages:** English, Vietnamese | **Platform:** iOS (Android planned)
+**Current version:** v1.6.0 | **Languages:** English, Vietnamese | **Platform:** iOS (Android planned)
 
 ## Repo Structure
 ```
@@ -24,8 +24,14 @@ easel/
 │   ├── api/        Serverless handlers (greeting, partner-advice, sos-tip, etc.)
 │   └── lib/        auth.ts, rateLimit.ts, minimax.ts (prompt engineering)
 ├── landing/        Static landing page (single index.html, GitHub Pages)
-├── docs/           PRD, Architecture, API, UX, User Journeys, Deployment
-│   └── plans/      Feature design documents
+├── docs/           All documentation (see docs/README.md for structure rules)
+│   ├── project/    Core project docs (PRD, Architecture, API, Deployment, UX)
+│   ├── features/   One subfolder per feature with all related docs
+│   ├── releases/   One subfolder per version (v1.6.0/, etc.)
+│   ├── reviews/    Expert reviews and audits
+│   ├── plans/      Design plans and proposals
+│   ├── bugs/       Bug investigations
+│   └── skills/     Pipeline and workflow definitions
 └── .github/        CI/CD workflows (supabase, proxy, notify-cycle, pages)
 ```
 
