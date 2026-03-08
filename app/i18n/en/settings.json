@@ -46,6 +46,6 @@
   "periodStarted": "Period started",
   "periodEnded": "Period ended",
   "whisperAlerts": "Whisper alerts",
-  "letAiDecide": "Let AI decide timing",
+  "smartTiming": "Smart timing",
   "daysBeforePeriod": "Days before period"
 }

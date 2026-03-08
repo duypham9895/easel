@@ -180,8 +180,18 @@ export default function SettingsTab() {
             >
               <Text style={rowStyles.label}>{t('language')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                <View style={{
+                  backgroundColor: language === 'vi' ? '#DA251D18' : '#00247D18',
+                  borderRadius: Radii.sm,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: language === 'vi' ? '#DA251D' : '#00247D' }}>
+                    {language === 'vi' ? 'VI' : 'EN'}
+                  </Text>
+                </View>
                 <Text style={rowStyles.value}>
-                  {language === 'vi' ? '🇻🇳 ' + t('vietnamese') : '🇬🇧 ' + t('english')}
+                  {language === 'vi' ? t('vietnamese') : t('english')}
                 </Text>
                 <Feather name="chevron-right" size={16} color={Colors.textHint} />
               </View>
@@ -262,12 +272,6 @@ export default function SettingsTab() {
                       <Text style={rowStyles.value}>—</Text>
                     )}
                   </View>
-                  <Divider />
-                  <ToggleRow
-                    label={t('whisperNotifications')}
-                    value={notificationPrefs.whisperAlerts}
-                    onToggle={v => updateNotificationPrefs({ whisperAlerts: v })}
-                  />
                 </>
               )}
             </View>
@@ -434,9 +438,7 @@ export default function SettingsTab() {
               <Divider />
               <ToggleRow label={t('periodEnded')} value={notificationPrefs.periodEnded} onToggle={v => updateNotificationPrefs({ periodEnded: v })} />
               <Divider />
-              <ToggleRow label={t('whisperAlerts')} value={notificationPrefs.whisperAlerts} onToggle={v => updateNotificationPrefs({ whisperAlerts: v })} />
-              <Divider />
-              <ToggleRow label={t('letAiDecide')} value={notificationPrefs.useAiTiming} onToggle={v => updateNotificationPrefs({ useAiTiming: v })} />
+              <ToggleRow label={t('smartTiming')} value={notificationPrefs.useAiTiming} onToggle={v => updateNotificationPrefs({ useAiTiming: v })} />
               {!notificationPrefs.useAiTiming && (
                 <>
                   <Divider />
