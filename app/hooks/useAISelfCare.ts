@@ -52,8 +52,8 @@ export function useAISelfCare(
 
         if (!res.ok) throw new Error(`Proxy ${res.status}`);
 
-        const data = (await res.json()) as { suggestion?: string };
-        if (data.suggestion) setSelfCare(data.suggestion);
+        const data = (await res.json()) as { selfCare?: string };
+        if (data.selfCare) setSelfCare(data.selfCare);
       } catch (err) {
         console.warn('[useAISelfCare] failed to fetch:', err);
       } finally {
