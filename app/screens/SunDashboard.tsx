@@ -54,7 +54,6 @@ export function SunDashboard() {
 
   const {
     advice,
-    isAI: adviceIsAI,
     isLoading: adviceLoading,
   } = useAIPartnerAdvice(phase, dayInCycle);
 
@@ -153,7 +152,7 @@ export function SunDashboard() {
           />
           <GuideCard
             icon="star"
-            title={adviceIsAI ? t('howToShowUpAI') : t('howToShowUp')}
+            title={t('howToShowUp')}
             text={adviceLoading ? '…' : advice}
             accent={phaseInfo.color}
           />

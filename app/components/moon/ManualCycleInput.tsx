@@ -36,6 +36,7 @@ function computePreviewDate(lastPeriodStartDate: string, avgCycleLength: number)
 
 export function ManualCycleInput({ onSubmit, prefill }: Props) {
   const { t, i18n } = useTranslation('health');
+  const { t: tCommon } = useTranslation('common');
   const locale = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
 
   const twoWeeksAgo = new Date();
@@ -148,7 +149,7 @@ export function ManualCycleInput({ onSubmit, prefill }: Props) {
               style={styles.doneDateButton}
               onPress={() => setShowDatePicker(false)}
             >
-              <Text style={styles.doneDateText}>Done</Text>
+              <Text style={styles.doneDateText}>{tCommon('done')}</Text>
             </TouchableOpacity>
           )}
         </View>

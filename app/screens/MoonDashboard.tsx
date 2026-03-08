@@ -59,9 +59,14 @@ export function MoonDashboard() {
     cycleSettings.avgCycleLength,
   );
   const phaseInfo = PHASE_INFO[phase];
-  const conceptionChance = getConceptionChance(phase);
+  const FERTILITY_KEY_MAP: Record<string, string> = {
+    'Low': 'fertilityLow',
+    'Medium': 'fertilityMedium',
+    'Very High': 'fertilityVeryHigh',
+  };
+  const conceptionChance = t(FERTILITY_KEY_MAP[getConceptionChance(phase)] ?? 'fertilityLow');
 
-  const { greeting, isAI, isLoading: greetingLoading } = useAIGreeting(
+  const { greeting, isLoading: greetingLoading } = useAIGreeting(
     phase,
     dayInCycle,
   );
@@ -91,9 +96,6 @@ export function MoonDashboard() {
               />
             ) : (
               <Text style={styles.headlineTitle}>{greeting}</Text>
-            )}
-            {isAI && !greetingLoading && (
-              <Text style={styles.aiLabel}>✦ AI</Text>
             )}
           </View>
           <TouchableOpacity
@@ -169,7 +171,7 @@ export function MoonDashboard() {
         {/* Phase description card */}
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionTitle}>{t('aboutPhase')}</Text>
-          <Text style={styles.descriptionText}>{tPhases(`${phase}_mood`)}</Text>
+          <Text style={styles.descriptionText}>{tPhases(`${phase}_moonMood`)}</Text>
         </View>
 
         {/* Daily check-in */}
@@ -232,11 +234,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: MOON.textPrimary,
     letterSpacing: -0.5,
-  },
-  aiLabel: {
-    ...Typography.tiny,
-    color: MOON.textHint,
-    letterSpacing: 1,
   },
   settingsBtn: {
     width: 40,

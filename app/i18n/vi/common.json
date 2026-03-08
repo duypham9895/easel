@@ -12,8 +12,6 @@
   "signOut": "Đăng xuất",
   "signOutConfirm": "Bạn có chắc muốn đăng xuất?",
   "signOutFailed": "Đăng xuất thất bại. Vui lòng thử lại.",
-  "ai": "AI",
-  "aiLabel": "✦ AI",
   "uploading": "Đang tải lên...",
   "tapToChangePhoto": "Nhấn để đổi ảnh",
   "shareCode": "Chia sẻ mã",
@@ -26,5 +24,8 @@
   "dayOfCycle": "Ngày {{day}} trong chu kỳ của Moon",
   "daysUntilPeriod": "ngày nữa\nđến kỳ kinh",
   "in_days_one": "Còn {{count}} ngày",
-  "in_days_other": "Còn {{count}} ngày"
+  "in_days_other": "Còn {{count}} ngày",
+  "tabToday": "Hôm nay",
+  "tabCalendar": "Lịch",
+  "tabSettings": "Cài đặt"
 }

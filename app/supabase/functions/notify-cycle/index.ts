@@ -27,6 +27,55 @@ interface PushMessage {
   channelId: string;
 }
 
+type Lang = 'en' | 'vi';
+
+const CYCLE_COPY: Record<Lang, {
+  approaching: { moonTitle: string; moonBody: (d: number) => string; sunTitle: string; sunBody: (d: number) => string };
+  started: { moonTitle: string; moonBody: string; sunTitle: string; sunBody: string };
+  ended: { moonTitle: string; moonBody: string; sunTitle: string; sunBody: string };
+}> = {
+  en: {
+    approaching: {
+      moonTitle: 'Your period is coming',
+      moonBody: (d) => `Your period may start in ${d} day${d === 1 ? '' : 's'}. Take care of yourself.`,
+      sunTitle: "Moon's period is approaching",
+      sunBody: (d) => `Moon's period may start in ${d} day${d === 1 ? '' : 's'} — be extra gentle today.`,
+    },
+    started: {
+      moonTitle: 'Your period may have started',
+      moonBody: 'Day 1 of your cycle. Be kind to yourself today.',
+      sunTitle: "Moon's period may have started",
+      sunBody: "It's day 1 of Moon's cycle. Show extra love today.",
+    },
+    ended: {
+      moonTitle: 'Your period is ending',
+      moonBody: "Your cycle is wrapping up. Energy is returning — you've got this.",
+      sunTitle: "Moon's period is ending",
+      sunBody: "Moon's cycle is finishing up. She'll be feeling more like herself soon.",
+    },
+  },
+  vi: {
+    approaching: {
+      moonTitle: 'Kỳ kinh sắp đến',
+      moonBody: (d) => `Kỳ kinh có thể bắt đầu trong ${d} ngày nữa. Hãy chăm sóc bản thân nhé.`,
+      sunTitle: 'Kỳ kinh của Moon sắp đến',
+      sunBody: (d) => `Kỳ kinh của Moon có thể bắt đầu trong ${d} ngày nữa — hãy nhẹ nhàng hơn hôm nay.`,
+    },
+    started: {
+      moonTitle: 'Kỳ kinh có thể đã bắt đầu',
+      moonBody: 'Ngày 1 của chu kỳ. Hãy dịu dàng với bản thân hôm nay.',
+      sunTitle: 'Kỳ kinh của Moon có thể đã bắt đầu',
+      sunBody: 'Ngày 1 trong chu kỳ của Moon. Hãy yêu thương cô ấy nhiều hơn hôm nay.',
+    },
+    ended: {
+      moonTitle: 'Kỳ kinh sắp kết thúc',
+      moonBody: 'Chu kỳ sắp hoàn tất. Năng lượng đang trở lại — bạn làm được mà.',
+      sunTitle: 'Kỳ kinh của Moon sắp kết thúc',
+      sunBody: 'Chu kỳ của Moon sắp xong. Cô ấy sẽ sớm cảm thấy như bình thường.',
+    },
+  },
+};
+
 function addDays(dateStr: string, days: number): Date {
   const d = new Date(dateStr + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + days);
@@ -120,6 +169,17 @@ Deno.serve(async (_req: Request) => {
       tokensByUser.get(user_id)!.push(token);
     }
 
+    // Batch 3: Get language preferences for all users
+    const { data: prefsData } = await supabase
+      .from('user_preferences')
+      .select('user_id, language')
+      .in('user_id', allUserIds);
+
+    const langByUser = new Map<string, Lang>();
+    for (const { user_id, language } of prefsData ?? []) {
+      langByUser.set(user_id, (language === 'vi' ? 'vi' : 'en') as Lang);
+    }
+
     // --- Build notification messages using lookup maps ---
     const allMessages: PushMessage[] = [];
 
@@ -142,37 +202,31 @@ Deno.serve(async (_req: Request) => {
       const doStarted = np?.period_started !== false;
       const doEnded = np?.period_ended !== false;
 
-      let moonTitle = '';
-      let moonBody = '';
-      let sunTitle = '';
-      let sunBody = '';
+      let eventType: 'approaching' | 'started' | 'ended' | null = null;
 
       if (doApproaching && daysUntil === notifyDaysBefore) {
-        const d = daysUntil;
-        moonTitle = 'Your period is coming';
-        moonBody = `Your period may start in ${d} day${d === 1 ? '' : 's'}. Take care of yourself.`;
-        sunTitle = "Moon's period is approaching";
-        sunBody = `Moon's period may start in ${d} day${d === 1 ? '' : 's'} — be extra gentle today.`;
+        eventType = 'approaching';
       } else if (doStarted && daysUntil === 0) {
-        moonTitle = 'Your period may have started';
-        moonBody = 'Day 1 of your cycle. Be kind to yourself today.';
-        sunTitle = "Moon's period may have started";
-        sunBody = "It's day 1 of Moon's cycle. Show extra love today.";
+        eventType = 'started';
       } else if (doEnded && daysUntil === -avgPeriodLen) {
-        moonTitle = 'Your period is ending';
-        moonBody = "Your cycle is wrapping up. Energy is returning — you've got this.";
-        sunTitle = "Moon's period is ending";
-        sunBody = "Moon's cycle is finishing up. She'll be feeling more like herself soon.";
+        eventType = 'ended';
       }
 
-      if (!moonTitle) continue;
+      if (!eventType) continue;
 
       // Use batch lookup instead of per-user query
+      const moonLang = langByUser.get(moon.id) ?? 'en';
+      const moonCopy = CYCLE_COPY[moonLang][eventType];
+      const moonTitle = moonCopy.moonTitle;
+      const moonBody = eventType === 'approaching'
+        ? (moonCopy as typeof CYCLE_COPY['en']['approaching']).moonBody(daysUntil)
+        : (moonCopy as typeof CYCLE_COPY['en']['started']).moonBody;
+
       const moonTokens = tokensByUser.get(moon.id) ?? [];
       for (const token of moonTokens) {
         allMessages.push({
           to: token, sound: 'default',
-          title: moonTitle, body: moonBody,
+          title: moonTitle, body: moonBody as string,
           data: { type: 'cycle', userId: moon.id },
           channelId: 'cycle',
         });
@@ -181,11 +235,18 @@ Deno.serve(async (_req: Request) => {
       // Use batch lookup instead of per-user query
       const partnerId = partnerByMoon.get(moon.id);
       if (partnerId) {
+        const sunLang = langByUser.get(partnerId) ?? 'en';
+        const sunCopy = CYCLE_COPY[sunLang][eventType];
+        const sunTitle = sunCopy.sunTitle;
+        const sunBody = eventType === 'approaching'
+          ? (sunCopy as typeof CYCLE_COPY['en']['approaching']).sunBody(daysUntil)
+          : (sunCopy as typeof CYCLE_COPY['en']['started']).sunBody;
+
         const sunTokens = tokensByUser.get(partnerId) ?? [];
         for (const token of sunTokens) {
           allMessages.push({
             to: token, sound: 'default',
-            title: sunTitle, body: sunBody,
+            title: sunTitle, body: sunBody as string,
             data: { type: 'cycle_partner', moonId: moon.id },
             channelId: 'cycle',
           });

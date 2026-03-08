@@ -54,7 +54,7 @@ export function PermissionDeniedScreen({ onEnterManually }: Props) {
             accessibilityRole="button"
           >
             <Feather name="settings" size={14} color={M.textHint} />
-            <Text style={styles.settingsLinkText}>Open Settings</Text>
+            <Text style={styles.settingsLinkText}>{t('permissionDenied.openSettings')}</Text>
           </TouchableOpacity>
         </>
       )}

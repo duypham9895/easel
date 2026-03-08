@@ -128,7 +128,7 @@ export function CycleDataReview({ syncResult, predictedDate, onEdit, onConfirm }
           >
             <Feather name="info" size={14} color={M.textHint} />
             <Text style={styles.explanationToggleText}>
-              {showExplanation ? 'Hide' : 'How does this work?'}
+              {showExplanation ? t('review.hideExplanation') : t('review.showExplanation')}
             </Text>
             <Feather name={showExplanation ? 'chevron-up' : 'chevron-down'} size={14} color={M.textHint} />
           </TouchableOpacity>

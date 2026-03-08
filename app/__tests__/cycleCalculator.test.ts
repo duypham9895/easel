@@ -20,12 +20,12 @@ describe('cycleCalculator', () => {
       expect(getCurrentDayInCycle(dateStr, 28)).toBe(11);
     });
 
-    it('wraps around after cycle completes', () => {
+    it('continues counting past cycle length for late periods', () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
-      // Day 30 in a 28-day cycle = day 3 of next cycle (30 % 28 = 2, +1 = 3)
-      expect(getCurrentDayInCycle(dateStr, 28)).toBe(3);
+      // Day 31 of a 28-day cycle = period is 3 days late (no modulo wrapping)
+      expect(getCurrentDayInCycle(dateStr, 28)).toBe(31);
     });
 
     it('returns 1 for future dates', () => {
@@ -35,11 +35,11 @@ describe('cycleCalculator', () => {
       expect(getCurrentDayInCycle(dateStr, 28)).toBe(1);
     });
 
-    it('handles 21-day short cycle', () => {
+    it('handles 21-day short cycle past expected length', () => {
       const twentyOneDaysAgo = new Date();
       twentyOneDaysAgo.setDate(twentyOneDaysAgo.getDate() - 21);
       const dateStr = twentyOneDaysAgo.toISOString().split('T')[0];
-      expect(getCurrentDayInCycle(dateStr, 21)).toBe(1); // Exactly one cycle = day 1
+      expect(getCurrentDayInCycle(dateStr, 21)).toBe(22); // Day 22 = period 1 day late (no wrapping)
     });
   });
 

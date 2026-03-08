@@ -72,6 +72,8 @@
     "confidenceMediumDesc": "Based on {{count}} cycles — accuracy improves with more data",
     "confidenceLow": "Low confidence",
     "confidenceLowDesc": "Based on limited data — predictions improve as you log more periods",
+    "showExplanation": "How does this work?",
+    "hideExplanation": "Hide",
     "editButton": "Edit",
     "confirmButton": "Looks good, let's go!",
     "predictionExplanation": "Your prediction is based on your average cycle length of {{cycleLength}} days. We calculate when your next period is likely to start based on when your last one began. The more data we have, the more accurate your predictions become."
@@ -80,7 +82,8 @@
   "permissionDenied": {
     "headline": "No problem!",
     "body": "You can still get great predictions by entering your cycle info manually. You can always connect Apple Health later in Settings.",
-    "ctaButton": "Enter manually"
+    "ctaButton": "Enter manually",
+    "openSettings": "Open Settings"
   },
 
   "settings": {

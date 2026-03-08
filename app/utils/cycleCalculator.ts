@@ -3,7 +3,7 @@ import { getOvulationDay } from '@/constants/cycle';
 
 export function getCurrentDayInCycle(
   lastPeriodStartDate: string,
-  avgCycleLength: number,
+  _avgCycleLength: number,
 ): number {
   const start = new Date(lastPeriodStartDate);
   const today = new Date();
@@ -16,7 +16,7 @@ export function getCurrentDayInCycle(
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) return 1;
-  return (diffDays % avgCycleLength) + 1;
+  return diffDays + 1;
 }
 
 export function getCurrentPhase(

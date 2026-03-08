@@ -72,6 +72,8 @@
     "confidenceMediumDesc": "Dựa trên {{count}} chu kỳ — độ chính xác cải thiện khi có thêm dữ liệu",
     "confidenceLow": "Độ tin cậy thấp",
     "confidenceLowDesc": "Dựa trên dữ liệu hạn chế — dự đoán cải thiện khi bạn ghi nhận thêm kỳ kinh",
+    "showExplanation": "Cách hoạt động?",
+    "hideExplanation": "Ẩn",
     "editButton": "Chỉnh sửa",
     "confirmButton": "Đúng rồi, bắt đầu thôi!",
     "predictionExplanation": "Dự đoán dựa trên độ dài chu kỳ trung bình {{cycleLength}} ngày của bạn. Chúng tôi tính toán thời điểm kỳ kinh tiếp theo dựa trên ngày bắt đầu kỳ kinh gần nhất. Càng nhiều dữ liệu, dự đoán càng chính xác."
@@ -80,7 +82,8 @@
   "permissionDenied": {
     "headline": "Không vấn đề!",
     "body": "Bạn vẫn có thể nhận dự đoán tốt bằng cách nhập thông tin chu kỳ thủ công. Bạn luôn có thể kết nối Apple Health sau trong Cài đặt.",
-    "ctaButton": "Nhập thủ công"
+    "ctaButton": "Nhập thủ công",
+    "openSettings": "Mở Cài đặt"
   },
 
   "settings": {
