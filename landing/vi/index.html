@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Easel — Hiểu Chu Kỳ, Hiểu Nhau</title>
+  <meta name="description" content="Easel là ứng dụng theo dõi chu kỳ kinh nguyệt dành cho cả hai. Moon Whisper cho em, Sun Whisper cho anh. Bắt đầu thấu hiểu nhau ở một tầng sâu hơn." />
+  <link rel="alternate" hreflang="en" href="https://duypham9895.github.io/easel/" />
+  <link rel="alternate" hreflang="vi" href="https://duypham9895.github.io/easel/vi/" />
+  <link rel="alternate" hreflang="x-default" href="https://duypham9895.github.io/easel/" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%239b7fc0'/%3E%3Cstop offset='100%25' stop-color='%23c97c84'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='36' font-style='italic' font-weight='400' fill='white' text-anchor='middle'%3Ee%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot" aria-hidden="true"></div>
+<div id="cursor-ring" aria-hidden="true"></div>
+
+<!-- =============================================
+     NAVIGATION
+============================================= -->
+<nav role="navigation" aria-label="Điều hướng chính">
+  <a href="#hero" class="nav-logo">Eas<span>el</span></a>
+  <ul class="nav-links">
+    <li><a href="#what">Easel là gì</a></li>
+    <li><a href="#whispers">Whisper</a></li>
+    <li><a href="#phases">4 Giai đoạn</a></li>
+    <li><a href="#testimonials">Câu chuyện</a></li>
+    <li><a href="#cta-final" class="nav-cta">Bắt Đầu Cùng Nhau</a></li>
+  </ul>
+  <div class="lang-switcher">
+    <a href="../" aria-label="English"><svg width="20" height="14" viewBox="0 0 60 42" aria-hidden="true"><clipPath id="us"><rect width="60" height="42" rx="3"/></clipPath><g clip-path="url(#us)"><rect width="60" height="42" fill="#B22234"/><rect y="3.23" width="60" height="3.23" fill="#fff"/><rect y="9.69" width="60" height="3.23" fill="#fff"/><rect y="16.15" width="60" height="3.23" fill="#fff"/><rect y="22.62" width="60" height="3.23" fill="#fff"/><rect y="29.08" width="60" height="3.23" fill="#fff"/><rect y="35.54" width="60" height="3.23" fill="#fff"/><rect width="24" height="22.62" fill="#3C3B6E"/></g></svg></a>
+    <a href="./" class="active" aria-label="Tiếng Việt"><svg width="20" height="14" viewBox="0 0 60 42" aria-hidden="true"><clipPath id="vn"><rect width="60" height="42" rx="3"/></clipPath><g clip-path="url(#vn)"><rect width="60" height="42" fill="#DA251D"/><polygon points="30,7 33.5,18.5 45,18.5 35.8,25.5 39,37 30,30 21,37 24.2,25.5 15,18.5 26.5,18.5" fill="#FFFF00"/></g></svg></a>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Mở menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobile-menu" role="menu">
+  <a href="#what">Easel là gì</a>
+  <a href="#whispers">Moon &amp; Sun Whisper</a>
+  <a href="#phases">4 Giai đoạn</a>
+  <a href="#for-him">Dành cho anh</a>
+  <a href="#for-her">Dành cho em</a>
+  <a href="#testimonials">Câu chuyện</a>
+  <a href="#cta-final" class="btn btn-primary" style="text-align:center">Bắt Đầu Cùng Nhau</a>
+  <div class="lang-switcher-mobile">
+    <a href="../" aria-label="English"><svg width="24" height="16" viewBox="0 0 60 42" aria-hidden="true"><clipPath id="us-m"><rect width="60" height="42" rx="3"/></clipPath><g clip-path="url(#us-m)"><rect width="60" height="42" fill="#B22234"/><rect y="3.23" width="60" height="3.23" fill="#fff"/><rect y="9.69" width="60" height="3.23" fill="#fff"/><rect y="16.15" width="60" height="3.23" fill="#fff"/><rect y="22.62" width="60" height="3.23" fill="#fff"/><rect y="29.08" width="60" height="3.23" fill="#fff"/><rect y="35.54" width="60" height="3.23" fill="#fff"/><rect width="24" height="22.62" fill="#3C3B6E"/></g></svg> English</a>
+    <a href="./" class="active" aria-label="Tiếng Việt"><svg width="24" height="16" viewBox="0 0 60 42" aria-hidden="true"><clipPath id="vn-m"><rect width="60" height="42" rx="3"/></clipPath><g clip-path="url(#vn-m)"><rect width="60" height="42" fill="#DA251D"/><polygon points="30,7 33.5,18.5 45,18.5 35.8,25.5 39,37 30,30 21,37 24.2,25.5 15,18.5 26.5,18.5" fill="#FFFF00"/></g></svg> Tiếng Việt</a>
+  </div>
+</div>
+
+<!-- =============================================
+     SECTION 1: HERO
+============================================= -->
+<section id="hero" aria-label="Hero">
+  <div class="blob hero-blob-1" aria-hidden="true"></div>
+  <div class="blob hero-blob-2" aria-hidden="true"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <p class="eyebrow reveal">Hiểu chu kỳ, dành cho hai người</p>
+        <h1 class="reveal reveal-delay-1">
+          Khi anh <em>hiểu</em> chu kỳ của em, anh hiểu em.
+        </h1>
+        <p class="hero-subhead reveal reveal-delay-2">
+          Easel là ứng dụng theo dõi chu kỳ đầu tiên được xây dựng cho cả hai — không chỉ để ghi nhận ngày kinh, mà để thay đổi cách hai bạn kết nối, giao tiếp và quan tâm nhau mỗi ngày.
+        </p>
+        <div class="hero-buttons reveal reveal-delay-3">
+          <a href="#cta-final" class="btn btn-primary">Bắt Đầu Cùng Nhau</a>
+          <a href="#what" class="btn btn-secondary">Xem Cách Hoạt Động</a>
+        </div>
+        <div class="hero-social-proof reveal reveal-delay-4">
+          <div class="avatar-stack" aria-hidden="true">
+            <div class="av av-1">S</div>
+            <div class="av av-2">M</div>
+            <div class="av av-3">J</div>
+            <div class="av av-4">L</div>
+          </div>
+          <p class="social-proof-text">
+            Đã có <strong>4.200+ cặp đôi</strong> chọn thấu hiểu nhau hơn
+          </p>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal reveal-delay-2" aria-label="Minh hoạ quỹ đạo Moon và Sun">
+        <div class="orbit-container">
+          <div class="orbit-ring orbit-ring-3" aria-hidden="true"></div>
+          <div class="orbit-ring orbit-ring-2" aria-hidden="true"></div>
+          <div class="orbit-ring orbit-ring-1" aria-hidden="true"></div>
+
+          <div class="orbit-center" aria-hidden="true">
+            <span class="orbit-center-text">e</span>
+          </div>
+
+          <div class="moon-body" aria-hidden="true">
+            <div class="moon-body-inner">🌙</div>
+          </div>
+
+          <div class="sun-body" aria-hidden="true">
+            <div class="sun-body-inner">☀️</div>
+          </div>
+
+          <div class="phase-float phase-float-1" aria-hidden="true"></div>
+          <div class="phase-float phase-float-2" aria-hidden="true"></div>
+          <div class="phase-float phase-float-3" aria-hidden="true"></div>
+          <div class="phase-float phase-float-4" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 2: EASEL LÀ GÌ
+============================================= -->
+<section id="what" class="bg-blush" aria-labelledby="what-heading">
+  <div class="container">
+    <div class="what-header">
+      <p class="eyebrow reveal">Ý tưởng</p>
+      <h2 id="what-heading" class="reveal reveal-delay-1">Ngôn ngữ chung cho nhịp yêu thương 28 ngày</h2>
+      <p class="reveal reveal-delay-2">Easel chuyển bốn giai đoạn trong chu kỳ kinh nguyệt thành hướng dẫn hàng ngày — cho sức khoẻ của em và sự thấu hiểu của anh. Khi cả hai cùng nhìn một bức tranh, mọi thứ trở nên dễ dàng hơn.</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item reveal">
+        <div class="stat-number">28</div>
+        <div class="stat-label">Ngày mỗi chu kỳ</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-1">
+        <div class="stat-number">4</div>
+        <div class="stat-label">Giai đoạn riêng biệt</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-2">
+        <div class="stat-number">2</div>
+        <div class="stat-label">Người, cùng nhau</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-3">
+        <div class="stat-number">1</div>
+        <div class="stat-label">Mối quan hệ bền vững hơn</div>
+      </div>
+    </div>
+
+    <div class="cycle-wheel-wrap">
+      <div class="cycle-wheel-canvas reveal">
+        <canvas id="cycleCanvas" width="320" height="320" aria-label="Vòng chu kỳ kinh nguyệt minh hoạ bốn giai đoạn"></canvas>
+        <div class="wheel-center-label" aria-hidden="true">
+          <span>Chu kỳ của em</span>
+          <small>28 ngày</small>
+        </div>
+      </div>
+
+      <div class="cycle-phases-list">
+        <div class="phase-item reveal">
+          <div class="phase-dot" style="background:var(--menstrual)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Hành kinh — Ngày 1–5</h4>
+            <p>Nghỉ ngơi, buông bỏ và hồi phục. Năng lượng thấp hơn, nội tâm sâu hơn. Em cần sự ấm áp, thoải mái và sự hiện diện dịu dàng.</p>
+          </div>
+        </div>
+        <div class="phase-item reveal reveal-delay-1">
+          <div class="phase-dot" style="background:var(--follicular)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Nang trứng — Ngày 6–13</h4>
+            <p>Năng lượng dâng cao và lạc quan. Em sáng tạo, hoà đồng và cởi mở với ý tưởng mới. Thời điểm tuyệt vời để lên kế hoạch và phiêu lưu.</p>
+          </div>
+        </div>
+        <div class="phase-item reveal reveal-delay-2">
+          <div class="phase-dot" style="background:var(--ovulation)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Rụng trứng — Ngày 14–16</h4>
+            <p>Đỉnh cao của sự tự tin và kết nối. Giao tiếp ở mức tốt nhất — em cảm thấy là chính mình nhất và khao khát sự gần gũi nhất.</p>
+          </div>
+        </div>
+        <div class="phase-item reveal reveal-delay-3">
+          <div class="phase-dot" style="background:var(--luteal)" aria-hidden="true"></div>
+          <div class="phase-item-info">
+            <h4>Hoàng thể — Ngày 17–28</h4>
+            <p>Hướng nội, nhạy cảm hơn. Em có thể cần nhiều sự trấn an và những buổi tối yên tĩnh hơn. Những cử chỉ nhỏ lúc này có ý nghĩa nhất.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 3: LỢI ÍCH
+============================================= -->
+<section id="benefits" class="bg-ink" aria-labelledby="benefits-heading">
+  <div class="container">
+    <div class="benefits-header">
+      <p class="eyebrow reveal">Tại sao hiệu quả</p>
+      <h2 id="benefits-heading" class="reveal reveal-delay-1">Tất cả những gì mối quan hệ của bạn đang thiếu</h2>
+      <p class="reveal reveal-delay-2">Đừng đoán nữa. Hãy bắt đầu thấu hiểu. Easel cho cả hai công cụ để cùng nhau vượt qua mỗi tháng bằng sự đồng cảm, thay vì bối rối.</p>
+    </div>
+
+    <div class="benefits-grid">
+      <div class="benefit-card reveal">
+        <div class="benefit-icon" aria-hidden="true">🌀</div>
+        <h4>Hiểu Bản Thân Sâu Hơn</h4>
+        <p>Em có bức tranh rõ ràng về nhịp sinh học — tâm trạng, năng lượng và triệu chứng — để có thể dự đoán và chuẩn bị, thay vì chỉ phản ứng.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-1">
+        <div class="benefit-icon" aria-hidden="true">🧘</div>
+        <h4>Điều Hoà Cảm Xúc</h4>
+        <p>Hiểu "tại sao" đằng sau cảm xúc sẽ xoá bỏ vòng xoáy tự trách. Dữ liệu trở thành sức mạnh, không phải chẩn đoán.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-2">
+        <div class="benefit-icon" aria-hidden="true">🔥</div>
+        <h4>Lên Kế Hoạch Gần Gũi</h4>
+        <p>Biết khi nào ham muốn ở đỉnh, khi nào em khao khát sự gần gũi, và khi nào em cần không gian — để mọi khoảnh khắc đều đúng lúc hơn.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-3">
+        <div class="benefit-icon" aria-hidden="true">🕊️</div>
+        <h4>Ít Cãi Nhau Hơn</h4>
+        <p>Phần lớn "xung đột bí ẩn" xảy ra trong giai đoạn hoàng thể. Khi anh biết điều này, căng thẳng tan biến trước khi kịp bắt đầu.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-4">
+        <div class="benefit-icon" aria-hidden="true">📊</div>
+        <h4>Theo Dõi Sức Khoẻ</h4>
+        <p>Theo dõi triệu chứng theo thời gian để phát hiện bất thường sớm. Easel biến nhật ký hàng ngày thành thông tin sức khoẻ có ý nghĩa.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-5">
+        <div class="benefit-icon" aria-hidden="true">💞</div>
+        <h4>Gắn Kết Đôi Lứa</h4>
+        <p>Chia sẻ điều riêng tư này làm sâu thêm sự tin tưởng. Muốn hiểu nhau ở tầng sâu này chính là một hành động yêu thương.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 4: MOON & SUN WHISPER
+============================================= -->
+<section id="whispers" aria-labelledby="whispers-heading">
+  <div class="container">
+    <div class="whispers-header">
+      <p class="eyebrow reveal">Tính năng đặc biệt</p>
+      <h2 id="whispers-heading" class="reveal reveal-delay-1">Moon Whisper &amp; Sun Whisper</h2>
+      <p class="reveal reveal-delay-2">Mỗi ngày, cả hai đều nhận được một tin nhắn được cá nhân hoá — một bài thơ nhẹ nhàng, một lời khuyên thực tế — được điều chỉnh chính xác theo giai đoạn hiện tại của em.</p>
+    </div>
+
+    <div class="whispers-split">
+      <!-- MOON PANEL -->
+      <div class="moon-panel whisper-panel reveal">
+        <p class="eyebrow moon-color">Dành cho em</p>
+        <div class="whisper-icon moon-icon" aria-hidden="true">🌙</div>
+        <h3>Moon Whisper</h3>
+        <p>Một tin nhắn dịu dàng mỗi ngày gửi đến em — thơ mộng, ấm áp và rất riêng tư. Mỗi Whisper được điều chỉnh theo giai đoạn hiện tại: khẳng định em khi em mệt mỏi, tôn vinh em khi em toả sáng, và nhắc em nghỉ ngơi khi em cần nhất. Giống như có một người bạn thân luôn biết nói đúng điều em cần nghe.</p>
+        <div class="whisper-cards">
+          <div class="whisper-card moon-card">
+            Em đang trong những ngày dịu dàng của sự khởi đầu. Nghỉ ngơi không phải là rút lui — đó là mảnh đất để mùa tiếp theo của em nảy mầm. Hãy để mình được dịu dàng hôm nay.
+            <span class="whisper-card-author">— Giai đoạn hành kinh, ngày 2</span>
+          </div>
+          <div class="whisper-card moon-card">
+            Có gì đó đang thức dậy trong em. Hãy để ý cách những ý tưởng đến dễ dàng hơn, cách thế giới cảm thấy nhẹ nhàng hơn. Đây là lúc em đang bừng sáng — hãy nghiêng vào nó.
+            <span class="whisper-card-author">— Giai đoạn nang trứng, ngày 8</span>
+          </div>
+          <div class="whisper-card moon-card">
+            Đây là phiên bản trọn vẹn nhất của em. Em rực rỡ, thu hút và không thể nhầm lẫn — chính là em. Thế giới cảm nhận được điều đó, kể cả khi em chưa tự thấy.
+            <span class="whisper-card-author">— Giai đoạn rụng trứng, ngày 14</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUN PANEL -->
+      <div class="sun-panel whisper-panel reveal reveal-delay-2">
+        <p class="eyebrow sun-color">Dành cho anh</p>
+        <div class="whisper-icon sun-icon" aria-hidden="true">☀️</div>
+        <h3>Sun Whisper</h3>
+        <p>Một bản tóm tắt hàng ngày rõ ràng, thực tế — viết riêng cho anh. Không cần đoán, không cần dò dẫm. Sun Whisper chuyển sự phức tạp của chu kỳ thành những gợi ý đơn giản, dễ làm: em có thể đang cảm thấy gì hôm nay, em có thể cần gì, và một điều nhỏ anh có thể làm để trở thành người bạn đời mà em xứng đáng có. Thấu hiểu trở nên dễ dàng.</p>
+        <div class="whisper-cards">
+          <div class="whisper-card sun-card">
+            Em ấy đang trong giai đoạn nghỉ ngơi hôm nay. Bỏ qua những kế hoạch lớn. Một bữa ăn ấm, một buổi tối yên lặng và câu "Tối nay để anh lo" sẽ có ý nghĩa rất lớn với em ấy lúc này.
+            <span class="whisper-card-author">— Sun Whisper, ngày 2</span>
+          </div>
+          <div class="whisper-card sun-card">
+            Năng lượng của em ấy đang dâng cao. Em ấy có thể muốn khám phá, thử điều mới, hoặc có một cuộc trò chuyện thật sự. Hãy đồng ý với ý tưởng của em ấy hôm nay — em ấy đang trong giai đoạn bừng sáng.
+            <span class="whisper-card-author">— Sun Whisper, ngày 8</span>
+          </div>
+          <div class="whisper-card sun-card">
+            Em ấy có thể nhạy cảm hơn tuần này. Không phải vì anh. Hãy hỏi thăm nhiều hơn, ít phê bình hơn. Một cái ôm thật lâu trước khi anh đi buổi sáng? Đó chính là nước đi của anh.
+            <span class="whisper-card-author">— Sun Whisper, ngày 22</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 5: DÀNH CHO ANH
+============================================= -->
+<section id="for-him" class="bg-blush" aria-labelledby="forhim-heading">
+  <div class="container">
+    <div class="for-him-inner">
+      <div class="for-him-reasons">
+        <p class="eyebrow reveal">Dành cho anh</p>
+        <h2 id="forhim-heading" class="reveal reveal-delay-1">Đừng đoán nữa. Hãy trở thành người bạn đời mà em cần.</h2>
+        <p style="margin-bottom:2.5rem" class="reveal reveal-delay-2">Anh không phải không biết yêu — anh chỉ đang thiếu một cuốn cẩm nang. Easel chính là cuốn cẩm nang đó.</p>
+
+        <div class="reason-item reveal reveal-delay-1">
+          <div class="reason-number" aria-hidden="true">01</div>
+          <div class="reason-content">
+            <h4>Đừng đoán, hãy thấu hiểu</h4>
+            <p>Sự căng thẳng hôm thứ Ba? Sự im lặng hôm thứ Sáu? Cuối cùng anh sẽ biết tại sao — và anh có thể đáp lại bằng sự đồng cảm thay vì bối rối.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-2">
+          <div class="reason-number" aria-hidden="true">02</div>
+          <div class="reason-content">
+            <h4>Biết khi nào nên cho không gian, khi nào nên xuất hiện</h4>
+            <p>Easel cho anh biết chính xác khi nào em cần sự gần gũi và khi nào em cần không gian riêng. Không còn vô tình thúc ép khi em cần yên tĩnh, hay biến mất khi em khao khát kết nối.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-3">
+          <div class="reason-number" aria-hidden="true">03</div>
+          <div class="reason-content">
+            <h4>Ít cãi nhau hơn, nhiều kết nối hơn</h4>
+            <p>Phần lớn xung đột trong mối quan hệ không phải về điều mà nó có vẻ ngoài. Khi anh hiểu chu kỳ của em, anh hiểu điều bên dưới — và điều đó xoá tan hầu hết mọi thứ.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-4">
+          <div class="reason-number" aria-hidden="true">04</div>
+          <div class="reason-content">
+            <h4>Trở thành người bạn đời thật sự hiểu em</h4>
+            <p>Em ấy đã dành nhiều năm ước có ai đó hiểu mà không cần giải thích lại. Easel biến điều đó thành có thể. Đó không phải điều nhỏ.</p>
+          </div>
+        </div>
+        <div class="reason-item reveal reveal-delay-5">
+          <div class="reason-number" aria-hidden="true">05</div>
+          <div class="reason-content">
+            <h4>Em cảm thấy được hiểu = sự gần gũi sâu hơn</h4>
+            <p>Khi em cảm thấy thật sự được nhìn thấy — về cảm xúc, thể chất, nhịp sinh học — em sẽ mở lòng theo cách biến một mối quan hệ tốt thành tuyệt vời.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-3">
+        <div class="mock-phone" aria-label="Ví dụ màn hình điện thoại với Sun Whisper và tin nhắn">
+          <div class="phone-header">
+            <div class="phone-avatar" aria-hidden="true">H</div>
+            <div>
+              <div class="phone-name">Hương</div>
+              <div class="phone-status">Đang hoạt động</div>
+            </div>
+          </div>
+          <div class="chat-bubbles">
+            <div class="easel-tip">
+              <div class="easel-tip-label">Easel Sun Whisper</div>
+              Em ấy đang bước vào giai đoạn hoàng thể hôm nay. Em ấy có thể cảm xúc hơn bình thường — đó là nội tiết, không phải cá nhân. Một chút kiên nhẫn thêm và một cử chỉ ân cần tối nay sẽ có ý nghĩa rất lớn.
+            </div>
+            <div class="chat-bubble-out">
+              Em ơi, anh mua đồ Thái ở chỗ em thích rồi nè. Tối nay anh rảnh luôn — coi phim nhé?
+              <div class="chat-time">19:23</div>
+            </div>
+            <div class="chat-bubble-in">
+              đợi chút sao anh biết tối nay em cần đúng cái này vậy
+              <div class="chat-time">19:26</div>
+            </div>
+            <div class="chat-bubble-out">
+              Anh chỉ chú ý thôi mà 😏
+              <div class="chat-time">19:27</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 6: DÀNH CHO EM
+============================================= -->
+<section id="for-her" aria-labelledby="forher-heading">
+  <div class="container">
+    <div class="for-her-inner">
+      <div class="for-her-visual reveal">
+        <div class="her-quote-card">
+          <div class="big-quote" aria-hidden="true">"</div>
+          <blockquote>"Được người mình yêu thấu hiểu — đó chính là Easel."</blockquote>
+          <cite>— Mọi cô gái từng ước anh ấy hiểu mà không cần nói</cite>
+        </div>
+      </div>
+
+      <div class="for-her-reasons">
+        <p class="eyebrow reveal">Dành cho em</p>
+        <h2 id="forher-heading" class="reveal reveal-delay-1">Em xứng đáng được thật sự <em>thấu hiểu</em>.</h2>
+        <p style="margin-bottom:2.5rem" class="reveal reveal-delay-2">Không chỉ là chịu đựng. Không chỉ là chiều theo. Thật sự, sâu sắc được hiểu — mà không cần phải giải thích mỗi tháng.</p>
+
+        <div class="her-reason-item reveal reveal-delay-1">
+          <div class="her-reason-icon" aria-hidden="true">🔇</div>
+          <div class="her-reason-content">
+            <h4>Không cần giải thích tại sao em cảm thấy như vậy</h4>
+            <p>Anh ấy sẽ có bối cảnh trước khi em phải tìm lời. Chu kỳ của em lên tiếng thay em khi em không còn năng lượng để nói.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-2">
+          <div class="her-reason-icon" aria-hidden="true">🧿</div>
+          <div class="her-reason-content">
+            <h4>Anh ấy sẽ biết trước khi em cần nói</h4>
+            <p>Tưởng tượng anh ấy mang túi chườm nóng đến trước khi em kịp xin, hoặc cho em không gian trước khi em phải yêu cầu. Đó là điều Easel giúp thực hiện.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-3">
+          <div class="her-reason-icon" aria-hidden="true">🌱</div>
+          <div class="her-reason-content">
+            <h4>Nhìn anh ấy trở nên kiên nhẫn hơn, chu đáo hơn</h4>
+            <p>Khi anh ấy có sự thấu hiểu làm bối cảnh, phản ứng của anh ấy thay đổi hoàn toàn. Không phải vì anh ấy thay đổi — mà vì cuối cùng anh ấy có đúng thông tin.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-4">
+          <div class="her-reason-icon" aria-hidden="true">🗣️</div>
+          <div class="her-reason-content">
+            <h4>Chu kỳ của em trở thành ngôn ngữ chung, không phải bí ẩn</h4>
+            <p>Thay vì điều gì đó xảy ra riêng với em, chu kỳ trở thành điều hai người cùng trải qua — cởi mở, không xấu hổ hay bực bội.</p>
+          </div>
+        </div>
+        <div class="her-reason-item reveal reveal-delay-5">
+          <div class="her-reason-icon" aria-hidden="true">✨</div>
+          <div class="her-reason-content">
+            <h4>Đây là điều riêng tư nhất hai người có thể cùng làm (ngoài chuyện hiển nhiên 😉)</h4>
+            <p>Để anh ấy thật sự bước vào — vào những nhịp điệu tạo nên con người em — là một hành động dũng cảm sâu sắc. Và khi anh ấy đáp lại bằng sự quan tâm, mọi thứ sâu đậm hơn.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 7: 4 GIAI ĐOẠN
+============================================= -->
+<section id="phases" class="bg-blush" aria-labelledby="phases-heading">
+  <div class="container">
+    <div class="phases-header">
+      <p class="eyebrow reveal">Nhịp điệu</p>
+      <h2 id="phases-heading" class="reveal reveal-delay-1">Bốn mùa của em, mỗi tháng</h2>
+      <p class="reveal reveal-delay-2">Mỗi giai đoạn có năng lượng, nhu cầu và món quà riêng. Hiểu cả bốn là chìa khoá để hiểu em — và khiến mỗi tháng êm ái hơn tháng trước.</p>
+    </div>
+
+    <div class="phases-scroll-wrap reveal">
+      <div class="phases-track">
+        <!-- Hành kinh -->
+        <article class="phase-card phase-menstrual" aria-label="Chi tiết giai đoạn hành kinh">
+          <div class="phase-card-emoji" aria-hidden="true">🌒</div>
+          <h3>Hành Kinh</h3>
+          <div class="phase-duration">Ngày 1–5 · Giai đoạn nghỉ ngơi</div>
+          <div class="phase-section-label">Em cảm thấy thế nào</div>
+          <p>Hướng nội, dịu dàng và mệt mỏi. Năng lượng thấp, nhạy cảm cao. Em khao khát sự ấm áp, dịu dàng và được phép chậm lại mà không cảm thấy tội lỗi.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">Anh có thể hỗ trợ thế nào</div>
+          <p>Giúp em bớt việc. Mang túi chườm nóng đến. Đừng hiểu nhầm sự im lặng của em — đó là rút lui để nạp năng lượng, không phải rút lui khỏi anh.</p>
+        </article>
+
+        <!-- Nang trứng -->
+        <article class="phase-card phase-follicular" aria-label="Chi tiết giai đoạn nang trứng">
+          <div class="phase-card-emoji" aria-hidden="true">🌤️</div>
+          <h3>Nang Trứng</h3>
+          <div class="phase-duration">Ngày 6–13 · Giai đoạn bừng sáng</div>
+          <div class="phase-section-label">Em cảm thấy thế nào</div>
+          <p>Nhẹ nhàng, lạc quan và tràn đầy ý tưởng. Năng lượng tăng đều. Em hoà đồng, tò mò và sẵn sàng nói "có" với mọi thứ. Đây là giai đoạn bừng sáng của em.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">Anh có thể hỗ trợ thế nào</div>
+          <p>Theo kịp năng lượng của em. Lên kế hoạch điều gì đó em muốn thử. Hãy tò mò cùng em. Gợi ý chuyến đi, nhà hàng, ý tưởng — em đã sẵn sàng cho điều đó.</p>
+        </article>
+
+        <!-- Rụng trứng -->
+        <article class="phase-card phase-ovulation" aria-label="Chi tiết giai đoạn rụng trứng">
+          <div class="phase-card-emoji" aria-hidden="true">🌕</div>
+          <h3>Rụng Trứng</h3>
+          <div class="phase-duration">Ngày 14–16 · Giai đoạn nở rộ</div>
+          <div class="phase-section-label">Em cảm thấy thế nào</div>
+          <p>Tự tin, thu hút và rạng rỡ. Đỉnh cao giao tiếp và kết nối. Em hướng ngoại nhất, cởi mở nhất và khao khát sự gần gũi nhất.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">Anh có thể hỗ trợ thế nào</div>
+          <p>Hãy hiện diện. Nói em đẹp (hôm nay em sẽ tin điều đó). Lên kế hoạch hẹn hò ở đây. Những cuộc trò chuyện sâu tự nhiên đến lúc này — hãy tận hưởng chúng.</p>
+        </article>
+
+        <!-- Hoàng thể -->
+        <article class="phase-card phase-luteal" aria-label="Chi tiết giai đoạn hoàng thể">
+          <div class="phase-card-emoji" aria-hidden="true">🌘</div>
+          <h3>Hoàng Thể</h3>
+          <div class="phase-duration">Ngày 17–28 · Giai đoạn lắng xuống</div>
+          <div class="phase-section-label">Em cảm thấy thế nào</div>
+          <p>Nhạy cảm, nội tâm và dễ quá tải. Tiếng nói tự phê bình trở nên lớn hơn. Những điều nhỏ cảm thấy lớn. Em cần sự trấn an hơn là giải pháp.</p>
+          <div class="phase-card-divider" aria-hidden="true"></div>
+          <div class="phase-section-label">Anh có thể hỗ trợ thế nào</div>
+          <p>Hãy lắng nghe mà không cố sửa. Ít phê bình hơn, nhiều công nhận hơn. "Anh thấy em và em đang làm tốt lắm" sẽ có giá trị hơn bất kỳ lời khuyên nào lúc này.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 8: ĐIỂM MỐI QUAN HỆ
+============================================= -->
+<section id="score" class="bg-ink" aria-labelledby="score-heading">
+  <div class="container">
+    <div class="score-inner">
+      <div class="score-text">
+        <p class="eyebrow reveal">Trò chơi hoá</p>
+        <h2 id="score-heading" class="reveal reveal-delay-1">Điểm Mối Quan Hệ</h2>
+        <p class="reveal reveal-delay-2">Tình yêu cần được chăm sóc. Điểm Mối Quan Hệ biến những hành động nhỏ mỗi ngày thành một thước đo kết nối chung — làm cho sự phát triển trở nên nhìn thấy được, và sự kiên trì trở nên đáng giá.</p>
+
+        <div class="score-ways reveal reveal-delay-3">
+          <div class="score-way">
+            <div class="score-way-icon" aria-hidden="true">📝</div>
+            <div class="score-way-text">
+              <h4>Em ghi nhật ký hàng ngày</h4>
+              <p>Tâm trạng, năng lượng, triệu chứng — chỉ mất 30 giây. Mỗi lần ghi đều tích điểm và giúp anh hiểu em hơn.</p>
+            </div>
+          </div>
+          <div class="score-way">
+            <div class="score-way-icon" aria-hidden="true">☀️</div>
+            <div class="score-way-text">
+              <h4>Anh đọc Sun Whisper</h4>
+              <p>Mở và đọc bản tóm tắt hàng ngày giúp tích điểm — và gửi tín hiệu cho em rằng anh đang thật sự quan tâm.</p>
+            </div>
+          </div>
+          <div class="score-way">
+            <div class="score-way-icon" aria-hidden="true">📅</div>
+            <div class="score-way-text">
+              <h4>Cả hai cùng xem lịch chung</h4>
+              <p>Cùng xem lịch chung mở khoá điểm thưởng — bởi vì sự quan tâm là hành động yêu thương tối thượng.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-widget reveal reveal-delay-2">
+        <div class="score-ring-wrap" aria-label="Điểm mối quan hệ: 87 trên 100">
+          <canvas id="scoreCanvas" width="240" height="240" aria-hidden="true"></canvas>
+          <div class="score-ring-center">
+            <div class="score-number">87<span class="score-denom">/100</span></div>
+            <div class="score-label">Tháng này</div>
+          </div>
+        </div>
+
+        <div class="score-status" aria-label="Trạng thái: Đang thăng hoa">Đang thăng hoa 🌙</div>
+
+        <div class="score-bars" aria-label="Chi tiết tương tác">
+          <div class="score-bar-item">
+            <div class="score-bar-label">Nhật ký của em</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill fill-her" data-fill="92" style="width:0%"></div>
+            </div>
+            <div class="score-bar-pct">92%</div>
+          </div>
+          <div class="score-bar-item">
+            <div class="score-bar-label">Whisper anh đã đọc</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill fill-him" data-fill="85" style="width:0%"></div>
+            </div>
+            <div class="score-bar-pct">85%</div>
+          </div>
+          <div class="score-bar-item">
+            <div class="score-bar-label">Lịch chung</div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill fill-shared" data-fill="78" style="width:0%"></div>
+            </div>
+            <div class="score-bar-pct">78%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 9: CÂU CHUYỆN
+============================================= -->
+<section id="testimonials" aria-labelledby="testimonials-heading">
+  <div class="container">
+    <div class="testimonials-header">
+      <p class="eyebrow reveal">Cặp đôi thật</p>
+      <h2 id="testimonials-heading" class="reveal reveal-delay-1">Họ nói gì</h2>
+      <p class="reveal reveal-delay-2">Từ lần tải đầu tiên đến thói quen mỗi ngày — đây là những câu chuyện nhắc chúng tôi tại sao Easel tồn tại.</p>
+    </div>
+
+    <div class="testimonials-grid">
+      <article class="testimonial-card reveal" aria-label="Chia sẻ từ Linh">
+        <div class="stars" aria-label="5 sao">★★★★★</div>
+        <p class="testimonial-text">"Trước đây em sợ tuần trước kỳ kinh vì Minh không bao giờ hiểu tại sao em khác đi. Giờ anh ấy mở Easel trước khi nói chuyện buổi tối. Những trận cãi nhau gần như biến mất. Anh ấy chỉ đơn giản... hiểu rồi."</p>
+        <div class="testimonial-footer">
+          <div class="testimonial-avatar" style="background: var(--rose-deep)" aria-hidden="true">LT</div>
+          <div>
+            <div class="testimonial-name">Linh T.</div>
+            <div class="testimonial-role">Góc nhìn của em · Yêu nhau 3 năm</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="testimonial-card reveal reveal-delay-2" aria-label="Chia sẻ từ Đức">
+        <div class="stars" aria-label="5 sao">★★★★★</div>
+        <p class="testimonial-text">"Thật lòng? Anh từng hoài nghi lắm. Nhưng Sun Whisper thay đổi cách anh xuất hiện mỗi ngày. Tháng trước anh mua hoa đúng lúc em ấy cần nhất — không phải vì đoán. Vì Easel cho anh biết. Em ấy khóc. Anh cũng khóc. Giờ tụi anh hạnh phúc hơn bao giờ hết."</p>
+        <div class="testimonial-footer">
+          <div class="testimonial-avatar" style="background: var(--sun-warm)" aria-hidden="true">ĐN</div>
+          <div>
+            <div class="testimonial-name">Đức N.</div>
+            <div class="testimonial-role">Góc nhìn của anh · Yêu nhau 2 năm</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="testimonial-card reveal reveal-delay-4" aria-label="Chia sẻ từ Hà và Tuấn">
+        <div class="stars" aria-label="5 sao">★★★★★</div>
+        <p class="testimonial-text">"Tụi mình dùng Easel sáu tháng rồi và nó đã trở thành thói quen buổi sáng. Em ghi nhật ký, anh đọc Whisper, rồi tụi mình check-in 5 phút. Điểm mối quan hệ đang là 94. Mình nghĩ đây là lúc tụi mình gắn kết nhất từ trước đến giờ."</p>
+        <div class="testimonial-footer">
+          <div class="testimonial-avatar" style="background: var(--moon-deep)" aria-hidden="true">H&T</div>
+          <div>
+            <div class="testimonial-name">Hà &amp; Tuấn</div>
+            <div class="testimonial-role">Cùng nhau · Dùng Easel 6 tháng</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     SECTION 10: CTA CUỐI
+============================================= -->
+<section id="cta-final" class="bg-ink" aria-labelledby="cta-heading">
+  <div class="cta-moon-deco" aria-hidden="true"></div>
+  <div class="cta-sun-deco" aria-hidden="true"></div>
+  <div class="container">
+    <div class="cta-final-inner">
+      <p class="eyebrow reveal" style="color:var(--rose)">Bắt đầu cùng nhau</p>
+      <h2 id="cta-heading" class="reveal reveal-delay-1">Mối quan hệ của bạn xứng đáng được <em>thấu hiểu</em> như thế này.</h2>
+      <p class="cta-sub reveal reveal-delay-2">Tham gia cùng những cặp đôi đã biến sự hiểu biết về chu kỳ thành sợi dây kết nối. Bắt đầu bằng một lần tải — và một hành động yêu thương nhỏ.</p>
+      <div class="cta-buttons reveal reveal-delay-3">
+        <a href="#" class="btn btn-moon">Tải Cho Em 🌙</a>
+        <a href="#" class="btn btn-sun">Chia Sẻ Với Anh ☀️</a>
+        <a href="#" class="btn btn-outline-white">Tìm Hiểu Thêm</a>
+      </div>
+      <p class="trust-line reveal reveal-delay-4">Miễn phí &nbsp;·&nbsp; Không cần thẻ &nbsp;·&nbsp; Xây dựng bằng tình yêu</p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================
+     FOOTER
+============================================= -->
+<footer role="contentinfo">
+  <div class="container">
+    <div class="footer-inner">
+      <a href="#hero" class="footer-logo">Eas<span>el</span></a>
+      <ul class="footer-links">
+        <li><a href="#what">Cách Hoạt Động</a></li>
+        <li><a href="#phases">4 Giai Đoạn</a></li>
+        <li><a href="#">Bảo Mật</a></li>
+        <li><a href="#">Liên Hệ</a></li>
+      </ul>
+      <p class="footer-copy">&copy; 2026 Easel. Tạo bằng tình yêu, cho tình yêu.</p>
+    </div>
+  </div>
+</footer>
+
+
+<script src="../script.js"></script>
+</body>
+</html>
