@@ -10,113 +10,13 @@
 
 ---
 
-## Agent Team Execution Mode
+## Execution Mode
 
-**MANDATORY:** This pipeline uses parallel agent execution. Launch independent phases as concurrent Agent tool calls in a single message.
+> **Shared orchestration rules:** See `docs/skills/PIPELINE_SHARED.md` for parallel execution and auto-detection.
 
-### Dependency Graph
+**Parallel phases:** 0 -> (1+2) -> 3 -> 4 -> 5 -> 6 -> (7+8). Persona agents must receive full persona profile. Phases 3-6 receive BOTH profiles.
 
-```
-Phase 0 (Orchestrator Setup)
-    │
-    ├──────────────────────┐
-    ▼                      ▼
-Phase 1 (Linh Onboarding) Phase 2 (Minh Onboarding)    ← PARALLEL
-    │                      │
-    └──────────┬───────────┘
-               ▼
-Phase 3 (30-Day Daily Life Usage)
-               │
-               ▼
-Phase 4 (Emotional Moments + Relationship Scenarios)
-               │
-               ▼
-Phase 5 (Friction + Confusion Log)
-               │
-               ▼
-Phase 6 (Persona Debrief)
-               │
-    ┌──────────┴───────────┐
-    ▼                      ▼
-Phase 7 (QA Issues)    Phase 8 (PM Recommendations)    ← PARALLEL
-```
-
-### Orchestration Rules
-
-| Step | Action | Agent Tool Calls |
-|---|---|---|
-| 1 | Run Phase 0 | 1 agent (Orchestrator — reads codebase, defines session scope) |
-| 2 | Run Phases 1+2 in parallel | 2 agents simultaneously: Linh onboarding + Minh onboarding |
-| 3 | Merge onboarding outputs, run Phase 3 | 1 agent (Both personas — reads both onboarding docs) |
-| 4 | Run Phase 4 | 1 agent (Both personas — reads daily usage log) |
-| 5 | Run Phase 5 | 1 agent (Both personas — reads ALL previous docs, synthesizes friction) |
-| 6 | Run Phase 6 | 1 agent (Both personas — full debrief, reads ALL docs) |
-| 7 | Run Phases 7+8 in parallel | 2 agents simultaneously: QA Issues + PM Recommendations |
-
-### How to Launch Parallel Agents
-
-```
-# Step 2 — launch BOTH in a single message:
-Agent(subagent_type="general-purpose", prompt="[Phase 1 — Linh Onboarding] ...")
-Agent(subagent_type="general-purpose", prompt="[Phase 2 — Minh Onboarding] ...")
-
-# Step 7 — launch BOTH in a single message:
-Agent(subagent_type="general-purpose", prompt="[Phase 7 — QA Issues Report] ...")
-Agent(subagent_type="general-purpose", prompt="[Phase 8 — PM Recommendations] ...")
-```
-
-### Context Passing Between Agents
-
-Each agent receives the full context it needs via its prompt:
-- Include the session scope and all previously generated doc file paths
-- Persona agents MUST receive their full persona profile in the prompt
-- Sequential agents MUST wait for parallel agents to complete before starting
-- Phases 3–6 agents receive BOTH persona profiles — they roleplay both characters
-
----
-
-## Trigger Patterns
-
-Activate this pipeline automatically when the request contains any of:
-
-- `"test like a real user"`
-- `"act like a customer"`
-- `"persona testing"`
-- `"test as boyfriend and girlfriend"`
-- `"user behavior testing"`
-- `"emotional user testing"`
-- `"test the app like a real couple"`
-- `"UX testing as real people"`
-- `"would real users like this"`
-- `"user acceptance testing"`
-- `"empathy testing"`
-- `"relationship testing"`
-
----
-
-## Auto-Detection Logic
-
-```
-IF request is about something BROKEN that should work:
--> ACTIVATE: BUG_FIX_PIPELINE
-
-IF request is about something that DOESN'T EXIST yet:
--> ACTIVATE: FEATURE_DEVELOPMENT_PIPELINE
-
-IF request is about something that EXISTS and WORKS
-   but needs to BEHAVE DIFFERENTLY or LOOK DIFFERENT:
--> ACTIVATE: CHANGE_REQUEST_PIPELINE
-
-IF request is about testing whether the app RESONATES
-   with real users, feels right emotionally, or delivers
-   genuine relationship value:
--> ACTIVATE: USER_PERSONA_TESTING_PIPELINE
-
-IF ambiguous:
--> ASK: "Are you looking to fix a bug, build a feature,
-        change existing behavior, or test how real users
-        would experience the app?"
-```
+**Triggers:** "test like a real user", "persona testing", "user acceptance testing", "test as real couple"
 
 ---
 
@@ -811,66 +711,8 @@ Each routed issue gets its own ID in the target pipeline (e.g., `BUG_YYYYMMDD_NN
 
 ---
 
-## Persona Testing vs Technical QA — Key Difference
+## Output Files
 
-| Aspect | Technical QA | Persona Testing |
-|---|---|---|
-| Question asked | "Does it work?" | "Does it matter?" |
-| Perspective | Engineer | Real human in a relationship |
-| Finds | Bugs, broken flows | Friction, emotional misses, missing moments |
-| Language | Test case IDs | *"I felt confused when..."* |
-| Success metric | All tests pass | "I'd recommend this to my best friend" |
-| What it catches | Technical regressions | UX regressions, emotional regressions |
-| Time horizon | Point-in-time | 30-day journey |
-| Relationship awareness | None | Central |
+All saved to `docs/uat/[SESSION_ID]_*.md`: setup, linh_onboarding, minh_onboarding, daily_usage_log (skip in focused), emotional_scenarios, friction_log, persona_debrief, issues_report, recommendations.
 
-**Both are necessary. Neither replaces the other.**
-
----
-
-## Output File Checklist
-
-> Replace `[SESSION_ID]` with format: `UPT_YYYYMMDD_NNN`
-
-- [ ] `docs/uat/[SESSION_ID]_setup.md`
-- [ ] `docs/uat/[SESSION_ID]_linh_onboarding.md`
-- [ ] `docs/uat/[SESSION_ID]_minh_onboarding.md`
-- [ ] `docs/uat/[SESSION_ID]_daily_usage_log.md` *(skip in focused mode)*
-- [ ] `docs/uat/[SESSION_ID]_emotional_scenarios.md`
-- [ ] `docs/uat/[SESSION_ID]_friction_log.md`
-- [ ] `docs/uat/[SESSION_ID]_persona_debrief.md`
-- [ ] `docs/uat/[SESSION_ID]_issues_report.md`
-- [ ] `docs/uat/[SESSION_ID]_recommendations.md`
-- [ ] All issues routed to correct pipeline (Bug Fix / CR / Feature)
-- [ ] Cross-references added between persona issues and target pipeline entries
-- [ ] Retention risk score documented
-- [ ] Relationship value score documented
-
----
-
-## Prompt to Trigger in Claude Code
-
-```
-Read docs/skills/USER_PERSONA_TESTING_PIPELINE.md and execute
-the full persona testing pipeline.
-
-Pipeline mode: full (or: focused)
-Test session scope: [specify features or "full app"]
-Platform: [iOS / Android / both]
-Build: [version or "current"]
-
-Both agents must stay fully in character throughout all phases.
-Document everything from their authentic human perspective first,
-then translate to formal issues in Phase 7.
-```
-
----
-
-## All Four Pipelines — Quick Reference
-
-| Trigger | Pipeline | Starting Point |
-|---|---|---|
-| Something is **broken** | `BUG_FIX_PIPELINE` | Reproduce the bug |
-| Something **doesn't exist** yet | `FEATURE_DEVELOPMENT_PIPELINE` | Write PRD |
-| Something **exists but needs to change** | `CHANGE_REQUEST_PIPELINE` | Define current vs desired |
-| Does the app **matter to real people**? | `USER_PERSONA_TESTING_PIPELINE` | Define personas + scenarios |
+> **Pipeline quick reference:** See `docs/skills/PIPELINE_SHARED.md`

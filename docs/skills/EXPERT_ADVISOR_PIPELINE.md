@@ -584,54 +584,8 @@ All routed items MUST follow `docs/skills/TESTING_STANDARDS.md` during implement
 
 ---
 
-## Prompt to Trigger in Claude Code
+## Output Files
 
-### Full App Expert Review:
-```
-Read docs/skills/EXPERT_ADVISOR_PIPELINE.md and execute
-the full expert advisory pipeline.
+All saved to `docs/advisory/[EAP_ID]_*.md`: setup, expert_reviews, panel_discussion, feature_deep_dives, ideas_innovations, strategic_advisory, synthesis, action_plan.
 
-Enable agent team mode with 6 parallel expert agents:
-- Dr. Maya Chen (Women's Health)
-- James Park (Relationship Psychology)
-- Sarah Okonkwo (Mobile UX & Product Design)
-- Marcus Webb (Privacy & Data Ethics)
-- Priya Nair (Growth & Retention)
-- David Lim (Couples App Strategy)
-
-Review scope: full app — all features
-Focus: everything — health, UX, relationship dynamics,
-privacy, retention, strategy, new ideas
-Build: current
-```
-
-### Focused Expert Review (specific area):
-```
-Read docs/skills/EXPERT_ADVISOR_PIPELINE.md and execute
-the full expert advisory pipeline.
-
-Enable agent team mode with 6 parallel expert agents:
-- Dr. Maya Chen (Women's Health)
-- James Park (Relationship Psychology)
-- Sarah Okonkwo (Mobile UX & Product Design)
-- Marcus Webb (Privacy & Data Ethics)
-- Priya Nair (Growth & Retention)
-- David Lim (Couples App Strategy)
-
-Review scope: [specific feature or area]
-Focus: [UX / health accuracy / partner experience / retention / privacy / all]
-Build: current
-```
-
----
-
-## Related Skills
-
-| Pipeline | When to Use |
-|---|---|
-| `docs/skills/EXPERT_ADVISOR_PIPELINE.md` | Strategic review, expert opinions, new ideas, advisory |
-| `docs/skills/USER_PERSONA_TESTING_PIPELINE.md` | Testing through real couple's eyes |
-| `docs/skills/FEATURE_DEVELOPMENT_PIPELINE.md` | Building something new |
-| `docs/skills/BUG_FIX_PIPELINE.md` | Fixing something broken |
-| `docs/skills/CHANGE_REQUEST_PIPELINE.md` | Improving something existing |
-| `docs/skills/TESTING_STANDARDS.md` | Verification standards for all implementations |
+> **Pipeline quick reference:** See `docs/skills/PIPELINE_SHARED.md`

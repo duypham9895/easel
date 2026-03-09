@@ -9,97 +9,13 @@
 
 ---
 
-## Agent Team Execution Mode
+## Execution Mode
 
-**MANDATORY:** This pipeline uses parallel agent execution. Launch independent phases as concurrent Agent tool calls in a single message.
+> **Shared orchestration rules:** See `docs/skills/PIPELINE_SHARED.md` for parallel execution, auto-detection, QA-SWE loop, and scope discipline.
 
-### Dependency Graph
+**Parallel phases:** 0 -> (1+2) -> 3 -> 4 -> 5 -> (6+7).
 
-```
-Phase 0 (Triage)
-    │
-    ├──────────────────┐
-    ▼                  ▼
-Phase 1 (Impact)   Phase 2 (Root Cause)     ← PARALLEL
-    │                  │
-    └────────┬─────────┘
-             ▼
-Phase 3 (Test Cases)
-             │
-             ▼
-Phase 4 (Implementation)
-             │
-             ▼
-Phase 5 (Test Execution)
-             │
-    ┌────────┴─────────┐
-    ▼                  ▼
-Phase 6 (Report)   Phase 7 (Release Note)   ← PARALLEL
-```
-
-### Orchestration Rules
-
-| Step | Action | Agent Tool Calls |
-|---|---|---|
-| 1 | Run Phase 0 | 1 agent (QA+PM Triage) |
-| 2 | Run Phases 1+2 in parallel | 2 agents simultaneously: QA Impact Mapping + SWE Root Cause Analysis |
-| 3 | Merge outputs, run Phase 3 | 1 agent (QA Test Cases) — reads outputs from both Phase 1 and 2 |
-| 4 | Run Phase 4 | 1 agent (SWE Implementation) |
-| 5 | Run Phase 5 | 1 agent (QA Test Execution) |
-| 6 | Run Phases 6+7 in parallel | 2 agents simultaneously: TPM Report + Tech Writer Release Note |
-
-### How to Launch Parallel Agents
-
-```
-# Step 2 — launch BOTH in a single message:
-Agent(subagent_type="general-purpose", prompt="[Phase 1 — Impact Mapping] ...")
-Agent(subagent_type="general-purpose", prompt="[Phase 2 — Root Cause Analysis] ...")
-
-# Step 6 — launch BOTH in a single message:
-Agent(subagent_type="general-purpose", prompt="[Phase 6 — Fix Report] ...")
-Agent(subagent_type="general-purpose", prompt="[Phase 7 — Release Note] ...")
-```
-
-### Context Passing Between Agents
-
-Each agent receives the full context it needs via its prompt:
-- Include the bug description and all previously generated doc file paths
-- Agents read the output files from previous phases
-- Sequential agents MUST wait for parallel agents to complete before starting
-
----
-
-## Trigger Patterns
-
-Activate this pipeline automatically when the request contains any of:
-
-- `"fix this bug"`
-- `"there's a bug"`
-- `"something is broken"`
-- `"bug report"`
-- `"[X] is not working"`
-- `"fix [X]"`
-- `"investigate [X]"`
-
----
-
-## Auto-Detection Logic
-
-```
-IF request contains:
-  "bug", "broken", "not working", "fix", "issue", "error",
-  "crash", "wrong behavior", "unexpected", "regression"
-→ ACTIVATE: BUG_FIX_PIPELINE
-
-IF request contains:
-  "new feature", "build", "develop", "create", "add", "implement",
-  "make", "i want [X] functionality"
-→ ACTIVATE: FEATURE_DEVELOPMENT_PIPELINE
-
-IF ambiguous (e.g. "improve X", "update X"):
-→ ASK: "Is this fixing broken behavior or adding new functionality?"
-→ Wait for answer, then activate correct pipeline
-```
+**Triggers:** "fix this bug", "something is broken", "not working", "fix [X]", "investigate [X]"
 
 ---
 
@@ -371,87 +287,15 @@ For each test case:
 
 ---
 
-## QA ↔ SWE Loop Protocol
+## Minimal Change Principle
 
-```
-LOOP START
+1. Fix ONLY the root cause
+2. Unrelated issues -> log as separate bug reports
+3. Every line changed must map to `root_cause.md`
+4. When in doubt: smaller change = safer change
 
-  QA executes test cases
+## Output Files
 
-  IF bug verification FAIL:
-    → QA writes: "[BUG_ID] Fix Ineffective — Root cause not resolved"
-    → Include: what was tested, what actually happened
-    → SWE returns to Phase 2 (Root Cause Analysis)
-    → SWE must update root_cause.md with new findings
-    → SWE implements new fix approach
-    → QA re-runs ALL test cases (full suite, not just failed)
+All saved to `docs/bugs/[BUG_ID]_*.md`: triage, impact_map, root_cause, test_cases, fix_notes, test_execution_report, fix_report, release_note.
 
-  IF regression FAIL:
-    → QA writes: "[BUG_ID] Regression Detected in [Feature Name]"
-    → Include: test case ID, steps, expected vs actual
-    → SWE reviews fix_notes.md and adjusts fix scope
-    → SWE must not introduce additional changes beyond regression fix
-    → QA re-runs FULL test suite
-
-  IF all P0 + P1 PASS AND zero new regressions:
-    → EXIT LOOP → Proceed to Phase 6
-
-LOOP END
-```
-
----
-
-## Minimal Change Principle (Hard Rule for SWE)
-
-When fixing bugs, SWE MUST follow this hierarchy:
-
-1. Fix ONLY the root cause — nothing else
-2. If you see unrelated issues while fixing, LOG them as separate bug reports — do NOT fix them in this PR
-3. If the proper fix requires refactoring, create a separate refactor task; implement a targeted fix now
-4. Every line changed must map to a reason in `root_cause.md`
-5. When in doubt: **smaller change = safer change**
-
----
-
-## Output File Checklist
-
-> Replace `[BUG_ID]` with format: `BUG_YYYYMMDD_NNN`
-
-- [ ] `docs/bugs/[BUG_ID]_triage.md`
-- [ ] `docs/bugs/[BUG_ID]_impact_map.md`
-- [ ] `docs/bugs/[BUG_ID]_root_cause.md`
-- [ ] `docs/bugs/[BUG_ID]_test_cases.md`
-- [ ] `docs/bugs/[BUG_ID]_fix_notes.md`
-- [ ] `docs/bugs/[BUG_ID]_test_execution_report.md`
-- [ ] `docs/bugs/[BUG_ID]_fix_report.md`
-- [ ] `docs/bugs/[BUG_ID]_release_note.md`
-- [ ] Original bug: ✅ CONFIRMED FIXED
-- [ ] Zero P0 regressions introduced
-- [ ] All new unit tests passing
-- [ ] All `device-test` cases: confirmed by user on device
-- [ ] Confidence level: matches TESTING_STANDARDS.md constraints
-
----
-
-## Bug Fix vs Feature Development — Key Differences
-
-| Aspect | Feature Pipeline | Bug Fix Pipeline |
-|---|---|---|
-| Starting point | Requirements (PRD) | Reproduction steps (triage) |
-| SWE first action | Read docs, then build | Trace root cause first |
-| Change scope | Build new things | Touch ONLY what's broken |
-| QA focus | Feature works correctly | Bug fixed + nothing new broke |
-| Risk mindset | Build confidently | Change minimally |
-| Phase 0 | PM writes PRD | QA triages and reproduces |
-| Success definition | All features work as designed | Bug gone, app fully stable |
-
----
-
-## All Four Pipelines — Quick Reference
-
-| Trigger | Pipeline | Starting Point |
-|---|---|---|
-| Something is **broken** | `BUG_FIX_PIPELINE` | Reproduce the bug |
-| Something **doesn't exist** yet | `FEATURE_DEVELOPMENT_PIPELINE` | Write PRD |
-| Something **exists but needs to change** | `CHANGE_REQUEST_PIPELINE` | Define current vs desired |
-| Does the app **matter to real people**? | `USER_PERSONA_TESTING_PIPELINE` | Define personas + scenarios |
+> **QA-SWE loop, scope discipline, quick reference:** See `docs/skills/PIPELINE_SHARED.md`

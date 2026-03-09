@@ -9,105 +9,13 @@
 
 ---
 
-## Agent Team Execution Mode
+## Execution Mode
 
-**MANDATORY:** This pipeline uses parallel agent execution. Launch independent phases as concurrent Agent tool calls in a single message.
+> **Shared orchestration rules:** See `docs/skills/PIPELINE_SHARED.md` for parallel execution, auto-detection, QA-SWE loop, and scope discipline.
 
-### Dependency Graph
+**Parallel phases:** 0 -> (1+2) -> 3 -> 4 -> 5 -> 6 -> (7+8). Phases 1+2 conditional (skip if no UI/copy change).
 
-```
-Phase 0 (Change Analysis)
-    │
-    ├──────────────────┐
-    ▼                  ▼
-Phase 1 (UX Impact) Phase 2 (Copy Updates)  ← PARALLEL (both conditional)
-    │                  │
-    └────────┬─────────┘
-             ▼
-Phase 3 (Technical Impact)
-             │
-             ▼
-Phase 4 (Test Cases)
-             │
-             ▼
-Phase 5 (Implementation)
-             │
-             ▼
-Phase 6 (Test Execution)
-             │
-    ┌────────┴─────────┐
-    ▼                  ▼
-Phase 7 (Report)   Phase 8 (Release Note)   ← PARALLEL
-```
-
-### Orchestration Rules
-
-| Step | Action | Agent Tool Calls |
-|---|---|---|
-| 1 | Run Phase 0 | 1 agent (PM — Change Analysis) |
-| 2 | Run Phases 1+2 in parallel | 2 agents simultaneously: UX Design + Copywriting (skip either if not applicable) |
-| 3 | Merge outputs, run Phase 3 | 1 agent (SWE — Technical Impact) — reads Analysis + UX + Copy |
-| 4 | Run Phase 4 | 1 agent (QA — Test Cases) — reads all previous docs |
-| 5 | Run Phase 5 | 1 agent (SWE — Implementation) |
-| 6 | Run Phase 6 | 1 agent (QA — Test Execution) |
-| 7 | Run Phases 7+8 in parallel | 2 agents simultaneously: TPM Report + Tech Writer Release Note |
-
-### How to Launch Parallel Agents
-
-```
-# Step 2 — launch BOTH in a single message:
-Agent(subagent_type="general-purpose", prompt="[Phase 1 — UX Impact] ...")
-Agent(subagent_type="general-purpose", prompt="[Phase 2 — Copy Updates] ...")
-
-# Step 7 — launch BOTH in a single message:
-Agent(subagent_type="general-purpose", prompt="[Phase 7 — Change Report] ...")
-Agent(subagent_type="general-purpose", prompt="[Phase 8 — Release Note] ...")
-```
-
-### Context Passing Between Agents
-
-Each agent receives the full context it needs via its prompt:
-- Include the change description and all previously generated doc file paths
-- Agents read the output files from previous phases
-- Sequential agents MUST wait for parallel agents to complete before starting
-
----
-
-## Trigger Patterns
-
-Activate this pipeline automatically when the request contains any of:
-
-- `"change request"`
-- `"change [X] to [Y]"`
-- `"update [X]"`
-- `"modify [X]"`
-- `"adjust [X]"`
-- `"i want [X] to behave differently"`
-- `"can we change how [X] works"`
-- `"revise [X]"`
-- `"the [X] should be [Y] instead"`
-- `"improve [X]"` (existing behavior, not new feature)
-
----
-
-## Auto-Detection Logic
-
-```
-IF request is about something BROKEN that should work:
--> ACTIVATE: BUG_FIX_PIPELINE
-
-IF request is about something that DOESN'T EXIST yet:
--> ACTIVATE: FEATURE_DEVELOPMENT_PIPELINE
-
-IF request is about something that EXISTS and WORKS
-   but needs to BEHAVE DIFFERENTLY or LOOK DIFFERENT:
--> ACTIVATE: CHANGE_REQUEST_PIPELINE
-
-IF ambiguous:
--> ASK: "Is this fixing something broken, adding something new,
-        or changing how something existing works?"
--> Wait for answer, then activate correct pipeline
-```
+**Triggers:** "change [X] to [Y]", "update [X]", "modify [X]", "adjust [X]", "improve [X]"
 
 ---
 
@@ -370,51 +278,8 @@ For each test case:
 
 ---
 
-## QA <-> SWE Loop Protocol
+## Output Files
 
-```
-LOOP START
-  QA executes test cases
-  IF verification FAIL -> SWE fixes, QA re-runs FULL suite
-  IF backward compat FAIL -> SWE handles transition, QA re-runs FULL suite
-  IF regression FAIL -> SWE fixes side effect only, QA re-runs FULL suite
-  IF all P0 + P1 PASS AND zero regressions -> EXIT LOOP -> Phase 7
-LOOP END
-```
+All saved to `docs/changes/[CR_ID]_*.md`: analysis, ux_impact (if UI), copy_updates (if copy), technical_impact, test_cases, implementation_notes, test_execution_report, change_report, release_note.
 
----
-
-## Change Scope Discipline (Hard Rule for SWE)
-
-1. Implement ONLY what is defined in `[CR_ID]_analysis.md`
-2. Related improvements discovered during implementation -> log as new CR
-3. Every line changed must map to an accepted requirement or identified side effect
-4. If more scope needed than assessed -> STOP and flag to PM
-5. Document ALL scope deviations as `[SCOPE DEVIATION]`
-
----
-
-## Output File Checklist
-
-- [ ] `docs/changes/[CR_ID]_analysis.md`
-- [ ] `docs/changes/[CR_ID]_ux_impact.md` *(if UI change)*
-- [ ] `docs/changes/[CR_ID]_copy_updates.md` *(if copy change)*
-- [ ] `docs/changes/[CR_ID]_technical_impact.md`
-- [ ] `docs/changes/[CR_ID]_test_cases.md`
-- [ ] `docs/changes/[CR_ID]_implementation_notes.md`
-- [ ] `docs/changes/[CR_ID]_test_execution_report.md`
-- [ ] `docs/changes/[CR_ID]_change_report.md`
-- [ ] `docs/changes/[CR_ID]_release_note.md`
-- [ ] All `device-test` cases: confirmed by user on device
-- [ ] Confidence level: matches `TESTING_STANDARDS.md` constraints
-
----
-
-## All Three Pipelines — Quick Reference
-
-| Trigger | Pipeline | Starting Point |
-|---|---|---|
-| Something is **broken** | `BUG_FIX_PIPELINE` | Reproduce the bug |
-| Something **doesn't exist** yet | `FEATURE_DEVELOPMENT_PIPELINE` | Write PRD |
-| Something **exists but needs to change** | `CHANGE_REQUEST_PIPELINE` | Define current vs desired |
-| Does the app **matter to real people**? | `USER_PERSONA_TESTING_PIPELINE` | Define personas + scenarios |
+> **QA-SWE loop, scope discipline, quick reference:** See `docs/skills/PIPELINE_SHARED.md`
