@@ -7,6 +7,7 @@
   "role": "Role",
   "changeRole": "Change Role",
   "changeRoleConfirm": "This will reset your experience. Are you sure?",
+  "changeRoleBlockedLinked": "You must unlink from your partner before changing roles.",
   "language": "Language",
   "english": "English",
   "vietnamese": "Tiếng Việt",

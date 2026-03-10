@@ -1,8 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { impactMedium } from '@/utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/appStore';
 import { UserRole } from '@/types';
@@ -37,13 +38,21 @@ export default function OnboardingScreen() {
     },
   ];
 
+  const bootstrapSession = useAppStore((s) => s.bootstrapSession);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   async function handleSelectRole(role: UserRole) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await setRole(role);
-    if (role === 'moon') {
-      router.replace('/health-sync');
-    } else {
-      router.replace('/(tabs)');
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    impactMedium();
+    try {
+      await setRole(role);
+      await bootstrapSession();
+      router.replace(role === 'moon' ? '/health-sync' : '/(tabs)');
+    } catch {
+      Alert.alert(t('errorTitle'), t('errorRetry'));
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -68,9 +77,10 @@ export default function OnboardingScreen() {
           {ROLE_CARDS.map((card) => (
             <TouchableOpacity
               key={card.role}
-              style={styles.card}
+              style={[styles.card, isSubmitting && styles.cardDisabled]}
               onPress={() => handleSelectRole(card.role)}
               activeOpacity={0.9}
+              disabled={isSubmitting}
             >
               <View style={[styles.cardIconBg, { backgroundColor: card.color + '18' }]}>
                 <Feather name={card.icon as any} size={26} color={card.color} />
@@ -163,6 +173,9 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     ...Typography.caption,
     color: Colors.textSecondary,
+  },
+  cardDisabled: {
+    opacity: 0.5,
   },
   cardChevron: {
     fontSize: 24,

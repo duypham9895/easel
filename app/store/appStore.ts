@@ -221,11 +221,12 @@ export const useAppStore = create<AppState>()(
       // Profile
       // -----------------------------------------------------------------------
       setRole: async (role) => {
-        set({ role });
         const { userId } = get();
         if (userId) {
           await upsertProfile(userId, { role });
         }
+        // Don't set role in local state — let bootstrapSession be the single writer
+        // to avoid write-then-read inconsistency
       },
 
       /**

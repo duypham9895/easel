@@ -198,7 +198,7 @@ export default function SettingsTab() {
             </TouchableOpacity>
             <Divider />
             <TouchableOpacity
-              style={rowStyles.row}
+              style={[rowStyles.row, isPartnerLinked && { opacity: 0.4 }]}
               onPress={() => {
                 Alert.alert(
                   t('changeRole'),
@@ -214,13 +214,26 @@ export default function SettingsTab() {
                 );
               }}
               activeOpacity={0.7}
+              disabled={isPartnerLinked}
             >
-              <Text style={rowStyles.label}>{t('role')}</Text>
+              <View>
+                <Text style={rowStyles.label}>{t('role')}</Text>
+                {isPartnerLinked && (
+                  <Text style={{ ...Typography.caption, color: Colors.textHint, marginTop: 2 }}>
+                    {t('changeRoleBlockedLinked')}
+                  </Text>
+                )}
+              </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
                 <Text style={rowStyles.value}>
                   {role === 'moon' ? tCommon('moon') : role === 'sun' ? tCommon('sun') : '—'}
                 </Text>
-                <Feather name="chevron-right" size={16} color={Colors.textHint} />
+                {!isPartnerLinked && (
+                  <Feather name="chevron-right" size={16} color={Colors.textHint} />
+                )}
+                {isPartnerLinked && (
+                  <Feather name="lock" size={14} color={Colors.textHint} />
+                )}
               </View>
             </TouchableOpacity>
           </View>

@@ -5,5 +5,7 @@
   "moonSubtitle": "Theo dõi chu kỳ & thì thầm với Sun khi em cần",
   "iAmSun": "Anh là Sun",
   "sunSubtitle": "Luôn đồng điệu & biết cách xuất hiện đúng lúc cho Moon",
-  "changeRoleHint": "Bạn có thể đổi vai trò bất cứ lúc nào trong Cài đặt."
+  "changeRoleHint": "Bạn có thể đổi vai trò trong Cài đặt trước khi kết nối với đối tác.",
+  "errorTitle": "Đã có lỗi xảy ra",
+  "errorRetry": "Không thể đặt vai trò. Vui lòng thử lại."
 }
