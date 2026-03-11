@@ -53,5 +53,6 @@
   "daysBeforePeriod": "Days before period",
   "editPeriodHistory": "Edit Period History",
   "myCycle": "MY CYCLE",
+  "myCycleSummary": "{{cycle}}-day cycle · {{period}}-day period",
   "viewCycle": "View"
 }
