@@ -4,7 +4,7 @@
   "benefitEyeTitle": "Không bao giờ bị bất ngờ",
   "benefitEyeDesc": "Biết chính xác cô ấy đang ở đâu trong chu kỳ — trước khi cảm xúc dâng cao.",
   "benefitZapTitle": "Biết phải làm gì, mỗi ngày",
-  "benefitZapDesc": "Nhận mẹo được AI cá nhân hoá về cách thể hiện dựa trên giai đoạn chính xác của cô ấy.",
+  "benefitZapDesc": "Nhận mẹo được cá nhân hoá về cách thể hiện dựa trên giai đoạn chính xác của cô ấy.",
   "benefitBellTitle": "Thì thầm khi cô ấy cần anh",
   "benefitBellDesc": "Cô ấy có thể gửi tín hiệu nhẹ nhàng khi cần hỗ trợ — không cần cuộc trò chuyện khó xử.",
   "benefitHeartTitle": "Ít xung đột, nhiều kết nối",
@@ -19,5 +19,6 @@
   "errorExpired": "Mã này đã hết hạn. Nhờ cô ấy tạo mã mới.",
   "errorAlreadyUsed": "Mã này đã được sử dụng.",
   "errorOwnCode": "Đây là mã của anh — hãy nhập mã của cô ấy.",
-  "errorInvalidCode": "Mã không hợp lệ. Vui lòng kiểm tra và thử lại."
+  "errorInvalidCode": "Mã không hợp lệ. Vui lòng kiểm tra và thử lại.",
+  "errorNetwork": "Kết nối thất bại. Vui lòng kiểm tra internet và thử lại."
 }

@@ -113,3 +113,16 @@ export interface CyclePrediction {
   confidenceLabel: 'high' | 'medium' | 'low';
   notifyDaysBefore: number;
 }
+
+export interface CalendarMarker {
+  type: 'period' | 'ovulation' | 'fertile';
+  source: 'logged' | 'predicted';
+}
+
+export interface CycleDeviation {
+  type: 'early' | 'late' | 'on_time';
+  daysDifference: number;    // positive = late, negative = early
+  predictedDate: string;     // YYYY-MM-DD
+  actualDate: string;        // YYYY-MM-DD
+  isSignificant: boolean;    // |daysDifference| > 3
+}

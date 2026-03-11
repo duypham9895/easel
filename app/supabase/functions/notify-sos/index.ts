@@ -15,6 +15,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { sendWebPushNotification } from '../_shared/webpush.ts';
 
 interface WebhookPayload {
   type: 'INSERT';
@@ -134,7 +135,7 @@ Deno.serve(async (req: Request) => {
     // 2. Fetch all push tokens for the boyfriend (could be multiple devices)
     const { data: tokens, error: tokenError } = await supabase
       .from('push_tokens')
-      .select('token')
+      .select('token, platform')
       .eq('user_id', couple.boyfriend_id);
 
     if (tokenError || !tokens || tokens.length === 0) {
@@ -159,32 +160,63 @@ Deno.serve(async (req: Request) => {
         body: signal.message ?? (lang === 'vi' ? 'Cô ấy gửi cho bạn một lời thì thầm.' : 'She sent you a whisper.'),
       };
 
-    const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
-      to: token,
-      sound: 'default',
-      title: copy.title,
-      body: copy.body,
-      data: { type: signal.type, coupleId: signal.couple_id },
-      channelId: 'whisper',
-    }));
+    // Split tokens into native (Expo) and web push
+    const nativeTokens = tokens.filter((t) => t.platform !== 'web');
+    const webTokens = tokens.filter((t) => t.platform === 'web');
 
-    const expoRes = await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'Accept-Encoding': 'gzip, deflate',
-      },
-      body: JSON.stringify(messages),
-    });
+    let sentCount = 0;
 
-    if (!expoRes.ok) {
-      const body = await expoRes.text();
-      throw new Error(`Expo Push API error ${expoRes.status}: ${body}`);
+    // Send to native devices via Expo Push API
+    if (nativeTokens.length > 0) {
+      const messages: ExpoPushMessage[] = nativeTokens.map(({ token }) => ({
+        to: token,
+        sound: 'default',
+        title: copy.title,
+        body: copy.body,
+        data: { type: signal.type, coupleId: signal.couple_id },
+        channelId: 'whisper',
+      }));
+
+      const expoRes = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+        },
+        body: JSON.stringify(messages),
+      });
+
+      if (!expoRes.ok) {
+        const body = await expoRes.text();
+        throw new Error(`Expo Push API error ${expoRes.status}: ${body}`);
+      }
+      await expoRes.json();
+      sentCount += messages.length;
     }
 
-    await expoRes.json();
-    console.log(`notify-sos: sent ${messages.length} push messages`);
+    // Send to web devices via Web Push API
+    if (webTokens.length > 0) {
+      const vapid = {
+        publicKey: Deno.env.get('VAPID_PUBLIC_KEY')!,
+        privateKey: Deno.env.get('VAPID_PRIVATE_KEY')!,
+      };
+      const payload = {
+        title: copy.title,
+        body: copy.body,
+        data: { type: signal.type, coupleId: signal.couple_id },
+      };
+
+      const results = await Promise.allSettled(
+        webTokens.map(({ token }) => {
+          const subscription = JSON.parse(token);
+          return sendWebPushNotification(subscription, payload, vapid);
+        }),
+      );
+      sentCount += results.filter((r) => r.status === 'fulfilled' && r.value).length;
+    }
+
+    console.log(`notify-sos: sent ${sentCount} push messages (${nativeTokens.length} native, ${webTokens.length} web)`);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

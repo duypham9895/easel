@@ -24,6 +24,16 @@
       "package": "com.easel.app",
       "versionCode": 1
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/icon.png",
+      "name": "Easel",
+      "shortName": "Easel",
+      "description": "Couples period tracking — empathy, privacy, and care.",
+      "backgroundColor": "#FBFBFD",
+      "themeColor": "#FF5F7E"
+    },
     "plugins": [
       "expo-router",
       "expo-notifications",

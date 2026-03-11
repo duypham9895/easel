@@ -7,7 +7,7 @@ import { GuideCard } from '@/components/bf/GuideCard';
 import { WhisperAlert } from '@/components/sun/WhisperAlert';
 import { UnlinkedScreen } from '@/components/sun/UnlinkedScreen';
 import { PHASE_INFO } from '@/constants/phases';
-import { Colors, SunColors, Spacing, Radii, Typography } from '@/constants/theme';
+import { Colors, SunColors, Spacing, Radii, Typography, CalendarTokens } from '@/constants/theme';
 import {
   getCurrentDayInCycle,
   getCurrentPhase,
@@ -15,6 +15,7 @@ import {
 } from '@/utils/cycleCalculator';
 import { useAIPartnerAdvice } from '@/hooks/useAIPartnerAdvice';
 import { useSOSListener } from '@/hooks/useSOSListener';
+import { usePeriodLogListener } from '@/hooks/usePeriodLogListener';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n/config';
 import { fetchPartnerDailyLog, PartnerDailyLog } from '@/lib/db/dailyLogs';
@@ -66,8 +67,10 @@ export function SunDashboard() {
   const cycleSettings = useAppStore((s) => s.cycleSettings);
   const activeCycle = partnerCycleSettings ?? cycleSettings;
   const activeWhisper = useAppStore((s) => s.activeWhisper);
+  const hasCycleData = !!activeCycle.lastPeriodStartDate;
 
   useSOSListener();
+  const { deviation, clearDeviation } = usePeriodLogListener();
 
   // Fetch Moon's daily log so Sun sees her actual mood and symptoms
   const [partnerLog, setPartnerLog] = useState<PartnerDailyLog | null>(null);
@@ -90,25 +93,26 @@ export function SunDashboard() {
     return () => { cancelled = true; };
   }, [isPartnerLinked]);
 
-  const dayInCycle = getCurrentDayInCycle(
-    activeCycle.lastPeriodStartDate,
-    activeCycle.avgCycleLength,
-  );
-  const phase = getCurrentPhase(
-    dayInCycle,
-    activeCycle.avgCycleLength,
-    activeCycle.avgPeriodLength,
-  );
-  const daysUntilPeriod = getDaysUntilNextPeriod(
-    dayInCycle,
-    activeCycle.avgCycleLength,
-  );
+  const dayInCycle = hasCycleData
+    ? getCurrentDayInCycle(activeCycle.lastPeriodStartDate, activeCycle.avgCycleLength)
+    : 0;
+  const phase = hasCycleData
+    ? getCurrentPhase(dayInCycle, activeCycle.avgCycleLength, activeCycle.avgPeriodLength)
+    : 'follicular';
+  const daysUntilPeriod = hasCycleData
+    ? getDaysUntilNextPeriod(dayInCycle, activeCycle.avgCycleLength)
+    : 0;
   const phaseInfo = PHASE_INFO[phase];
 
   const {
     advice,
     isLoading: adviceLoading,
-  } = useAIPartnerAdvice(phase, dayInCycle, partnerLog?.mood, partnerLog?.symptoms);
+  } = useAIPartnerAdvice(
+    hasCycleData ? phase : 'follicular',
+    hasCycleData ? dayInCycle : 1,
+    partnerLog?.mood,
+    partnerLog?.symptoms,
+  );
 
   const shareInvite = useCallback(() => {
     Share.share({
@@ -145,45 +149,63 @@ export function SunDashboard() {
         </View>
 
         {/* Moon Status Card */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusLeft}>
-            {/* Phase orb */}
-            <View
-              style={[styles.phaseOrb, { backgroundColor: phaseInfo.color }]}
-            >
-              <Text style={styles.phaseOrbDay}>{dayInCycle}</Text>
+        {hasCycleData ? (
+          <View style={styles.statusCard}>
+            <View style={styles.statusLeft}>
+              {/* Phase orb */}
+              <View
+                style={[styles.phaseOrb, { backgroundColor: phaseInfo.color }]}
+              >
+                <Text style={styles.phaseOrbDay}>{dayInCycle}</Text>
+              </View>
+              {/* Text group */}
+              <View style={styles.statusText}>
+                <Text style={[styles.phaseName, { color: phaseInfo.color }]}>
+                  {tPhases(`${phase}_name`)}
+                </Text>
+                <Text style={styles.phaseTagline}>{tPhases(`${phase}_tagline`)}</Text>
+                <Text style={styles.cycleDay}>
+                  {tCommon('dayOfCycle', { day: dayInCycle })}
+                </Text>
+              </View>
             </View>
-            {/* Text group */}
-            <View style={styles.statusText}>
-              <Text style={[styles.phaseName, { color: phaseInfo.color }]}>
-                {tPhases(`${phase}_name`)}
-              </Text>
-              <Text style={styles.phaseTagline}>{tPhases(`${phase}_tagline`)}</Text>
-              <Text style={styles.cycleDay}>
-                {tCommon('dayOfCycle', { day: dayInCycle })}
-              </Text>
-            </View>
-          </View>
 
-          {/* Countdown badge */}
-          <View
-            style={[
-              styles.countdownBadge,
-              { backgroundColor: phaseInfo.color + '14' },
-            ]}
-          >
-            <Text
-              style={[styles.countdownNumber, { color: phaseInfo.color }]}
+            {/* Countdown badge */}
+            <View
+              style={[
+                styles.countdownBadge,
+                { backgroundColor: phaseInfo.color + '14' },
+              ]}
             >
-              {daysUntilPeriod}
-            </Text>
-            <Text
-              style={[styles.countdownLabel, { color: phaseInfo.color }]}
-            >
-              {tCommon('daysUntilPeriod')}
-            </Text>
+              <Text
+                style={[styles.countdownNumber, { color: phaseInfo.color }]}
+              >
+                {daysUntilPeriod}
+              </Text>
+              <Text
+                style={[styles.countdownLabel, { color: phaseInfo.color }]}
+              >
+                {tCommon('daysUntilPeriod')}
+              </Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <View style={styles.statusCard}>
+            <View style={styles.statusLeft}>
+              <View style={[styles.phaseOrb, { backgroundColor: SUN.textHint }]}>
+                <Text style={styles.phaseOrbDay}>—</Text>
+              </View>
+              <View style={styles.statusText}>
+                <Text style={[styles.phaseName, { color: SUN.textSecondary }]}>
+                  {t('waitingForCycleData', { defaultValue: 'Waiting for cycle data' })}
+                </Text>
+                <Text style={styles.phaseTagline}>
+                  {t('moonHasntSetUp', { defaultValue: 'Moon hasn\'t set up her cycle yet' })}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Active Whisper alert */}
         {activeWhisper && (
@@ -192,6 +214,23 @@ export function SunDashboard() {
             phase={phase}
             dayInCycle={dayInCycle}
           />
+        )}
+
+        {/* Cycle deviation notification */}
+        {deviation?.isSignificant && (
+          <View style={styles.deviationCard}>
+            <View style={styles.deviationContent}>
+              <Text style={styles.deviationText}>
+                {t('cycleShiftNotice')}
+              </Text>
+            </View>
+            <Text
+              style={styles.deviationDismiss}
+              onPress={clearDeviation}
+            >
+              {'\u2715'}
+            </Text>
+          </View>
         )}
 
         {/* Guide section */}
@@ -343,6 +382,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 14,
+  },
+  deviationCard: {
+    backgroundColor: CalendarTokens.deviationCardBackground,
+    borderRadius: Radii.md,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  deviationContent: {
+    flex: 1,
+  },
+  deviationText: {
+    ...Typography.caption,
+    color: CalendarTokens.deviationCardText,
+    lineHeight: 18,
+  },
+  deviationDismiss: {
+    fontSize: 16,
+    color: CalendarTokens.deviationCardText,
+    padding: Spacing.xs,
   },
   section: {
     gap: Spacing.md,

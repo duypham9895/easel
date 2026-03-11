@@ -121,5 +121,79 @@
     "periodLength": "Độ dài kỳ kinh là số ngày bạn thường có kinh. Hầu hết kỳ kinh kéo dài 3-7 ngày.",
     "howPredictionWorks": "Easel dự đoán kỳ kinh tiếp theo dựa trên lịch sử chu kỳ. Càng nhiều dữ liệu, dự đoán càng chính xác. Chúng tôi sử dụng độ dài chu kỳ trung bình để ước tính ngày bắt đầu kỳ kinh tiếp theo.",
     "whatIsConfidence": "Độ tin cậy cho biết mức độ đáng tin của dự đoán. Càng nhiều dữ liệu chu kỳ thì độ tin cậy càng cao. Dự đoán độ tin cậy cao thường chính xác trong 1-2 ngày."
+  },
+
+  "periodLog": {
+    "periodStarted": "Kỳ kinh đã bắt đầu",
+    "periodEnded": "Kỳ kinh đã kết thúc",
+    "periodStartedToday": "Kỳ kinh bắt đầu hôm nay",
+    "periodEndedToday": "Kỳ kinh kết thúc hôm nay",
+    "confirmStart": "Kỳ kinh của bạn bắt đầu vào {{date}}?",
+    "confirmEnd": "Kỳ kinh của bạn kết thúc vào {{date}}?",
+    "yes": "Đúng rồi",
+    "no": "Không, quay lại",
+    "logged": "Đã ghi nhận — chu kỳ đã được cập nhật",
+    "loggedEnd": "Đã ghi nhận — ngày kết thúc đã lưu",
+    "undo": "Hoàn tác",
+    "editPeriod": "Chỉnh sửa kỳ kinh",
+    "deletePeriod": "Xóa kỳ kinh này",
+    "deleteConfirm": "Xóa kỳ kinh đã ghi?",
+    "deleteConfirmBody": "Dự đoán chu kỳ sẽ được tính lại mà không có mục này.",
+    "deleteYes": "Xóa",
+    "deleteNo": "Giữ lại",
+    "validation": {
+      "futureDate": "Không thể ghi kỳ kinh trong tương lai",
+      "tooFarBack": "Bạn có thể ghi kỳ kinh trong 30 ngày gần đây",
+      "overlap": "Trùng với kỳ kinh đã ghi trước đó",
+      "tooShort": "Kỳ kinh thường kéo dài ít nhất 2 ngày",
+      "tooLong": "Kỳ kinh thường kéo dài không quá 10 ngày"
+    }
+  },
+
+  "deviation": {
+    "earlyHeadline": "Kỳ kinh đến sớm hơn",
+    "lateHeadline": "Kỳ kinh đến muộn hơn một chút",
+    "earlyBody": "Kỳ kinh đến sớm khoảng {{days}} ngày so với dự kiến. Mỗi cơ thể có nhịp điệu riêng — điều này hoàn toàn bình thường.",
+    "lateBody": "Kỳ kinh đến muộn khoảng {{days}} ngày so với dự kiến. Cơ thể không phải chiếc đồng hồ, và điều đó không sao cả.",
+    "exploreButton": "Tìm hiểu thêm",
+    "dismissButton": "Mình ổn, cảm ơn",
+    "updatedPredictions": "Dự đoán trong tương lai đã được cập nhật dựa trên thông tin này."
+  },
+
+  "questionnaire": {
+    "headline": "Cùng tìm hiểu điều gì đang xảy ra",
+    "subtitle": "Vài câu hỏi nhanh để có bức tranh rõ hơn cho bạn.",
+    "stressQuestion": "Gần đây bạn có căng thẳng hơn bình thường không?",
+    "stressLow": "Không hẳn",
+    "stressMedium": "Hơi hơi",
+    "stressHigh": "Khá nhiều",
+    "lifestyleQuestion": "Gần đây giấc ngủ, chế độ ăn, hoặc tập luyện có thay đổi không?",
+    "sleepChanges": "Giấc ngủ thay đổi",
+    "dietChanges": "Chế độ ăn thay đổi",
+    "exerciseChanges": "Tập luyện thay đổi",
+    "noneOfThese": "Không có thay đổi nào",
+    "travelQuestion": "Gần đây bạn có đi xa hoặc đổi múi giờ không?",
+    "travelYes": "Có",
+    "travelNo": "Không",
+    "submitButton": "Xem thông tin cho mình",
+    "skipButton": "Bỏ qua câu hỏi"
+  },
+
+  "insight": {
+    "headline": "Thông tin dành riêng cho bạn",
+    "loadingTitle": "Đang tổng hợp...",
+    "loadingSubtitle": "Đang xem xét chu kỳ và những thay đổi gần đây của bạn",
+    "explanationTitle": "Có thể điều gì đang xảy ra",
+    "suggestionsTitle": "Bạn có thể thử",
+    "doctorNudgeTitle": "Nên hỏi ý kiến bác sĩ",
+    "doctorNudgeBody": "Chúng tôi nhận thấy chu kỳ của bạn đã thay đổi liên tiếp vài lần. Có lẽ không có gì đáng lo, nhưng một cuộc trò chuyện nhanh với bác sĩ sẽ giúp bạn yên tâm hơn.",
+    "doctorButton": "Tìm bác sĩ",
+    "disclaimer": "Thông tin này chỉ mang tính tham khảo — không phải lời khuyên y tế. Luôn tham khảo ý kiến chuyên gia y tế khi có thắc mắc về sức khoẻ.",
+    "doneButton": "Đã hiểu",
+    "shareWithSun": "Chia sẻ với Sun",
+    "sharedWithSun": "Đã chia sẻ với Sun",
+    "errorTitle": "Không thể tải thông tin",
+    "errorBody": "Đã có lỗi xảy ra. Bạn có thể thử lại hoặc quay lại sau.",
+    "retryButton": "Thử lại"
   }
 }

@@ -121,5 +121,79 @@
     "periodLength": "Your period length is how many days you typically bleed. Most periods last 3-7 days.",
     "howPredictionWorks": "Easel predicts your next period based on your cycle history. With more data, predictions become more accurate. We use your average cycle length to estimate when your next period will start.",
     "whatIsConfidence": "Confidence shows how reliable the prediction is. More cycle data means higher confidence. High confidence predictions are typically accurate within 1-2 days."
+  },
+
+  "periodLog": {
+    "periodStarted": "My period started",
+    "periodEnded": "My period ended",
+    "periodStartedToday": "My period started today",
+    "periodEndedToday": "My period ended today",
+    "confirmStart": "Did your period start on {{date}}?",
+    "confirmEnd": "Did your period end on {{date}}?",
+    "yes": "Yes, that's right",
+    "no": "No, go back",
+    "logged": "Got it — your cycle is updated",
+    "loggedEnd": "Got it — period end noted",
+    "undo": "Undo",
+    "editPeriod": "Edit period",
+    "deletePeriod": "Remove this period",
+    "deleteConfirm": "Remove this logged period?",
+    "deleteConfirmBody": "Your cycle predictions will recalculate without this entry.",
+    "deleteYes": "Remove",
+    "deleteNo": "Keep it",
+    "validation": {
+      "futureDate": "You can't log a future period",
+      "tooFarBack": "You can log periods within the last 30 days",
+      "overlap": "This overlaps with an existing period",
+      "tooShort": "Periods are usually at least 2 days",
+      "tooLong": "Periods are usually 10 days or less"
+    }
+  },
+
+  "deviation": {
+    "earlyHeadline": "Your period came early",
+    "lateHeadline": "Your period came a little late",
+    "earlyBody": "It arrived about {{days}} days earlier than expected. Every body has its own rhythm — this is completely normal.",
+    "lateBody": "It arrived about {{days}} days later than expected. Bodies aren't clockwork, and that's okay.",
+    "exploreButton": "Tell me more",
+    "dismissButton": "I'm good, thanks",
+    "updatedPredictions": "Your future predictions have been updated based on this."
+  },
+
+  "questionnaire": {
+    "headline": "Let's understand what's going on",
+    "subtitle": "A few quick questions to give you a more personalized picture.",
+    "stressQuestion": "Have you been more stressed than usual lately?",
+    "stressLow": "Not really",
+    "stressMedium": "A little",
+    "stressHigh": "Quite a lot",
+    "lifestyleQuestion": "Any recent changes in sleep, diet, or exercise?",
+    "sleepChanges": "Sleep changes",
+    "dietChanges": "Diet changes",
+    "exerciseChanges": "Exercise changes",
+    "noneOfThese": "None of these",
+    "travelQuestion": "Have you traveled or changed time zones recently?",
+    "travelYes": "Yes",
+    "travelNo": "No",
+    "submitButton": "Show my insights",
+    "skipButton": "Skip questions"
+  },
+
+  "insight": {
+    "headline": "Your personalized insight",
+    "loadingTitle": "Putting things together...",
+    "loadingSubtitle": "Looking at your cycle patterns and recent changes",
+    "explanationTitle": "What's likely going on",
+    "suggestionsTitle": "Things you can try",
+    "doctorNudgeTitle": "Worth checking in with your doctor",
+    "doctorNudgeBody": "We've noticed your cycle has been shifting for a few cycles in a row. It's probably nothing, but a quick chat with your doctor could give you peace of mind.",
+    "doctorButton": "Find a provider",
+    "disclaimer": "This is for informational purposes only — not medical advice. Always consult a healthcare professional for medical concerns.",
+    "doneButton": "Got it",
+    "shareWithSun": "Share with your Sun",
+    "sharedWithSun": "Shared with your Sun",
+    "errorTitle": "Couldn't load your insight",
+    "errorBody": "Something went wrong. You can try again or check in later.",
+    "retryButton": "Try again"
   }
 }

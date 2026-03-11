@@ -328,3 +328,129 @@ Return ONLY valid JSON, no other text:
     throw new Error(`Failed to parse cycle prediction: ${raw.slice(0, 100)}`);
   }
 }
+
+// ---------------------------------------------------------------------------
+// 8. Cycle health insight — explain deviations with warmth
+// ---------------------------------------------------------------------------
+interface CycleHealthDeviation {
+  type: 'early' | 'late';
+  daysDifference: number;
+  cycleHistory: {
+    avgCycleLength: number;
+    variability: number;
+    confidence: 'high' | 'medium' | 'low';
+    recentCycleLengths: number[];
+  };
+}
+
+interface CycleHealthUserContext {
+  recentStress: 'low' | 'moderate' | 'high' | null;
+  sleepChanges: boolean;
+  dietChanges: boolean;
+  exerciseChanges: boolean;
+  travelRecent: boolean;
+}
+
+export interface CycleHealthInsightResult {
+  explanation: string;
+  suggestions: Array<{
+    icon: string;
+    title: string;
+    description: string;
+  }>;
+  shouldSuggestDoctor: boolean;
+  doctorReason: string | null;
+}
+
+function buildCycleHealthPrompt(
+  deviation: CycleHealthDeviation,
+  userContext: CycleHealthUserContext,
+  language: string
+): { system: string; user: string } {
+  const reportedFactors: string[] = [];
+  if (userContext.recentStress && userContext.recentStress !== 'low') {
+    reportedFactors.push(`stress level: ${userContext.recentStress}`);
+  }
+  if (userContext.sleepChanges) reportedFactors.push('recent sleep changes');
+  if (userContext.dietChanges) reportedFactors.push('recent diet changes');
+  if (userContext.exerciseChanges) reportedFactors.push('recent exercise changes');
+  if (userContext.travelRecent) reportedFactors.push('recent travel');
+
+  const factorsText = reportedFactors.length > 0
+    ? reportedFactors.join(', ')
+    : 'no specific lifestyle changes reported';
+
+  // Determine if doctor suggestion is warranted based on data alone
+  // (AI will also assess, but we pre-compute for the prompt)
+  const recentLengths = deviation.cycleHistory.recentCycleLengths;
+  const hasConsecutiveIrregular = recentLengths.length >= 3 && recentLengths.slice(-3).every(
+    (len) => Math.abs(len - deviation.cycleHistory.avgCycleLength) > 7
+  );
+  const isLargeDeviation = deviation.daysDifference >= 14;
+
+  const system = `You are a warm, empathetic health companion (NOT a doctor) inside a period-tracking app called Easel.
+Knowledge base:
+- Stress raises cortisol → suppresses GnRH → delays ovulation → shifts period
+- Only 13% of cycles are exactly 28 days; normal range: 24-38 days
+- PCOS (10-13% of women) and thyroid disorders are top medical causes of irregularity
+- Travel, sleep shifts, diet changes disrupt circadian hormones → delay periods
+- Moderate exercise helps; excessive exercise can suppress cycles
+- Weight changes in either direction affect estrogen/progesterone balance
+
+Rules:
+- Warm, normalizing tone — like a knowledgeable friend, never clinical or scary
+- Connect reported lifestyle factors to the deviation using the knowledge base
+- ALWAYS end with: "This is not medical advice"
+- Return ONLY valid JSON matching this exact shape:
+{"explanation":"string","suggestions":[{"icon":"emoji","title":"string","description":"string"}],"shouldSuggestDoctor":boolean,"doctorReason":"string or null"}
+- suggestions: exactly 2-3 items, each title max 6 words, description max 25 words
+- shouldSuggestDoctor: true if ${hasConsecutiveIrregular ? '3+ consecutive irregular cycles detected' : isLargeDeviation ? 'deviation is 14+ days' : 'patterns suggest a medical check would be wise'}; false otherwise
+- doctorReason: a gentle, non-alarming reason if shouldSuggestDoctor is true, otherwise null
+- explanation: max 60 words, warm and reassuring${langInstruction(language)}`;
+
+  const user = `Period came ${deviation.daysDifference} days ${deviation.type} than expected.
+Average cycle: ${deviation.cycleHistory.avgCycleLength} days | Variability: ${deviation.cycleHistory.variability} days | Confidence: ${deviation.cycleHistory.confidence}
+Recent cycle lengths: ${recentLengths.join(', ')} days
+Reported factors: ${factorsText}
+${hasConsecutiveIrregular ? 'Note: 3+ consecutive irregular cycles detected.' : ''}
+${isLargeDeviation ? 'Note: Deviation is 14+ days from expected.' : ''}
+Provide the health insight as JSON.`;
+
+  return { system, user };
+}
+
+export async function generateCycleHealthInsight(
+  deviation: CycleHealthDeviation,
+  userContext: CycleHealthUserContext,
+  language = 'en'
+): Promise<CycleHealthInsightResult> {
+  const { system, user } = buildCycleHealthPrompt(deviation, userContext, language);
+
+  const raw = await callMinimax(system, user, 350, 0.75);
+  try {
+    const parsed = JSON.parse(raw) as CycleHealthInsightResult;
+    if (
+      typeof parsed.explanation !== 'string' ||
+      !Array.isArray(parsed.suggestions) ||
+      parsed.suggestions.length < 2 ||
+      parsed.suggestions.length > 3 ||
+      typeof parsed.shouldSuggestDoctor !== 'boolean'
+    ) {
+      throw new Error('Invalid response shape');
+    }
+    for (const s of parsed.suggestions) {
+      if (typeof s.icon !== 'string' || typeof s.title !== 'string' || typeof s.description !== 'string') {
+        throw new Error('Invalid suggestion shape');
+      }
+    }
+    if (parsed.shouldSuggestDoctor && typeof parsed.doctorReason !== 'string') {
+      throw new Error('Missing doctorReason when shouldSuggestDoctor is true');
+    }
+    return {
+      ...parsed,
+      doctorReason: parsed.shouldSuggestDoctor ? parsed.doctorReason : null,
+    };
+  } catch {
+    throw new Error(`Failed to parse cycle health insight: ${raw.slice(0, 200)}`);
+  }
+}

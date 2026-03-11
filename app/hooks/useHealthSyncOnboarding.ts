@@ -30,6 +30,12 @@ interface ManualInput {
   avgPeriodLength: number;
 }
 
+interface MultiPeriodInput {
+  periods: Array<{ startDate: string; endDate?: string }>;
+  avgCycleLength: number;
+  avgPeriodLength: number;
+}
+
 function computeAvgCycleLength(records: PeriodRecord[]): number {
   if (records.length < 2) return 28;
   const gaps: number[] = [];
@@ -148,6 +154,34 @@ export function useHealthSyncOnboarding() {
     setStep('review');
   }, []);
 
+  const handleMultiPeriodSubmit = useCallback((input: MultiPeriodInput) => {
+    const sorted = [...input.periods].sort(
+      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+    );
+    const lastPeriodStartDate = sorted[0]?.startDate ?? new Date().toISOString().split('T')[0];
+    const confidenceLevel = computeConfidence(sorted.length, 'manual');
+
+    const records: PeriodRecord[] = sorted.map(p => ({
+      startDate: p.startDate,
+      endDate: p.endDate ?? undefined,
+    }));
+
+    const result: SyncResult = {
+      records,
+      periodsFound: sorted.length,
+      dateRange: sorted.length > 1
+        ? { start: sorted[sorted.length - 1].startDate, end: sorted[0].startDate }
+        : null,
+      avgCycleLength: input.avgCycleLength,
+      avgPeriodLength: input.avgPeriodLength,
+      lastPeriodStartDate,
+      source: 'manual',
+      confidenceLevel,
+    };
+    setSyncResult(result);
+    setStep('review');
+  }, []);
+
   const handleImportContinue = useCallback(() => {
     setStep('review');
   }, []);
@@ -188,6 +222,7 @@ export function useHealthSyncOnboarding() {
     handleSyncHealthKit,
     handlePermissionDenied,
     handleManualSubmit,
+    handleMultiPeriodSubmit,
     handleImportContinue,
     handleImportReject,
     handleEditFromReview,

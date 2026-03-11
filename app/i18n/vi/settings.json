@@ -48,7 +48,8 @@
   "periodApproaching": "Sắp đến kỳ kinh",
   "periodStarted": "Đã bắt đầu kỳ kinh",
   "periodEnded": "Đã kết thúc kỳ kinh",
-  "whisperAlerts": "Thông báo Thì thầm",
+
   "smartTiming": "Nhắc nhở thông minh",
-  "daysBeforePeriod": "Số ngày trước kỳ kinh"
+  "daysBeforePeriod": "Số ngày trước kỳ kinh",
+  "editPeriodHistory": "Chỉnh sửa lịch sử kỳ kinh"
 }

@@ -126,6 +126,7 @@ export default function SettingsTab() {
 
   const partnerPhaseInfo = (() => {
     if (!partnerCycleSettings) return null;
+    if (!partnerCycleSettings.lastPeriodStartDate) return null;
     const dayInCycle = getCurrentDayInCycle(
       partnerCycleSettings.lastPeriodStartDate,
       partnerCycleSettings.avgCycleLength,

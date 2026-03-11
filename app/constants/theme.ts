@@ -74,6 +74,20 @@ export const SharedColors = {
   info: '#42A5F5',
 } as const;
 
+/** Design tokens for calendar marker visual distinction (logged vs predicted). */
+export const CalendarTokens = {
+  /** Opacity for markers based on actual logged period data. */
+  loggedPeriodOpacity: 1.0,
+  /** Opacity for markers based on predicted/projected cycle data. */
+  predictedPeriodOpacity: 0.35,
+  /** Border style for predicted period markers (for custom calendar implementations). */
+  predictedBorderStyle: 'dashed' as const,
+  /** Background tint for the deviation notification card on Sun's dashboard. */
+  deviationCardBackground: '#FFF3E0',
+  /** Text color for the deviation notification card. */
+  deviationCardText: '#6B5B45',
+} as const;
+
 export function getTheme(role: 'moon' | 'sun' | null) {
   if (role === 'moon') return MoonColors;
   if (role === 'sun') return SunColors;

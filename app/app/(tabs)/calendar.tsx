@@ -4,19 +4,22 @@ import { Calendar } from 'react-native-calendars';
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 import i18n from '@/i18n/config';
 import { useAppStore } from '@/store/appStore';
-import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
+import { Colors, Spacing, Radii, Typography, CalendarTokens } from '@/constants/theme';
 import { getCurrentPhase, buildCalendarMarkers } from '@/utils/cycleCalculator';
 import { PHASE_INFO } from '@/constants/phases';
-import type { CyclePhase } from '@/types';
+import type { CyclePhase, CalendarMarker } from '@/types';
 
 export default function CalendarTab() {
   const cycleSettings = useAppStore(s => s.cycleSettings);
+  const periodLogs = useAppStore(s => s.periodLogs);
   const role = useAppStore(s => s.role);
   const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const { t } = useTranslation('calendar');
+  const router = useRouter();
 
   // Unauthenticated / onboarding-incomplete users have no cycle yet
   if (!role) {
@@ -50,6 +53,17 @@ export default function CalendarTab() {
               ? t('moonCycleAppearHere')
               : t('linkFirst')}
           </Text>
+          {!isPartnerLinked && (
+            <TouchableOpacity
+              style={styles.connectButton}
+              onPress={() => router.replace('/(tabs)')}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+            >
+              <Feather name="link-2" size={16} color={Colors.white} />
+              <Text style={styles.connectButtonText}>{t('connectNow')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -80,7 +94,7 @@ export default function CalendarTab() {
   const todayDayInCycle = todayDiff < 0 ? 1 : (todayDiff % avgCycleLength) + 1;
   const phase = getCurrentPhase(todayDayInCycle, avgCycleLength, avgPeriodLength);
   const phaseInfo = PHASE_INFO[phase];
-  const markers = buildCalendarMarkers(lastPeriodStartDate, avgCycleLength, avgPeriodLength);
+  const markers = buildCalendarMarkers(lastPeriodStartDate, avgCycleLength, avgPeriodLength, periodLogs);
 
   // Build react-native-calendars markedDates format
   const markedDates: Record<string, object> = {};
@@ -91,11 +105,20 @@ export default function CalendarTab() {
     if (data.type === 'ovulation') color = Colors.ovulatory;
     if (data.type === 'fertile') color = Colors.follicular;
 
+    // Apply opacity based on whether data is logged (solid) or predicted (translucent)
+    const opacity = data.source === 'logged'
+      ? CalendarTokens.loggedPeriodOpacity
+      : CalendarTokens.predictedPeriodOpacity;
+    const alphaHex = Math.round(opacity * 255).toString(16).padStart(2, '0').toUpperCase();
+    const selectedColor = data.source === 'logged'
+      ? color + 'CC'
+      : color + alphaHex;
+
     markedDates[date] = {
       marked: true,
       dotColor: color,
       selected: data.type === 'period' || data.type === 'ovulation' || data.type === 'fertile',
-      selectedColor: color + 'CC',
+      selectedColor,
       selectedTextColor: Colors.white,
     };
   }
@@ -157,7 +180,8 @@ export default function CalendarTab() {
 
       {/* Legend */}
       <View style={styles.legend}>
-        <LegendItem color={Colors.menstrual} label={t('periodPredicted')} />
+        <LegendItem color={Colors.menstrual} label={t('periodLogged')} />
+        <LegendItem color={Colors.menstrual} label={t('periodPredicted')} opacity={CalendarTokens.predictedPeriodOpacity} />
         <LegendItem color={Colors.follicular} label={t('fertileWindow')} />
         <LegendItem color={Colors.ovulatory} label={t('ovulationDay')} />
         <LegendItem color={Colors.textPrimary} label={t('today')} />
@@ -177,7 +201,7 @@ export default function CalendarTab() {
 
 interface DayDetailSheetProps {
   dateString: string | null;
-  markers: Record<string, { type: 'period' | 'ovulation' | 'fertile' }>;
+  markers: Record<string, CalendarMarker>;
   lastPeriodStartDate: string;
   avgCycleLength: number;
   avgPeriodLength: number;
@@ -206,9 +230,13 @@ function formatDate(dateString: string, locale: string): string {
   return date.toLocaleDateString(loc, { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-function markerLabel(type: 'period' | 'ovulation' | 'fertile'): string {
-  if (type === 'period') return i18n.t('calendar:predictedPeriodDay');
-  if (type === 'ovulation') return i18n.t('calendar:ovulationDay');
+function markerLabel(marker: CalendarMarker): string {
+  if (marker.type === 'period') {
+    return marker.source === 'logged'
+      ? i18n.t('calendar:periodLogged')
+      : i18n.t('calendar:predictedPeriodDay');
+  }
+  if (marker.type === 'ovulation') return i18n.t('calendar:ovulationDay');
   return i18n.t('calendar:fertileWindow');
 }
 
@@ -266,7 +294,7 @@ function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLeng
           <View style={[sheetStyles.markerBadge, { backgroundColor: markerColor(marker.type) + '18' }]}>
             <Feather name="info" size={13} color={markerColor(marker.type)} />
             <Text style={[sheetStyles.markerText, { color: markerColor(marker.type) }]}>
-              {markerLabel(marker.type)}
+              {markerLabel(marker)}
             </Text>
           </View>
         )}
@@ -287,10 +315,10 @@ function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLeng
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendItem({ color, label, opacity }: { color: string; label: string; opacity?: number }) {
   return (
     <View style={styles.legendItem}>
-      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <View style={[styles.legendDot, { backgroundColor: color, opacity: opacity ?? 1.0 }]} />
       <Text style={styles.legendLabel}>{label}</Text>
     </View>
   );
@@ -368,6 +396,21 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.menstrual,
+    borderRadius: Radii.full,
+    height: 48,
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  connectButtonText: {
+    ...Typography.bodyBold,
+    color: Colors.white,
   },
 });
 

@@ -38,5 +38,14 @@
   "greetingOvulatory3": "Năng lượng đỉnh cao — hãy làm điều bạn yêu thích.",
   "greetingLuteal1": "Từ từ thôi. Bạn không cần phải làm hết mọi thứ.",
   "greetingLuteal2": "Tin vào cảm xúc của bạn — chúng biết mình cần gì.",
-  "greetingLuteal3": "Chế độ ấm áp đã bật. Bạn xứng đáng được bình yên."
+  "greetingLuteal3": "Chế độ ấm áp đã bật. Bạn xứng đáng được bình yên.",
+  "periodStartedButton": "Kinh nguyệt đã bắt đầu",
+  "periodEndedButton": "Kinh nguyệt đã kết thúc",
+  "periodStartedTitle": "Kinh nguyệt bắt đầu?",
+  "periodStartedMessage": "Hành động này sẽ ghi nhận hôm nay là ngày bắt đầu chu kỳ và cập nhật dự đoán.",
+  "periodEndedTitle": "Kinh nguyệt kết thúc?",
+  "periodEndedMessage": "Hành động này sẽ đánh dấu chu kỳ hiện tại kết thúc hôm nay.",
+  "periodConfirm": "Đúng rồi",
+  "periodCancel": "Chưa đâu",
+  "cycleShiftNotice": "Chu kỳ của Moon đã thay đổi — hãy hỏi thăm cô ấy nhé"
 }

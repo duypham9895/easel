@@ -48,7 +48,8 @@
   "periodApproaching": "Period approaching",
   "periodStarted": "Period started",
   "periodEnded": "Period ended",
-  "whisperAlerts": "Whisper alerts",
+
   "smartTiming": "Smart timing",
-  "daysBeforePeriod": "Days before period"
+  "daysBeforePeriod": "Days before period",
+  "editPeriodHistory": "Edit Period History"
 }

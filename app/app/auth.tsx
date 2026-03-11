@@ -6,7 +6,7 @@ import {
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import * as LocalAuthentication from 'expo-local-authentication';
+import { checkBiometricAvailability, promptBiometric } from '@/hooks/useLocalAuth';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n/config';
 import { useAppStore } from '@/store/appStore';
@@ -65,9 +65,8 @@ export default function AuthScreen() {
   useEffect(() => {
     if (mode !== 'signIn') { setShowBiometric(false); return; }
     (async () => {
-      const hasHw = await LocalAuthentication.hasHardwareAsync();
-      const enrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHw || !enrolled) return;
+      const available = await checkBiometricAvailability();
+      if (!available) return;
       const { data: { session } } = await supabase.auth.getSession();
       setShowBiometric(!!session);
     })();
@@ -143,12 +142,8 @@ export default function AuthScreen() {
   }
 
   async function handleBiometricSignIn() {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: i18n.t('auth:biometricPrompt'),
-      fallbackLabel: i18n.t('auth:biometricFallback'),
-      cancelLabel: i18n.t('common:cancel'),
-    });
-    if (!result.success) return;
+    const success = await promptBiometric(i18n.t('auth:biometricPrompt'));
+    if (!success) return;
     setIsLoading(true);
     try {
       await bootstrapSession();

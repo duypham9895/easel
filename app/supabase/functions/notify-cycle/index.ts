@@ -17,6 +17,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { sendWebPushNotification } from '../_shared/webpush.ts';
 
 interface PushMessage {
   to: string;
@@ -160,13 +161,14 @@ Deno.serve(async (_req: Request) => {
     const allUserIds = [...new Set([...moonIds, ...partnerIds])];
     const { data: allTokensData } = await supabase
       .from('push_tokens')
-      .select('user_id, token')
+      .select('user_id, token, platform')
       .in('user_id', allUserIds);
 
-    const tokensByUser = new Map<string, string[]>();
-    for (const { user_id, token } of allTokensData ?? []) {
+    type TokenEntry = { token: string; platform: string };
+    const tokensByUser = new Map<string, TokenEntry[]>();
+    for (const { user_id, token, platform } of allTokensData ?? []) {
       if (!tokensByUser.has(user_id)) tokensByUser.set(user_id, []);
-      tokensByUser.get(user_id)!.push(token);
+      tokensByUser.get(user_id)!.push({ token, platform: platform ?? 'ios' });
     }
 
     // Batch 3: Get language preferences for all users
@@ -182,6 +184,8 @@ Deno.serve(async (_req: Request) => {
 
     // --- Build notification messages using lookup maps ---
     const allMessages: PushMessage[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const webMessages: { subscription: any; payload: { title: string; body: string; data: Record<string, string> } }[] = [];
 
     for (const moon of moonUsers) {
       const cs = Array.isArray(moon.cycle_settings)
@@ -223,13 +227,20 @@ Deno.serve(async (_req: Request) => {
         : (moonCopy as typeof CYCLE_COPY['en']['started']).moonBody;
 
       const moonTokens = tokensByUser.get(moon.id) ?? [];
-      for (const token of moonTokens) {
-        allMessages.push({
-          to: token, sound: 'default',
-          title: moonTitle, body: moonBody as string,
-          data: { type: 'cycle', userId: moon.id },
-          channelId: 'cycle',
-        });
+      for (const entry of moonTokens) {
+        if (entry.platform === 'web') {
+          webMessages.push({
+            subscription: JSON.parse(entry.token),
+            payload: { title: moonTitle, body: moonBody as string, data: { type: 'cycle', userId: moon.id } },
+          });
+        } else {
+          allMessages.push({
+            to: entry.token, sound: 'default',
+            title: moonTitle, body: moonBody as string,
+            data: { type: 'cycle', userId: moon.id },
+            channelId: 'cycle',
+          });
+        }
       }
 
       // Use batch lookup instead of per-user query
@@ -243,22 +254,45 @@ Deno.serve(async (_req: Request) => {
           : (sunCopy as typeof CYCLE_COPY['en']['started']).sunBody;
 
         const sunTokens = tokensByUser.get(partnerId) ?? [];
-        for (const token of sunTokens) {
-          allMessages.push({
-            to: token, sound: 'default',
-            title: sunTitle, body: sunBody as string,
-            data: { type: 'cycle_partner', moonId: moon.id },
-            channelId: 'cycle',
-          });
+        for (const entry of sunTokens) {
+          if (entry.platform === 'web') {
+            webMessages.push({
+              subscription: JSON.parse(entry.token),
+              payload: { title: sunTitle, body: sunBody as string, data: { type: 'cycle_partner', moonId: moon.id } },
+            });
+          } else {
+            allMessages.push({
+              to: entry.token, sound: 'default',
+              title: sunTitle, body: sunBody as string,
+              data: { type: 'cycle_partner', moonId: moon.id },
+              channelId: 'cycle',
+            });
+          }
         }
       }
     }
 
+    // Send native push via Expo
     await sendPush(allMessages);
-    console.log(`notify-cycle: sent ${allMessages.length} messages to ${moonUsers.length} Moon users`);
+
+    // Send web push via Web Push API
+    let webSent = 0;
+    if (webMessages.length > 0) {
+      const vapid = {
+        publicKey: Deno.env.get('VAPID_PUBLIC_KEY')!,
+        privateKey: Deno.env.get('VAPID_PRIVATE_KEY')!,
+      };
+      const results = await Promise.allSettled(
+        webMessages.map((m) => sendWebPushNotification(m.subscription, m.payload, vapid)),
+      );
+      webSent = results.filter((r) => r.status === 'fulfilled' && r.value).length;
+    }
+
+    const totalSent = allMessages.length + webSent;
+    console.log(`notify-cycle: sent ${totalSent} messages (${allMessages.length} native, ${webSent} web) to ${moonUsers.length} Moon users`);
 
     return new Response(
-      JSON.stringify({ success: true, sent: allMessages.length }),
+      JSON.stringify({ success: true, sent: totalSent }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
   } catch (err) {

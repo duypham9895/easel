@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { CycleSettings, DbPeriodLog, PeriodRecord } from '@/types';
 
 export interface DbCycleSettings {
@@ -93,4 +94,45 @@ export async function deletePeriodLog(userId: string, startDate: string): Promis
     .eq('start_date', startDate);
 
   if (error) throw error;
+}
+
+/**
+ * Subscribe to new period_logs inserts for a specific user (Moon).
+ * Used by Sun to detect when Moon logs a new period.
+ * Returns a cleanup function — call it on unmount.
+ *
+ * @param moonUserId - The Moon user's ID to watch for new period logs
+ * @param onNewPeriod - Called with the new period log when inserted
+ */
+export function subscribeToPeriodLogs(
+  moonUserId: string,
+  onNewPeriod: (log: Pick<DbPeriodLog, 'start_date' | 'end_date'>) => void,
+): () => void {
+  let channel: RealtimeChannel | null = null;
+
+  channel = supabase
+    .channel(`period-logs:${moonUserId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'period_logs',
+        filter: `user_id=eq.${moonUserId}`,
+      },
+      (payload) => {
+        const record = payload.new as DbPeriodLog;
+        onNewPeriod({
+          start_date: record.start_date,
+          end_date: record.end_date,
+        });
+      },
+    )
+    .subscribe();
+
+  return () => {
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+  };
 }

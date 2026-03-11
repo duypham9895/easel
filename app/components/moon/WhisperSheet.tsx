@@ -10,7 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { notificationSuccess } from '@/utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { CyclePhase, SOSOption } from '@/types';
 import { MoonColors, Spacing, Radii, Typography } from '@/constants/theme';
@@ -91,7 +91,7 @@ export function WhisperSheet({ visible, onClose, onSend, phase, dayInCycle }: Pr
   }
 
   function handleSend(option: SOSOption) {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    notificationSuccess();
     setSentOption(option);
     setSent(true);
     animateSentState();

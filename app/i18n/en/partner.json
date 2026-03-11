@@ -4,7 +4,7 @@
   "benefitEyeTitle": "Never be caught off guard",
   "benefitEyeDesc": "See exactly where she is in her cycle — before emotions run high.",
   "benefitZapTitle": "Know what to do, every day",
-  "benefitZapDesc": "Get AI-personalized tips on how to show up based on her exact phase.",
+  "benefitZapDesc": "Get personalized tips on how to show up based on her exact phase.",
   "benefitBellTitle": "Whispers when she needs you",
   "benefitBellDesc": "She can send you a quiet signal when she needs support — no awkward conversations.",
   "benefitHeartTitle": "Less conflict, more connection",
@@ -19,5 +19,6 @@
   "errorExpired": "This code has expired. Ask her to generate a new one.",
   "errorAlreadyUsed": "This code has already been used.",
   "errorOwnCode": "That's your own code — enter her code instead.",
-  "errorInvalidCode": "Invalid code. Please check and try again."
+  "errorInvalidCode": "Invalid code. Please check and try again.",
+  "errorNetwork": "Connection failed. Please check your internet and try again."
 }

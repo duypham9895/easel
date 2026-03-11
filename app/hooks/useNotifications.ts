@@ -1,57 +1,73 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { router } from 'expo-router';
 import { useAppStore } from '@/store/appStore';
 
-/**
- * Set the global notification handler once (module level).
- * Controls how notifications behave when the app is in the foreground:
- * - shouldShowAlert: show the banner even if app is open
- * - shouldPlaySound: play the default SOS chime
- * - shouldSetBadge: we manage badge count ourselves
- */
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+const isWeb = Platform.OS === 'web';
+
+// Native-only imports — skip on web where expo-notifications is unavailable
+let Notifications: typeof import('expo-notifications') | null = null;
+let Device: typeof import('expo-device') | null = null;
+
+if (!isWeb) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Notifications = require('expo-notifications');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Device = require('expo-device');
+
+  Notifications!.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 /**
- * Register for push notifications, save the Expo push token to the DB,
- * and wire up a tap listener so tapping a notification when the app is
- * closed/backgrounded routes the user to the right screen.
+ * Register for push notifications (native or web), save the token/subscription
+ * to the DB, and wire up tap listeners.
  *
- * Call this once at the root layout — it runs after login.
+ * - Native: Expo Push via expo-notifications
+ * - Web: Web Push API via service worker + VAPID
  */
 export function useNotifications() {
   const { isLoggedIn, registerPushToken } = useAppStore();
-  const tapListenerRef = useRef<ReturnType<typeof Notifications.addNotificationResponseReceivedListener> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tapListenerRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isLoggedIn) return;
 
     let cancelled = false;
 
-    (async () => {
-      const token = await requestPermissionsAndGetToken();
-      if (!cancelled && token) {
-        await registerPushToken(token).catch((err) =>
-          console.warn('[useNotifications] failed to save token:', err)
-        );
-      }
-    })();
+    if (isWeb) {
+      // Web Push registration
+      (async () => {
+        const subscription = await registerWebPush();
+        if (!cancelled && subscription) {
+          // Store the full subscription JSON as the "token"
+          await registerPushToken(JSON.stringify(subscription)).catch((err) =>
+            console.warn('[useNotifications] failed to save web push subscription:', err)
+          );
+        }
+      })();
+    } else if (Notifications) {
+      // Native Push registration
+      (async () => {
+        const token = await requestNativeToken();
+        if (!cancelled && token) {
+          await registerPushToken(token).catch((err) =>
+            console.warn('[useNotifications] failed to save token:', err)
+          );
+        }
+      })();
 
-    // Handle notification tap — routes user to their dashboard regardless of type
-    tapListenerRef.current = Notifications.addNotificationResponseReceivedListener(
-      () => {
-        router.replace('/(tabs)');
-      }
-    );
+      tapListenerRef.current = Notifications.addNotificationResponseReceivedListener(
+        () => { router.replace('/(tabs)'); }
+      );
+    }
 
     return () => {
       cancelled = true;
@@ -60,14 +76,63 @@ export function useNotifications() {
   }, [isLoggedIn]);
 }
 
-async function requestPermissionsAndGetToken(): Promise<string | null> {
-  // Push notifications don't work on simulators — real device only
+// ── Web Push ──────────────────────────────────────────────────────────────────
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function registerWebPush(): Promise<PushSubscription | null> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.warn('[useNotifications] Web Push not supported in this browser.');
+    return null;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+
+    const vapidPublicKey = process.env.EXPO_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidPublicKey) {
+      console.warn('[useNotifications] VAPID public key not set.');
+      return null;
+    }
+
+    // Check if already subscribed
+    let subscription = await registration.pushManager.getSubscription();
+    if (subscription) return subscription;
+
+    // Request new subscription
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
+    });
+
+    console.log('[useNotifications] Web Push subscription created.');
+    return subscription;
+  } catch (err) {
+    console.warn('[useNotifications] Web Push registration failed:', err);
+    return null;
+  }
+}
+
+// ── Native Push (Expo) ────────────────────────────────────────────────────────
+
+async function requestNativeToken(): Promise<string | null> {
+  if (!Notifications || !Device) return null;
+
   if (!Device.isDevice) {
     console.warn('[useNotifications] Push notifications require a real device.');
     return null;
   }
 
-  // Set up notification channels on Android (required for Android 8+)
   if (Platform.OS === 'android') {
     await Promise.all([
       Notifications.setNotificationChannelAsync('whisper', {
@@ -107,8 +172,6 @@ async function requestPermissionsAndGetToken(): Promise<string | null> {
     return null;
   }
 
-  // projectId is required for the modern Expo push token format.
-  // Get it from: Expo Dashboard → Project → Project ID
   const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
   if (!projectId) {
     console.warn('[useNotifications] EXPO_PUBLIC_EAS_PROJECT_ID is not set.');

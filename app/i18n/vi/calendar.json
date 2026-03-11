@@ -11,10 +11,15 @@
   "cycleDay": "Ngày {{day}} của chu kỳ",
   "whatsHappening": "Đang diễn ra",
   "selfCareTip": "Mẹo chăm sóc bản thân",
+  "periodLogged": "Kỳ kinh (đã ghi nhận)",
   "periodPredicted": "Kỳ kinh (dự đoán)",
   "fertileWindow": "Cửa sổ thụ thai",
   "ovulationDay": "Ngày rụng trứng",
   "today": "Hôm nay",
   "phaseLabel": "Giai đoạn {{name}}",
-  "predictedPeriodDay": "Ngày kỳ kinh dự đoán"
+  "predictedPeriodDay": "Ngày kỳ kinh dự đoán",
+  "legendPredicted": "Dự đoán",
+  "legendLogged": "Đã ghi nhận",
+  "legendPeriod": "Kỳ kinh",
+  "connectNow": "Kết nối ngay"
 }

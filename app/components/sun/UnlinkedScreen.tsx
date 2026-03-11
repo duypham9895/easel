@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { notificationSuccess } from '@/utils/haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -43,10 +43,12 @@ export function UnlinkedScreen({ onLink, onInvite }: Props) {
     try {
       await onLink(code);
       // Success — celebrate with a strong haptic before the dashboard replaces this screen
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      notificationSuccess();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('expired')) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : '';
+      if (msg.includes('network') || msg.includes('fetch') || msg.includes('timeout')) {
+        setError(t('errorNetwork'));
+      } else if (msg.includes('expired')) {
         setError(t('errorExpired'));
       } else if (msg.includes('already been used')) {
         setError(t('errorAlreadyUsed'));

@@ -28,7 +28,13 @@ import { useAIGreeting } from '@/hooks/useAIGreeting';
 import { useAIPhaseInsight } from '@/hooks/useAIPhaseInsight';
 import { useAISelfCare } from '@/hooks/useAISelfCare';
 import { WhisperSheet } from '@/components/moon/WhisperSheet';
+import { PeriodStartButton } from '@/components/moon/PeriodStartButton';
+import { DeviationPromptSheet } from '@/components/moon/DeviationPromptSheet';
+import { HealthQuestionnaireSheet } from '@/components/moon/HealthQuestionnaireSheet';
+import { HealthInsightSheet } from '@/components/moon/HealthInsightSheet';
 import { useCoupleLinkedListener } from '@/hooks/useCoupleLinkedListener';
+import { useDeviationDetection } from '@/hooks/useDeviationDetection';
+import { useCycleHealthInsight } from '@/hooks/useCycleHealthInsight';
 import { useTranslation } from 'react-i18next';
 
 const MOON = MoonColors;
@@ -37,7 +43,7 @@ export function MoonDashboard() {
   const { t } = useTranslation('dashboard');
   const { t: tPhases } = useTranslation('phases');
   const cycleSettings = useAppStore(s => s.cycleSettings);
-  const sendWhisper = useAppStore(s => s.sendWhisper ?? s.sendSOS);
+  const sendWhisper = useAppStore(s => s.sendWhisper);
   const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
   const [whisperVisible, setWhisperVisible] = useState(false);
   const openWhisper = useCallback(() => setWhisperVisible(true), []);
@@ -47,6 +53,34 @@ export function MoonDashboard() {
 
   // Real-time: update GF's store the moment BF links
   useCoupleLinkedListener();
+
+  // Deviation detection — prompt Moon when period arrives significantly early/late
+  const {
+    deviation,
+    showInsightPrompt,
+    dismissInsightPrompt,
+    acceptInsightPrompt,
+  } = useDeviationDetection();
+
+  // Health insight flow — questionnaire → AI insight
+  const [questionnaireVisible, setQuestionnaireVisible] = useState(false);
+  const [insightVisible, setInsightVisible] = useState(false);
+  const { fetchInsight, result: insightResult, loading: insightLoading, error: insightError } = useCycleHealthInsight();
+
+  const handleExplore = useCallback(() => {
+    acceptInsightPrompt();
+    setQuestionnaireVisible(true);
+  }, [acceptInsightPrompt]);
+
+  const handleQuestionnaireComplete = useCallback((context: import('@/hooks/useCycleHealthInsight').UserHealthContext) => {
+    setQuestionnaireVisible(false);
+    setInsightVisible(true);
+    fetchInsight(context);
+  }, [fetchInsight]);
+
+  const handleInsightClose = useCallback(() => {
+    setInsightVisible(false);
+  }, []);
 
   const dayInCycle = getCurrentDayInCycle(
     cycleSettings.lastPeriodStartDate,
@@ -165,6 +199,13 @@ export function MoonDashboard() {
           totalCycleDays={cycleSettings.avgCycleLength}
         />
 
+        {/* Period Started / Ended button — conditional on cycle phase */}
+        <PeriodStartButton
+          dayInCycle={dayInCycle}
+          avgCycleLength={cycleSettings.avgCycleLength}
+          avgPeriodLength={cycleSettings.avgPeriodLength}
+        />
+
         {/* Whisper CTA button */}
         <TouchableOpacity
           style={[styles.whisperButton, { backgroundColor: phaseInfo.color }]}
@@ -221,6 +262,29 @@ export function MoonDashboard() {
         onSend={sendWhisper}
         phase={phase}
         dayInCycle={dayInCycle}
+      />
+
+      {/* Deviation insight prompt — shown when period deviates significantly */}
+      <DeviationPromptSheet
+        visible={showInsightPrompt}
+        deviation={deviation}
+        onDismiss={dismissInsightPrompt}
+        onExplore={handleExplore}
+      />
+
+      {/* Health questionnaire — collects lifestyle context */}
+      <HealthQuestionnaireSheet
+        visible={questionnaireVisible}
+        onComplete={handleQuestionnaireComplete}
+        onClose={() => setQuestionnaireVisible(false)}
+      />
+
+      {/* Health insight — shows AI-generated explanation + suggestions */}
+      <HealthInsightSheet
+        visible={insightVisible}
+        result={insightResult}
+        loading={insightLoading}
+        onClose={handleInsightClose}
       />
     </SafeAreaView>
   );

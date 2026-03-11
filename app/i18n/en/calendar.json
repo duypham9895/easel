@@ -11,10 +11,15 @@
   "cycleDay": "Cycle Day {{day}}",
   "whatsHappening": "What's happening",
   "selfCareTip": "Self-care tip",
+  "periodLogged": "Period (logged)",
   "periodPredicted": "Period (predicted)",
   "fertileWindow": "Fertile window",
   "ovulationDay": "Ovulation day",
   "today": "Today",
   "phaseLabel": "{{name}} Phase",
-  "predictedPeriodDay": "Predicted period day"
+  "predictedPeriodDay": "Predicted period day",
+  "legendPredicted": "Predicted",
+  "legendLogged": "Logged",
+  "legendPeriod": "Period",
+  "connectNow": "Connect now"
 }

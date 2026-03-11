@@ -1,0 +1,17 @@
+{
+  "name": "Easel",
+  "short_name": "Easel",
+  "description": "Couples period tracking — empathy, privacy, and care.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBFBFD",
+  "theme_color": "#FF5F7E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

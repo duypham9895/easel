@@ -4,7 +4,7 @@ import { useHealthSyncOnboarding } from '@/hooks/useHealthSyncOnboarding';
 import { HealthSyncEducation } from '@/components/moon/HealthSyncEducation';
 import { HealthSyncLoading } from '@/components/moon/HealthSyncLoading';
 import { HealthImportSummary } from '@/components/moon/HealthImportSummary';
-import { ManualCycleInput } from '@/components/moon/ManualCycleInput';
+import { PeriodHistoryInput } from '@/components/moon/PeriodHistoryInput';
 import { CycleDataReview } from '@/components/moon/CycleDataReview';
 import { PermissionDeniedScreen } from '@/components/moon/PermissionDeniedScreen';
 import { HealthEmptyState } from '@/components/moon/HealthEmptyState';
@@ -18,7 +18,7 @@ export default function HealthSyncScreen() {
     predictedDate,
     handleSyncHealthKit,
     handlePermissionDenied,
-    handleManualSubmit,
+    handleMultiPeriodSubmit,
     handleImportContinue,
     handleImportReject,
     handleEditFromReview,
@@ -63,9 +63,8 @@ export default function HealthSyncScreen() {
 
     case 'manual-input':
       return (
-        <ManualCycleInput
-          onSubmit={handleManualSubmit}
-          prefill={syncResult}
+        <PeriodHistoryInput
+          onSubmit={handleMultiPeriodSubmit}
         />
       );
 

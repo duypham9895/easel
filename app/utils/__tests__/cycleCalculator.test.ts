@@ -5,8 +5,9 @@ import {
   getConceptionChance,
   buildCalendarMarkers,
   computeCycleStats,
+  detectDeviation,
 } from '../cycleCalculator';
-import type { PeriodRecord } from '@/types';
+import type { PeriodRecord, CycleDeviation } from '@/types';
 
 // Standard cycle params used throughout: 28-day cycle, 5-day period
 // getOvulationDay(28, 5) = Math.max(6, 14) = 14
@@ -165,13 +166,15 @@ describe('getDaysUntilNextPeriod', () => {
 });
 
 describe('buildCalendarMarkers', () => {
-  // Use a helper that computes expected keys the same way the implementation does,
-  // so tests are timezone-independent.
+  // Use a helper that computes expected keys using local-time construction,
+  // matching the implementation's toLocalDateString() approach.
   function dateKey(start: string, offsetDays: number): string {
-    const d = new Date(start);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + offsetDays);
-    return d.toISOString().split('T')[0];
+    const [y, m, d] = start.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + offsetDays);
+    const yy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
   }
 
   const START = '2025-06-15'; // mid-year to avoid UTC-boundary edge cases
@@ -181,57 +184,57 @@ describe('buildCalendarMarkers', () => {
 
   it('marks cycle start date as period (day 1)', () => {
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
-    expect(markers[dateKey(START, 0)]).toEqual({ type: 'period' });
+    expect(markers[dateKey(START, 0)]).toEqual({ type: 'period', source: 'predicted' });
   });
 
   it('marks last period day as period (day 5)', () => {
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
-    expect(markers[dateKey(START, 4)]).toEqual({ type: 'period' });
+    expect(markers[dateKey(START, 4)]).toEqual({ type: 'period', source: 'predicted' });
   });
 
   it('marks ovulation day correctly (cycleStart + 13 days)', () => {
     // ovulationDay = 14, zero-indexed offset = 13
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
-    expect(markers[dateKey(START, 13)]).toEqual({ type: 'ovulation' });
+    expect(markers[dateKey(START, 13)]).toEqual({ type: 'ovulation', source: 'predicted' });
   });
 
   it('marks fertile window (3 days before ovulation: offsets 10, 11, 12)', () => {
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
-    expect(markers[dateKey(START, 10)]).toEqual({ type: 'fertile' });
-    expect(markers[dateKey(START, 11)]).toEqual({ type: 'fertile' });
-    expect(markers[dateKey(START, 12)]).toEqual({ type: 'fertile' });
+    expect(markers[dateKey(START, 10)]).toEqual({ type: 'fertile', source: 'predicted' });
+    expect(markers[dateKey(START, 11)]).toEqual({ type: 'fertile', source: 'predicted' });
+    expect(markers[dateKey(START, 12)]).toEqual({ type: 'fertile', source: 'predicted' });
   });
 
   it('covers 3 cycles — second cycle period day 1 at offset 28', () => {
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
-    expect(markers[dateKey(START, 28)]).toEqual({ type: 'period' });
+    expect(markers[dateKey(START, 28)]).toEqual({ type: 'period', source: 'predicted' });
   });
 
   it('covers 3 cycles — third cycle period day 1 at offset 56', () => {
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
-    expect(markers[dateKey(START, 56)]).toEqual({ type: 'period' });
+    expect(markers[dateKey(START, 56)]).toEqual({ type: 'period', source: 'predicted' });
   });
 
   it('period days are not overwritten by fertile marker', () => {
     // Period = days 0–4, fertile = days 10–12 — no overlap
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
-    expect(markers[dateKey(START, 0)]).toEqual({ type: 'period' });
-    expect(markers[dateKey(START, 4)]).toEqual({ type: 'period' });
+    expect(markers[dateKey(START, 0)]).toEqual({ type: 'period', source: 'predicted' });
+    expect(markers[dateKey(START, 4)]).toEqual({ type: 'period', source: 'predicted' });
   });
 
   it('second cycle has ovulation marker at correct offset', () => {
     const markers = buildCalendarMarkers(START, CYCLE, PERIOD);
     // Second cycle starts at offset 28, ovulation at offset 28 + 13 = 41
-    expect(markers[dateKey(START, 41)]).toEqual({ type: 'ovulation' });
+    expect(markers[dateKey(START, 41)]).toEqual({ type: 'ovulation', source: 'predicted' });
   });
 
   it('produces markers for a short 21-day cycle', () => {
     // getOvulationDay(21, 3) = Math.max(4, 7) = 7 → offset 6
     const markers = buildCalendarMarkers(START, 21, 3);
-    expect(markers[dateKey(START, 0)]).toEqual({ type: 'period' });
-    expect(markers[dateKey(START, 6)]).toEqual({ type: 'ovulation' });
+    expect(markers[dateKey(START, 0)]).toEqual({ type: 'period', source: 'predicted' });
+    expect(markers[dateKey(START, 6)]).toEqual({ type: 'ovulation', source: 'predicted' });
     // Second cycle starts at offset 21
-    expect(markers[dateKey(START, 21)]).toEqual({ type: 'period' });
+    expect(markers[dateKey(START, 21)]).toEqual({ type: 'period', source: 'predicted' });
   });
 
   it('fertile marker does not overwrite existing period marker (overlap)', () => {
@@ -240,14 +243,52 @@ describe('buildCalendarMarkers', () => {
     // Fertile window: 3 days before ovulation offset 6 → offsets 3, 4, 5
     // Offsets 3 and 4 are already period days → should stay as 'period'
     const markers = buildCalendarMarkers(START, 21, 5);
-    expect(markers[dateKey(START, 3)]).toEqual({ type: 'period' });
-    expect(markers[dateKey(START, 4)]).toEqual({ type: 'period' });
+    expect(markers[dateKey(START, 3)]).toEqual({ type: 'period', source: 'predicted' });
+    expect(markers[dateKey(START, 4)]).toEqual({ type: 'period', source: 'predicted' });
     // Offset 5 has no prior marker → should be 'fertile'
-    expect(markers[dateKey(START, 5)]).toEqual({ type: 'fertile' });
+    expect(markers[dateKey(START, 5)]).toEqual({ type: 'fertile', source: 'predicted' });
   });
 
-  // NOTE: Tests for historical period markers and computeCycleStats
-  // will be added in CR-2 when the calculator is upgraded.
+  it('marks historical period logs as logged source', () => {
+    const periodLogs: PeriodRecord[] = [
+      { startDate: '2025-06-01', endDate: '2025-06-04' },
+    ];
+    const markers = buildCalendarMarkers(START, CYCLE, PERIOD, periodLogs);
+    // June 1-4 should be logged
+    expect(markers['2025-06-01']).toEqual({ type: 'period', source: 'logged' });
+    expect(markers['2025-06-02']).toEqual({ type: 'period', source: 'logged' });
+    expect(markers['2025-06-03']).toEqual({ type: 'period', source: 'logged' });
+    expect(markers['2025-06-04']).toEqual({ type: 'period', source: 'logged' });
+  });
+
+  it('logged data takes precedence over predicted data for the same date', () => {
+    // Log a period that overlaps with the predicted cycle start
+    const periodLogs: PeriodRecord[] = [
+      { startDate: START, endDate: dateKey(START, 2) },
+    ];
+    const markers = buildCalendarMarkers(START, CYCLE, PERIOD, periodLogs);
+    // Days 0-2 should be logged (overlap with predicted period days 0-4)
+    expect(markers[dateKey(START, 0)]).toEqual({ type: 'period', source: 'logged' });
+    expect(markers[dateKey(START, 1)]).toEqual({ type: 'period', source: 'logged' });
+    expect(markers[dateKey(START, 2)]).toEqual({ type: 'period', source: 'logged' });
+    // Days 3-4 should still be predicted (no logged data)
+    expect(markers[dateKey(START, 3)]).toEqual({ type: 'period', source: 'predicted' });
+    expect(markers[dateKey(START, 4)]).toEqual({ type: 'period', source: 'predicted' });
+  });
+
+  it('logged periods do not get overwritten by predicted ovulation or fertile markers', () => {
+    // Log a period that extends into where ovulation would be predicted
+    const periodLogs: PeriodRecord[] = [
+      { startDate: dateKey(START, 10), endDate: dateKey(START, 14) },
+    ];
+    const markers = buildCalendarMarkers(START, CYCLE, PERIOD, periodLogs);
+    // Offsets 10-12 are fertile window, 13 is ovulation — but logged period should take precedence
+    expect(markers[dateKey(START, 10)]).toEqual({ type: 'period', source: 'logged' });
+    expect(markers[dateKey(START, 11)]).toEqual({ type: 'period', source: 'logged' });
+    expect(markers[dateKey(START, 12)]).toEqual({ type: 'period', source: 'logged' });
+    expect(markers[dateKey(START, 13)]).toEqual({ type: 'period', source: 'logged' });
+    expect(markers[dateKey(START, 14)]).toEqual({ type: 'period', source: 'logged' });
+  });
 });
 
 describe('computeCycleStats', () => {
@@ -457,5 +498,150 @@ describe('computeCycleStats', () => {
     const result = computeCycleStats(logs);
     expect(result.avgCycleLength).toBe(45);
     expect(result.confidence).toBe('low');
+  });
+});
+
+describe('detectDeviation', () => {
+  // Helper: add days to a YYYY-MM-DD string using local-time Date construction
+  // to match the implementation's parseLocalDate() approach and avoid UTC pitfalls.
+  function addDays(base: string, offsetDays: number): string {
+    const [y, m, d] = base.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + offsetDays);
+    const yy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  }
+
+  // Standard setup: last period Jan 1, 28-day cycle
+  // predicted = lastStart + 28 days (computed inside detectDeviation)
+  const LAST = '2025-01-01';
+  const CYCLE = 28;
+
+  it('returns on_time when actual matches predicted exactly (0 days)', () => {
+    const actual = addDays(LAST, CYCLE); // actual = predicted
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('on_time');
+    expect(result.daysDifference).toBe(0);
+    expect(result.isSignificant).toBe(false);
+    expect(result.actualDate).toBe(actual);
+    expect(result.predictedDate).toBe(actual);
+  });
+
+  it('returns on_time when actual is 1 day late (within ±2 threshold)', () => {
+    const actual = addDays(LAST, CYCLE + 1);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('on_time');
+    expect(result.daysDifference).toBe(1);
+    expect(result.isSignificant).toBe(false);
+  });
+
+  it('returns on_time when actual is 2 days early (boundary of ±2)', () => {
+    const actual = addDays(LAST, CYCLE - 2);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('on_time');
+    expect(result.daysDifference).toBe(-2);
+    expect(result.isSignificant).toBe(false);
+  });
+
+  it('returns on_time when actual is 2 days late (boundary of ±2)', () => {
+    const actual = addDays(LAST, CYCLE + 2);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('on_time');
+    expect(result.daysDifference).toBe(2);
+    expect(result.isSignificant).toBe(false);
+  });
+
+  it('returns early when actual is 3 days before predicted', () => {
+    const actual = addDays(LAST, CYCLE - 3);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('early');
+    expect(result.daysDifference).toBe(-3);
+    expect(result.isSignificant).toBe(false); // |3| is NOT > 3
+  });
+
+  it('returns late when actual is 3 days after predicted', () => {
+    const actual = addDays(LAST, CYCLE + 3);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('late');
+    expect(result.daysDifference).toBe(3);
+    expect(result.isSignificant).toBe(false); // |3| is NOT > 3
+  });
+
+  it('returns early + significant when actual is 5 days before predicted', () => {
+    const actual = addDays(LAST, CYCLE - 5);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('early');
+    expect(result.daysDifference).toBe(-5);
+    expect(result.isSignificant).toBe(true);
+  });
+
+  it('returns late + significant when actual is 7 days after predicted', () => {
+    const actual = addDays(LAST, CYCLE + 7);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('late');
+    expect(result.daysDifference).toBe(7);
+    expect(result.isSignificant).toBe(true);
+  });
+
+  it('isSignificant boundary: 4 days late is significant (|4| > 3)', () => {
+    const actual = addDays(LAST, CYCLE + 4);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('late');
+    expect(result.daysDifference).toBe(4);
+    expect(result.isSignificant).toBe(true);
+  });
+
+  it('isSignificant boundary: 4 days early is significant (|-4| > 3)', () => {
+    const actual = addDays(LAST, CYCLE - 4);
+    const result = detectDeviation(actual, LAST, CYCLE);
+    expect(result.type).toBe('early');
+    expect(result.daysDifference).toBe(-4);
+    expect(result.isSignificant).toBe(true);
+  });
+
+  it('works with short cycle (21 days)', () => {
+    const actual = addDays(LAST, 21 - 2); // 2 days early
+    const result = detectDeviation(actual, LAST, 21);
+    expect(result.type).toBe('on_time');
+    expect(result.daysDifference).toBe(-2);
+    expect(result.predictedDate).toBe(addDays(LAST, 21));
+  });
+
+  it('works with medium-long cycle (35 days)', () => {
+    const actual = addDays(LAST, 35 + 3); // 3 days late
+    const result = detectDeviation(actual, LAST, 35);
+    expect(result.type).toBe('late');
+    expect(result.daysDifference).toBe(3);
+    expect(result.predictedDate).toBe(addDays(LAST, 35));
+    expect(result.isSignificant).toBe(false);
+  });
+
+  it('works with long cycle (45 days)', () => {
+    const actual = addDays(LAST, 45 + 7); // 7 days late
+    const result = detectDeviation(actual, LAST, 45);
+    expect(result.type).toBe('late');
+    expect(result.daysDifference).toBe(7);
+    expect(result.predictedDate).toBe(addDays(LAST, 45));
+    expect(result.isSignificant).toBe(true);
+  });
+
+  it('handles month boundary crossing correctly', () => {
+    const lastStart = '2025-01-15';
+    const actual = addDays(lastStart, 28 - 2); // 2 days early
+    const result = detectDeviation(actual, lastStart, 28);
+    expect(result.type).toBe('on_time');
+    expect(result.daysDifference).toBe(-2);
+    expect(result.predictedDate).toBe(addDays(lastStart, 28));
+  });
+
+  it('handles year boundary crossing correctly', () => {
+    const lastStart = '2025-12-15';
+    const actual = addDays(lastStart, 28 + 6); // 6 days late
+    const result = detectDeviation(actual, lastStart, 28);
+    expect(result.type).toBe('late');
+    expect(result.daysDifference).toBe(6);
+    expect(result.predictedDate).toBe(addDays(lastStart, 28));
+    expect(result.isSignificant).toBe(true);
   });
 });

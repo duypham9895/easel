@@ -38,5 +38,14 @@
   "greetingOvulatory3": "Peak energy — go do something you love.",
   "greetingLuteal1": "Slow and steady. You don't have to do it all.",
   "greetingLuteal2": "Trust your feelings — they know what they need.",
-  "greetingLuteal3": "Cosy mode activated. You've earned some peace."
+  "greetingLuteal3": "Cosy mode activated. You've earned some peace.",
+  "periodStartedButton": "My period started",
+  "periodEndedButton": "My period ended",
+  "periodStartedTitle": "Period started?",
+  "periodStartedMessage": "This will log today as the start of your period and update your cycle predictions.",
+  "periodEndedTitle": "Period ended?",
+  "periodEndedMessage": "This will mark your current period as ended today.",
+  "periodConfirm": "Yes",
+  "periodCancel": "Not yet",
+  "cycleShiftNotice": "Moon's cycle has shifted — consider checking in with her"
 }

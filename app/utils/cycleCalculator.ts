@@ -1,5 +1,5 @@
 import { CyclePhase } from '@/types';
-import type { PeriodRecord } from '@/types';
+import type { PeriodRecord, CycleDeviation, CalendarMarker } from '@/types';
 import { getOvulationDay } from '@/constants/cycle';
 
 export interface CycleStats {
@@ -108,35 +108,49 @@ export function getConceptionChance(phase: CyclePhase): string {
 /**
  * Returns a map of date strings (YYYY-MM-DD) to their cycle status
  * for use in the calendar view.
+ *
+ * Each marker includes a `source` field:
+ * - 'logged' — based on actual period data from periodLogs
+ * - 'predicted' — based on cycle length projections
+ *
+ * Historical periods from logs take precedence over predicted periods
+ * for the same date, so logged data is never overwritten.
  */
 export function buildCalendarMarkers(
   lastPeriodStartDate: string,
   avgCycleLength: number,
   avgPeriodLength: number,
   periodLogs?: PeriodRecord[],
-): Record<string, { type: 'period' | 'ovulation' | 'fertile' }> {
-  const markers: Record<string, { type: 'period' | 'ovulation' | 'fertile' }> = {};
+): Record<string, CalendarMarker> {
+  const markers: Record<string, CalendarMarker> = {};
+
+  // Track which dates have logged data so predictions don't overwrite them
+  const loggedDates = new Set<string>();
 
   // Mark actual historical period dates from logs
   if (periodLogs && periodLogs.length > 0) {
     for (const log of periodLogs) {
-      const pStart = new Date(log.startDate);
-      pStart.setHours(0, 0, 0, 0);
-      const pLen = log.endDate
-        ? Math.round((new Date(log.endDate).getTime() - pStart.getTime()) / DAY_MS) + 1
-        : avgPeriodLength;
+      const pStart = parseLocalDate(log.startDate);
+      let pLen: number;
+      if (log.endDate) {
+        const pEnd = parseLocalDate(log.endDate);
+        pLen = Math.round((pEnd.getTime() - pStart.getTime()) / DAY_MS) + 1;
+      } else {
+        pLen = avgPeriodLength;
+      }
       for (let d = 0; d < pLen; d++) {
         const date = new Date(pStart.getTime());
         date.setDate(date.getDate() + d);
-        markers[toDateString(date)] = { type: 'period' };
+        const key = toLocalDateString(date);
+        markers[key] = { type: 'period', source: 'logged' };
+        loggedDates.add(key);
       }
     }
   }
 
-  const start = new Date(lastPeriodStartDate);
-  start.setHours(0, 0, 0, 0);
+  const start = parseLocalDate(lastPeriodStartDate);
 
-  // Mark 3 cycles ahead
+  // Mark 3 cycles ahead (predicted)
   for (let cycle = 0; cycle < 3; cycle++) {
     const cycleStart = new Date(start.getTime());
     cycleStart.setDate(cycleStart.getDate() + cycle * avgCycleLength);
@@ -145,21 +159,28 @@ export function buildCalendarMarkers(
     for (let d = 0; d < avgPeriodLength; d++) {
       const date = new Date(cycleStart.getTime());
       date.setDate(date.getDate() + d);
-      markers[toDateString(date)] = { type: 'period' };
+      const key = toLocalDateString(date);
+      // Don't overwrite logged data with predictions
+      if (!loggedDates.has(key)) {
+        markers[key] = { type: 'period', source: 'predicted' };
+      }
     }
 
     const ovulationDay = getOvulationDay(avgCycleLength, avgPeriodLength);
     const ovulationDate = new Date(cycleStart.getTime());
     ovulationDate.setDate(ovulationDate.getDate() + ovulationDay - 1);
-    markers[toDateString(ovulationDate)] = { type: 'ovulation' };
+    const ovKey = toLocalDateString(ovulationDate);
+    if (!loggedDates.has(ovKey)) {
+      markers[ovKey] = { type: 'ovulation', source: 'predicted' };
+    }
 
     // Fertile window (3 days before ovulation)
     for (let d = 1; d <= 3; d++) {
       const fertileDate = new Date(ovulationDate.getTime());
       fertileDate.setDate(fertileDate.getDate() - d);
-      const key = toDateString(fertileDate);
+      const key = toLocalDateString(fertileDate);
       if (!markers[key]) {
-        markers[key] = { type: 'fertile' };
+        markers[key] = { type: 'fertile', source: 'predicted' };
       }
     }
   }
@@ -167,6 +188,53 @@ export function buildCalendarMarkers(
   return markers;
 }
 
-function toDateString(date: Date): string {
-  return date.toISOString().split('T')[0];
+/**
+ * Detects whether a newly logged period deviates from the predicted date.
+ *
+ * @param actualStartDate      - The date Moon actually started her period (YYYY-MM-DD)
+ * @param lastPeriodStartDate  - The start date of her previous period (YYYY-MM-DD)
+ * @param avgCycleLength       - The predicted cycle length in days
+ * @returns CycleDeviation describing early/late/on_time and significance
+ */
+export function detectDeviation(
+  actualStartDate: string,
+  lastPeriodStartDate: string,
+  avgCycleLength: number,
+): CycleDeviation {
+  const lastStart = parseLocalDate(lastPeriodStartDate);
+
+  const predicted = new Date(lastStart.getTime());
+  predicted.setDate(predicted.getDate() + avgCycleLength);
+  const predictedDate = toLocalDateString(predicted);
+
+  const actual = parseLocalDate(actualStartDate);
+
+  const daysDifference = Math.round((actual.getTime() - predicted.getTime()) / DAY_MS);
+  const absDiff = Math.abs(daysDifference);
+
+  const type: CycleDeviation['type'] =
+    absDiff <= 2 ? 'on_time' : daysDifference < 0 ? 'early' : 'late';
+
+  return {
+    type,
+    daysDifference,
+    predictedDate,
+    actualDate: actualStartDate,
+    isSignificant: absDiff > 3,
+  };
 }
+
+/** Parse a YYYY-MM-DD string as local midnight (avoids UTC date-only parsing pitfall). */
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** Format a Date as YYYY-MM-DD using local time components. */
+function toLocalDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+

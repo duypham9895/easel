@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserRole, SOSOption, CycleSettings, NotificationPreferences, PeriodRecord } from '@/types';
+import { UserRole, SOSOption, CycleSettings, NotificationPreferences, PeriodRecord, CycleDeviation } from '@/types';
+import { detectDeviation } from '@/utils/cycleCalculator';
 import { supabase } from '@/lib/supabase';
 import { getProfile, upsertProfile } from '@/lib/db/profiles';
 import { getCycleSettings, upsertCycleSettings, fetchPeriodLogs, logPeriodStart, deletePeriodLog } from '@/lib/db/cycle';
@@ -37,6 +38,9 @@ interface AppState {
   notificationPrefs: NotificationPreferences;
   activeWhisper: SOSOption | null;
 
+  // Deviation detection (transient — not persisted)
+  lastDeviation: CycleDeviation | null;
+
   // Auth actions
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -57,6 +61,7 @@ interface AppState {
   loadPeriodLogs: () => Promise<void>;
   addPeriodLog: (startDate: string, endDate?: string | null) => Promise<void>;
   removePeriodLog: (startDate: string) => Promise<void>;
+  clearDeviation: () => void;
 
   // SOS
   sendSOS: (option: SOSOption) => Promise<void>;
@@ -152,6 +157,7 @@ export const useAppStore = create<AppState>()(
       displayName: null,
       notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
       activeWhisper: null,
+      lastDeviation: null,
       language: (i18n.language as SupportedLanguage) ?? 'en',
 
       // -----------------------------------------------------------------------
@@ -233,6 +239,7 @@ export const useAppStore = create<AppState>()(
           coupleId: null,
           activeSOS: null,
           activeWhisper: null,
+          lastDeviation: null,
           cycleSettings: makeDefaultCycleSettings(),
           periodLogs: [],
           partnerCycleSettings: null,
@@ -249,11 +256,10 @@ export const useAppStore = create<AppState>()(
       // -----------------------------------------------------------------------
       setRole: async (role) => {
         const { userId } = get();
+        set({ role }); // Optimistic local update — ensures immediate availability
         if (userId) {
           await upsertProfile(userId, { role });
         }
-        // Don't set role in local state — let bootstrapSession be the single writer
-        // to avoid write-then-read inconsistency
       },
 
       /**
@@ -373,8 +379,20 @@ export const useAppStore = create<AppState>()(
         const updated = [entry, ...periodLogs.filter((l) => l.startDate !== startDate)]
           .sort((a, b) => b.startDate.localeCompare(a.startDate))
           .slice(0, 24);
-        set({ periodLogs: updated, cycleSettings: recomputeCycleFromLogs(updated, cycleSettings) });
+
+        // Detect deviation using PREVIOUS cycle settings (before recomputation)
+        const deviation = cycleSettings.lastPeriodStartDate
+          ? detectDeviation(startDate, cycleSettings.lastPeriodStartDate, cycleSettings.avgCycleLength)
+          : null;
+
+        set({
+          periodLogs: updated,
+          cycleSettings: recomputeCycleFromLogs(updated, cycleSettings),
+          lastDeviation: deviation,
+        });
       },
+
+      clearDeviation: () => set({ lastDeviation: null }),
 
       removePeriodLog: async (startDate) => {
         const { userId, periodLogs, cycleSettings } = get();
@@ -506,7 +524,7 @@ export const useAppStore = create<AppState>()(
       name: 'easel-app-storage',
       storage: createJSONStorage(() => AsyncStorage),
       // activeSOS/activeWhisper are transient; userId/coupleId are re-hydrated via bootstrapSession
-      partialize: ({ activeSOS, activeWhisper, userId, coupleId, ...rest }) => rest,
+      partialize: ({ activeSOS, activeWhisper, lastDeviation, userId, coupleId, ...rest }) => rest,
     },
   ),
 );

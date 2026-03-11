@@ -22,7 +22,7 @@ interface Props {
 export function WhisperAlert({ whisper, phase, dayInCycle }: Props) {
   const { t } = useTranslation('dashboard');
   const { t: tCommon } = useTranslation('common');
-  const clearWhisper = useAppStore((s) => s.clearWhisper ?? s.clearSOS);
+  const clearWhisper = useAppStore((s) => s.clearWhisper);
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -61,7 +61,7 @@ export function WhisperAlert({ whisper, phase, dayInCycle }: Props) {
         </View>
         <View style={styles.textGroup}>
           <Text style={styles.badge}>
-            {`${t('whisper')}${tipIsAI ? ' · ✦ AI' : ''}`}
+            {`${t('whisper')}${tipIsAI ? ' · ✦' : ''}`}
           </Text>
           <Text style={styles.title}>{t('moonNeeds', { title: whisper.title })}</Text>
           <Text style={styles.description}>{tip}</Text>

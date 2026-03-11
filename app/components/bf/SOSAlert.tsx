@@ -42,7 +42,7 @@ export function SOSAlert({ sos, phase, dayInCycle }: Props) {
           <Feather name={sos.icon as any} size={22} color="white" />
         </View>
         <View style={styles.textGroup}>
-          <Text style={styles.badge}>{`${t('sosSignal')}${tipIsAI ? ' · ✦ AI' : ''}`}</Text>
+          <Text style={styles.badge}>{`${t('sosSignal')}${tipIsAI ? ' · ✦' : ''}`}</Text>
           <Text style={styles.title}>{t('sheNeeds', { title: sos.title })}</Text>
           <Text style={styles.description}>{tip}</Text>
         </View>

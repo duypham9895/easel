@@ -4,7 +4,7 @@ import {
   Modal, Pressable, Animated,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { notificationSuccess } from '@/utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { SOS_OPTIONS } from '@/constants/sos';
 import { SOSOption } from '@/types';
@@ -39,7 +39,7 @@ export function SOSSheet({ visible, onClose, onSend }: Props) {
   }, [visible]);
 
   function handleSend(option: SOSOption) {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    notificationSuccess();
     onSend(option);
     onClose();
   }
