@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Modal, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-calendars';
 import { Feather } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { useAppStore } from '@/store/appStore';
 import { Colors, Spacing, Radii, Typography, CalendarTokens } from '@/constants/theme';
 import { getCurrentPhase, buildCalendarMarkers } from '@/utils/cycleCalculator';
 import { PHASE_INFO } from '@/constants/phases';
+import { MyCycleCard } from '@/components/moon/MyCycleCard';
 import type { CyclePhase, CalendarMarker } from '@/types';
 
 export default function CalendarTab() {
@@ -17,6 +18,7 @@ export default function CalendarTab() {
   const periodLogs = useAppStore(s => s.periodLogs);
   const role = useAppStore(s => s.role);
   const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
+  const language = useAppStore(s => s.language);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const { t } = useTranslation('calendar');
   const router = useRouter();
@@ -24,7 +26,7 @@ export default function CalendarTab() {
   // Unauthenticated / onboarding-incomplete users have no cycle yet
   if (!role) {
     return (
-      <SafeAreaView style={styles.root} edges={['top']}>
+      <SafeAreaView style={[styles.root, styles.rootPadded]} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.title}>{t('title')}</Text>
         </View>
@@ -38,7 +40,7 @@ export default function CalendarTab() {
   // Sun users don't have their own cycle — show partner info instead
   if (role === 'sun') {
     return (
-      <SafeAreaView style={styles.root} edges={['top']}>
+      <SafeAreaView style={[styles.root, styles.rootPadded]} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.title}>{t('title')}</Text>
           <Text style={styles.subtitle}>{t('moonCycleAtGlance')}</Text>
@@ -72,7 +74,7 @@ export default function CalendarTab() {
   // Guard against corrupted persisted state to avoid NaN/undefined crashes
   if (!cycleSettings.lastPeriodStartDate || cycleSettings.avgCycleLength < 1) {
     return (
-      <SafeAreaView style={styles.root} edges={['top']}>
+      <SafeAreaView style={[styles.root, styles.rootPadded]} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.title}>{t('title')}</Text>
         </View>
@@ -144,48 +146,60 @@ export default function CalendarTab() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{t('title')}</Text>
-        <Text style={styles.subtitle}>{t('subtitle')}</Text>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('title')}</Text>
+          <Text style={styles.subtitle}>{t('subtitle')}</Text>
+        </View>
 
-      <Calendar
-        style={styles.calendar}
-        theme={{
-          backgroundColor: Colors.background,
-          calendarBackground: Colors.card,
-          textSectionTitleColor: Colors.textHint,
-          selectedDayBackgroundColor: phaseInfo.color,
-          selectedDayTextColor: Colors.white,
-          todayTextColor: phaseInfo.color,
-          dayTextColor: Colors.textPrimary,
-          textDisabledColor: Colors.textHint,
-          dotColor: Colors.menstrual,
-          selectedDotColor: Colors.white,
-          arrowColor: Colors.menstrual,
-          monthTextColor: Colors.textPrimary,
-          indicatorColor: Colors.menstrual,
-          textDayFontWeight: '600',
-          textMonthFontWeight: '700',
-          textDayHeaderFontWeight: '600',
-          textDayFontSize: 14,
-          textMonthFontSize: 18,
-          textDayHeaderFontSize: 13,
-        }}
-        markedDates={markedDates}
-        markingType="dot"
-        enableSwipeMonths
-        onDayPress={(day: { dateString: string }) => setSelectedDay(day.dateString)}
-      />
+        <Calendar
+          style={styles.calendar}
+          theme={{
+            backgroundColor: Colors.background,
+            calendarBackground: Colors.card,
+            textSectionTitleColor: Colors.textHint,
+            selectedDayBackgroundColor: phaseInfo.color,
+            selectedDayTextColor: Colors.white,
+            todayTextColor: phaseInfo.color,
+            dayTextColor: Colors.textPrimary,
+            textDisabledColor: Colors.textHint,
+            dotColor: Colors.menstrual,
+            selectedDotColor: Colors.white,
+            arrowColor: Colors.menstrual,
+            monthTextColor: Colors.textPrimary,
+            indicatorColor: Colors.menstrual,
+            textDayFontWeight: '600',
+            textMonthFontWeight: '700',
+            textDayHeaderFontWeight: '600',
+            textDayFontSize: 14,
+            textMonthFontSize: 18,
+            textDayHeaderFontSize: 13,
+          }}
+          markedDates={markedDates}
+          markingType="dot"
+          enableSwipeMonths
+          onDayPress={(day: { dateString: string }) => setSelectedDay(day.dateString)}
+        />
 
-      {/* Legend */}
-      <View style={styles.legend}>
-        <LegendItem color={Colors.menstrual} label={t('periodLogged')} />
-        <LegendItem color={Colors.menstrual} label={t('periodPredicted')} opacity={CalendarTokens.predictedPeriodOpacity} />
-        <LegendItem color={Colors.follicular} label={t('fertileWindow')} />
-        <LegendItem color={Colors.ovulatory} label={t('ovulationDay')} />
-        <LegendItem color={Colors.textPrimary} label={t('today')} />
-      </View>
+        {/* Legend */}
+        <View style={styles.legend}>
+          <LegendItem color={Colors.menstrual} label={t('periodLogged')} />
+          <LegendItem color={Colors.menstrual} label={t('periodPredicted')} opacity={CalendarTokens.predictedPeriodOpacity} />
+          <LegendItem color={Colors.follicular} label={t('fertileWindow')} />
+          <LegendItem color={Colors.ovulatory} label={t('ovulationDay')} />
+          <LegendItem color={Colors.textPrimary} label={t('today')} />
+        </View>
+
+        {/* My Cycle Card — Moon only */}
+        <MyCycleCard
+          cycleSettings={cycleSettings}
+          periodLogs={periodLogs}
+          language={language}
+          onLogPeriod={() => router.push('/health-sync')}
+          onEditSettings={() => router.push('/health-sync')}
+          onViewAllPeriods={() => router.push('/health-sync')}
+        />
+      </ScrollView>
 
       <DayDetailSheet
         dateString={selectedDay}
@@ -328,7 +342,14 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  rootPadded: {
     paddingHorizontal: Spacing.lg,
+    gap: Spacing.lg,
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 40,
     gap: Spacing.lg,
   },
   header: {

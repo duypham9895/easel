@@ -21,5 +21,17 @@
   "legendPredicted": "Dự đoán",
   "legendLogged": "Đã ghi nhận",
   "legendPeriod": "Kỳ kinh",
-  "connectNow": "Kết nối ngay"
+  "connectNow": "Kết nối ngay",
+
+  "myCycle": "CHU KỲ CỦA TÔI",
+  "cycleLengthStat": "Chu kỳ {{count}} ngày",
+  "periodLengthStat": "Kỳ kinh {{count}} ngày",
+  "nextPeriodLabel": "Kỳ kinh tiếp theo",
+  "periodHistoryTitle": "Lịch sử kỳ kinh",
+  "noPeriods": "Chưa ghi kỳ kinh nào",
+  "noPeriodsHint": "Ghi kỳ kinh để dự đoán chính xác hơn",
+  "logPeriod": "Ghi kỳ kinh",
+  "editCycleSettings": "Chỉnh sửa",
+  "cyclePeriodSummary": "Độ dài chu kỳ · Độ dài kỳ kinh",
+  "seeAllPeriods": "Xem tất cả {{count}} kỳ kinh"
 }

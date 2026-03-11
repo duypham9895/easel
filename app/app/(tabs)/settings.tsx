@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, TextInput, Alert, Switch, Image, ActivityIndicator, Share, Platform,
+  StyleSheet, TextInput, Alert, Switch, Image, ActivityIndicator, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/appStore';
 import { Colors, Spacing, Radii, Typography } from '@/constants/theme';
@@ -19,11 +18,9 @@ export default function SettingsTab() {
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
   const { t: tPhases } = useTranslation('phases');
-  const { t: tHealth } = useTranslation('health');
   const email = useAppStore(s => s.email);
   const role = useAppStore(s => s.role);
   const cycleSettings = useAppStore(s => s.cycleSettings);
-  const updateCycleSettings = useAppStore(s => s.updateCycleSettings);
   const signOut = useAppStore(s => s.signOut);
   const generateLinkCode = useAppStore(s => s.generateLinkCode);
   const linkCode = useAppStore(s => s.linkCode);
@@ -40,7 +37,6 @@ export default function SettingsTab() {
   const { upload, isUploading } = useAvatarUpload();
   const displayName = useAppStore(s => s.displayName);
   const updateDisplayName = useAppStore(s => s.updateDisplayName);
-  const periodLogs = useAppStore(s => s.periodLogs);
   const language = useAppStore(s => s.language);
   const setLanguage = useAppStore(s => s.setLanguage);
   const { sync: syncHealth, isAvailable: healthAvailable } = useHealthSync();
@@ -49,39 +45,10 @@ export default function SettingsTab() {
   const [isSyncingHealth, setIsSyncingHealth] = useState(false);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
-  const [cycleLen, setCycleLen] = useState(String(cycleSettings.avgCycleLength));
-  const [periodLen, setPeriodLen] = useState(String(cycleSettings.avgPeriodLength));
-  const [lastPeriod, setLastPeriod] = useState(cycleSettings.lastPeriodStartDate);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   function handleToggleLanguage() {
     const next: SupportedLanguage = language === 'en' ? 'vi' : 'en';
     setLanguage(next);
-  }
-
-  async function handleSaveCycle() {
-    const cl = parseInt(cycleLen, 10);
-    const pl = parseInt(periodLen, 10);
-    if (isNaN(cl) || isNaN(pl) || cl < 21 || cl > 45 || pl < 2 || pl > 10) {
-      Alert.alert(t('invalidValues'), t('invalidValuesMsg'));
-      return;
-    }
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    const parsedDate = new Date(lastPeriod);
-    if (!dateRegex.test(lastPeriod) || isNaN(parsedDate.getTime())) {
-      Alert.alert(t('invalidDate'), t('invalidDateMsg'));
-      return;
-    }
-    try {
-      await updateCycleSettings({
-        avgCycleLength: cl,
-        avgPeriodLength: pl,
-        lastPeriodStartDate: lastPeriod,
-      });
-      Alert.alert(tCommon('saved'), t('cycleSettingsSaved'));
-    } catch {
-      Alert.alert(tCommon('error'), t('saveError'));
-    }
   }
 
   async function handleSaveName() {
@@ -391,104 +358,25 @@ export default function SettingsTab() {
           </View>
         )}
 
-        {/* Cycle settings — Moon only */}
+        {/* My Cycle link — Moon only */}
         {role === 'moon' && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('cycleSettings')}</Text>
-            <View style={styles.card}>
-              <SettingInput
-                label={t('avgCycleLength')}
-                value={cycleLen}
-                onChangeText={setCycleLen}
-                keyboardType="number-pad"
-              />
-              <Divider />
-              <SettingInput
-                label={t('avgPeriodLength')}
-                value={periodLen}
-                onChangeText={setPeriodLen}
-                keyboardType="number-pad"
-              />
-              <Divider />
-              <View style={settingStyles.row}>
-                <Text style={settingStyles.label}>{t('lastPeriodStart')}</Text>
-                <TouchableOpacity
-                  style={settingStyles.input}
-                  onPress={() => setShowDatePicker(true)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{ ...Typography.body, color: Colors.textPrimary }}>
-                    {lastPeriod
-                      ? new Date(lastPeriod + 'T12:00:00').toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
-                          year: 'numeric', month: 'long', day: 'numeric',
-                        })
-                      : tCommon('selectDate')}
-                  </Text>
-                </TouchableOpacity>
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={lastPeriod ? new Date(lastPeriod + 'T12:00:00') : new Date()}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    maximumDate={new Date()}
-                    onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
-                      if (Platform.OS === 'android') {
-                        setShowDatePicker(false);
-                      }
-                      if (event.type === 'set' && selectedDate) {
-                        const yyyy = selectedDate.getFullYear();
-                        const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                        const dd = String(selectedDate.getDate()).padStart(2, '0');
-                        setLastPeriod(`${yyyy}-${mm}-${dd}`);
-                      }
-                    }}
-                  />
-                )}
-                {showDatePicker && Platform.OS === 'ios' && (
-                  <TouchableOpacity
-                    style={[styles.saveButton, { marginTop: Spacing.xs }]}
-                    onPress={() => setShowDatePicker(false)}
-                  >
-                    <Text style={styles.saveButtonText}>{tCommon('done')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSaveCycle}>
-                <Text style={styles.saveButtonText}>{t('saveCycleSettings')}</Text>
-              </TouchableOpacity>
-              <Divider />
-              <TouchableOpacity
-                style={styles.generateButton}
-                onPress={() => router.push('/health-sync')}
-                activeOpacity={0.85}
-              >
-                <Feather name="list" size={16} color={Colors.menstrual} style={{ marginRight: Spacing.xs }} />
-                <Text style={styles.generateButtonText}>{t('editPeriodHistory')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Period History — Moon only */}
-        {role === 'moon' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{tHealth('periodHistory.headline')}</Text>
-            <View style={styles.card}>
+            <Text style={styles.sectionLabel}>{t('myCycle')}</Text>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => router.push('/(tabs)/calendar')}
+              activeOpacity={0.7}
+            >
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={styles.cardBody}>
-                  {tHealth('periodHistory.periodsLogged', { count: periodLogs.length })}
+                  {t('myCycleSummary', { cycle: cycleSettings.avgCycleLength, period: cycleSettings.avgPeriodLength })}
                 </Text>
-                <Feather name="clock" size={16} color={Colors.textHint} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                  <Text style={rowStyles.value}>{t('viewCycle')}</Text>
+                  <Feather name="chevron-right" size={16} color={Colors.textHint} />
+                </View>
               </View>
-              <TouchableOpacity
-                style={styles.generateButton}
-                onPress={() => router.push('/health-sync')}
-                activeOpacity={0.85}
-              >
-                <Feather name="plus" size={16} color={Colors.menstrual} style={{ marginRight: Spacing.xs }} />
-                <Text style={styles.generateButtonText}>{tHealth('periodHistory.addAnother')}</Text>
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -587,27 +475,6 @@ function ToggleRow({ label, value, onToggle }: { label: string; value: boolean; 
   );
 }
 
-function SettingInput({
-  label, value, onChangeText, keyboardType,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  keyboardType: 'number-pad' | 'default';
-}) {
-  return (
-    <View style={settingStyles.row}>
-      <Text style={settingStyles.label}>{label}</Text>
-      <TextInput
-        style={settingStyles.input}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        placeholderTextColor={Colors.textHint}
-      />
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
@@ -643,11 +510,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
   },
   linkedBadgeText: { ...Typography.bodyBold, color: '#4CAF50' },
-  saveButton: {
-    backgroundColor: Colors.textPrimary, borderRadius: Radii.md,
-    padding: Spacing.md, alignItems: 'center', marginTop: Spacing.xs,
-  },
-  saveButtonText: { ...Typography.bodyBold, color: Colors.white },
   signOutButton: {
     backgroundColor: Colors.card, borderRadius: Radii.lg,
     padding: Spacing.md, alignItems: 'center',

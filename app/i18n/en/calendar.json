@@ -21,5 +21,17 @@
   "legendPredicted": "Predicted",
   "legendLogged": "Logged",
   "legendPeriod": "Period",
-  "connectNow": "Connect now"
+  "connectNow": "Connect now",
+
+  "myCycle": "MY CYCLE",
+  "cycleLengthStat": "{{count}}-day cycle",
+  "periodLengthStat": "{{count}}-day period",
+  "nextPeriodLabel": "Next period",
+  "periodHistoryTitle": "Period History",
+  "noPeriods": "No periods logged yet",
+  "noPeriodsHint": "Log your periods for more accurate predictions",
+  "logPeriod": "Log a period",
+  "editCycleSettings": "Edit",
+  "cyclePeriodSummary": "Cycle length · Period length",
+  "seeAllPeriods": "See all {{count}} periods"
 }
