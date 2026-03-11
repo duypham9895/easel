@@ -1,10 +1,8 @@
 import { Platform } from 'react-native';
 import { useAppStore } from '@/store/appStore';
+import type { PeriodRecord } from '@/types';
 
-export interface PeriodRecord {
-  startDate: string; // YYYY-MM-DD
-  endDate: string | null;
-}
+export type { PeriodRecord };
 
 interface UseHealthSyncResult {
   isAvailable: boolean;
@@ -44,12 +42,14 @@ async function callPredictCycle(
 export function useHealthSync(): UseHealthSyncResult {
   const updateCycleSettings = useAppStore((s) => s.updateCycleSettings);
   const updateNotificationPrefs = useAppStore((s) => s.updateNotificationPrefs);
+  const addPeriodLog = useAppStore((s) => s.addPeriodLog);
+  const periodLogs = useAppStore((s) => s.periodLogs);
 
   if (Platform.OS === 'ios') {
-    return buildHealthKitSync(updateCycleSettings, updateNotificationPrefs);
+    return buildHealthKitSync(updateCycleSettings, updateNotificationPrefs, addPeriodLog, periodLogs);
   }
   if (Platform.OS === 'android') {
-    return buildHealthConnectSync(updateCycleSettings, updateNotificationPrefs);
+    return buildHealthConnectSync(updateCycleSettings, updateNotificationPrefs, addPeriodLog, periodLogs);
   }
   return { isAvailable: false, sync: async () => [] };
 }
@@ -57,6 +57,8 @@ export function useHealthSync(): UseHealthSyncResult {
 function buildHealthKitSync(
   updateCycleSettings: (s: { lastPeriodStartDate: string }) => Promise<void>,
   updateNotificationPrefs: (prefs: { manualDaysBefore: number }) => void,
+  addPeriodLog: (startDate: string, endDate?: string | null) => Promise<void>,
+  existingLogs: PeriodRecord[],
 ): UseHealthSyncResult {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let AppleHealthKit: any = null;
@@ -114,6 +116,7 @@ function buildHealthKitSync(
           if (records.length > 0) {
             await updateCycleSettings({ lastPeriodStartDate: records[0].startDate });
             await callPredictCycle(records, updateNotificationPrefs);
+            await persistNewRecords(records, existingLogs, addPeriodLog);
           }
           resolve(records);
         });
@@ -127,6 +130,8 @@ function buildHealthKitSync(
 function buildHealthConnectSync(
   updateCycleSettings: (s: { lastPeriodStartDate: string }) => Promise<void>,
   updateNotificationPrefs: (prefs: { manualDaysBefore: number }) => void,
+  addPeriodLog: (startDate: string, endDate?: string | null) => Promise<void>,
+  existingLogs: PeriodRecord[],
 ): UseHealthSyncResult {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let HealthConnect: any = null;
@@ -157,6 +162,7 @@ function buildHealthConnectSync(
       if (periodRecords.length > 0) {
         await updateCycleSettings({ lastPeriodStartDate: periodRecords[0].startDate });
         await callPredictCycle(periodRecords, updateNotificationPrefs);
+        await persistNewRecords(periodRecords, existingLogs, addPeriodLog);
       }
       return periodRecords;
     } catch (err) {
@@ -166,6 +172,36 @@ function buildHealthConnectSync(
   }
 
   return { isAvailable: true, sync };
+}
+
+const TWO_DAYS_MS = 2 * 86_400_000;
+
+/**
+ * Returns true when `hkStartDate` is within `toleranceDays` of any entry in
+ * `existing`. Exported for unit testing.
+ */
+export function isDuplicate(
+  existing: PeriodRecord[],
+  hkStartDate: string,
+  toleranceDays = 2,
+): boolean {
+  const toleranceMs = toleranceDays * 86_400_000;
+  const hkTime = new Date(hkStartDate).getTime();
+  return existing.some(
+    (log) => Math.abs(new Date(log.startDate).getTime() - hkTime) <= toleranceMs,
+  );
+}
+
+async function persistNewRecords(
+  hkRecords: PeriodRecord[],
+  existingLogs: PeriodRecord[],
+  addPeriodLog: (startDate: string, endDate?: string | null) => Promise<void>,
+): Promise<void> {
+  for (const rec of hkRecords) {
+    if (!isDuplicate(existingLogs, rec.startDate)) {
+      await addPeriodLog(rec.startDate, rec.endDate);
+    }
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

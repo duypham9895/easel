@@ -19,6 +19,7 @@ export default function SettingsTab() {
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
   const { t: tPhases } = useTranslation('phases');
+  const { t: tHealth } = useTranslation('health');
   const email = useAppStore(s => s.email);
   const role = useAppStore(s => s.role);
   const cycleSettings = useAppStore(s => s.cycleSettings);
@@ -39,6 +40,7 @@ export default function SettingsTab() {
   const { upload, isUploading } = useAvatarUpload();
   const displayName = useAppStore(s => s.displayName);
   const updateDisplayName = useAppStore(s => s.updateDisplayName);
+  const periodLogs = useAppStore(s => s.periodLogs);
   const language = useAppStore(s => s.language);
   const setLanguage = useAppStore(s => s.setLanguage);
   const { sync: syncHealth, isAvailable: healthAvailable } = useHealthSync();
@@ -452,6 +454,38 @@ export default function SettingsTab() {
               </View>
               <TouchableOpacity style={styles.saveButton} onPress={handleSaveCycle}>
                 <Text style={styles.saveButtonText}>{t('saveCycleSettings')}</Text>
+              </TouchableOpacity>
+              <Divider />
+              <TouchableOpacity
+                style={styles.generateButton}
+                onPress={() => router.push('/health-sync')}
+                activeOpacity={0.85}
+              >
+                <Feather name="list" size={16} color={Colors.menstrual} style={{ marginRight: Spacing.xs }} />
+                <Text style={styles.generateButtonText}>{t('editPeriodHistory')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Period History — Moon only */}
+        {role === 'moon' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{tHealth('periodHistory.headline')}</Text>
+            <View style={styles.card}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={styles.cardBody}>
+                  {tHealth('periodHistory.periodsLogged', { count: periodLogs.length })}
+                </Text>
+                <Feather name="clock" size={16} color={Colors.textHint} />
+              </View>
+              <TouchableOpacity
+                style={styles.generateButton}
+                onPress={() => router.push('/health-sync')}
+                activeOpacity={0.85}
+              >
+                <Feather name="plus" size={16} color={Colors.menstrual} style={{ marginRight: Spacing.xs }} />
+                <Text style={styles.generateButtonText}>{tHealth('periodHistory.addAnother')}</Text>
               </TouchableOpacity>
             </View>
           </View>

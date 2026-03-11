@@ -95,6 +95,27 @@
     "updateCycleButton": "Update cycle info"
   },
 
+  "periodHistory": {
+    "headline": "Your period history",
+    "subtitle": "Adding more periods helps us predict your cycle more accurately.",
+    "mostRecent": "Most recent period",
+    "olderPeriod": "Earlier period",
+    "started": "Started",
+    "ended": "Ended",
+    "startDate": "Period start date",
+    "endDate": "Period end date (optional)",
+    "optional": "Optional",
+    "rememberMore": "I remember more periods",
+    "addAnother": "Add another period",
+    "periodsLogged": "{{count}} periods logged",
+    "iRememberMore": "I remember more periods",
+    "autoComputed": "~{{days}} days (calculated from your history)",
+    "maxReached": "You can add periods up to 24 months back",
+    "tooOld": "Periods must be within the last 24 months",
+    "endBeforeStart": "End date can't be before start date",
+    "overlap": "Period dates can't overlap each other"
+  },
+
   "tooltips": {
     "cycleLength": "Your cycle length is the number of days from the first day of one period to the first day of the next. Most cycles are 21-35 days.",
     "periodLength": "Your period length is how many days you typically bleed. Most periods last 3-7 days.",

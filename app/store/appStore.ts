@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserRole, SOSOption, CycleSettings, NotificationPreferences } from '@/types';
+import { UserRole, SOSOption, CycleSettings, NotificationPreferences, PeriodRecord } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { getProfile, upsertProfile } from '@/lib/db/profiles';
-import { getCycleSettings, upsertCycleSettings } from '@/lib/db/cycle';
+import { getCycleSettings, upsertCycleSettings, fetchPeriodLogs, logPeriodStart, deletePeriodLog } from '@/lib/db/cycle';
 import { createOrRefreshLinkCode, linkToPartnerByCode, getMyCouple } from '@/lib/db/couples';
 import { sendSOSSignal } from '@/lib/db/sos';
 import { upsertPushToken } from '@/lib/db/pushTokens';
@@ -25,6 +25,7 @@ interface AppState {
 
   // Cycle data
   cycleSettings: CycleSettings;
+  periodLogs: PeriodRecord[];
   // Sun-only: girlfriend's cycle settings fetched after linking
   partnerCycleSettings: CycleSettings | null;
 
@@ -53,6 +54,9 @@ interface AppState {
 
   // Cycle
   updateCycleSettings: (settings: Partial<CycleSettings>) => Promise<void>;
+  loadPeriodLogs: () => Promise<void>;
+  addPeriodLog: (startDate: string, endDate?: string | null) => Promise<void>;
+  removePeriodLog: (startDate: string) => Promise<void>;
 
   // SOS
   sendSOS: (option: SOSOption) => Promise<void>;
@@ -86,6 +90,22 @@ function makeDefaultCycleSettings(): CycleSettings {
     avgPeriodLength: 5,
     lastPeriodStartDate: new Date().toISOString().split('T')[0],
   };
+}
+
+/** Compute lastPeriodStartDate and avgCycleLength from period log history. */
+function recomputeCycleFromLogs(logs: PeriodRecord[], current: CycleSettings): CycleSettings {
+  const lastPeriodStartDate = logs[0]?.startDate ?? current.lastPeriodStartDate;
+  const gaps: number[] = [];
+  for (let i = 0; i < logs.length - 1; i++) {
+    const a = new Date(logs[i].startDate).getTime();
+    const b = new Date(logs[i + 1].startDate).getTime();
+    const days = Math.round((a - b) / 86_400_000);
+    if (days >= 21 && days <= 45) gaps.push(days);
+  }
+  const avgCycleLength = gaps.length > 0
+    ? Math.round(gaps.reduce((sum, d) => sum + d, 0) / gaps.length)
+    : current.avgCycleLength;
+  return { ...current, lastPeriodStartDate, avgCycleLength };
 }
 
 // Module-level timer refs so they can be cleared without adding to persisted state
@@ -125,6 +145,7 @@ export const useAppStore = create<AppState>()(
       userId: null,
       coupleId: null,
       cycleSettings: makeDefaultCycleSettings(),
+      periodLogs: [],
       partnerCycleSettings: null,
       activeSOS: null,
       avatarUrl: null,
@@ -157,6 +178,10 @@ export const useAppStore = create<AppState>()(
             ? await getCycleSettings(couple.girlfriend_id) ?? null
             : null;
 
+        const periodLogs = profile?.role === 'moon'
+          ? await fetchPeriodLogs(userId)
+          : [];
+
         set({
           isLoggedIn: true,
           email: data.user.email ?? email,
@@ -165,6 +190,7 @@ export const useAppStore = create<AppState>()(
           isPartnerLinked: couple?.status === 'linked',
           coupleId: couple?.id ?? null,
           cycleSettings,
+          periodLogs,
           partnerCycleSettings,
           displayName: profile?.display_name ?? null,
           avatarUrl: profile?.avatar_url ?? null,
@@ -208,6 +234,7 @@ export const useAppStore = create<AppState>()(
           activeSOS: null,
           activeWhisper: null,
           cycleSettings: makeDefaultCycleSettings(),
+          periodLogs: [],
           partnerCycleSettings: null,
           displayName: null,
           avatarUrl: null,
@@ -252,6 +279,11 @@ export const useAppStore = create<AppState>()(
             ? await getCycleSettings(couple.girlfriend_id) ?? null
             : null;
 
+        // Load period logs for Moon users
+        const periodLogs = profile?.role === 'moon'
+          ? await fetchPeriodLogs(userId)
+          : [];
+
         // Restore language preference from DB
         const { data: prefData } = await supabase
           .from('user_preferences')
@@ -271,6 +303,7 @@ export const useAppStore = create<AppState>()(
           isPartnerLinked: couple?.status === 'linked',
           coupleId: couple?.id ?? null,
           cycleSettings,
+          periodLogs,
           partnerCycleSettings,
           displayName: profile?.display_name ?? null,
           avatarUrl: profile?.avatar_url ?? null,
@@ -323,6 +356,32 @@ export const useAppStore = create<AppState>()(
         if (userId) {
           await upsertCycleSettings(userId, merged);
         }
+      },
+
+      loadPeriodLogs: async () => {
+        const { userId } = get();
+        if (!userId) return;
+        const logs = await fetchPeriodLogs(userId);
+        set({ periodLogs: logs });
+      },
+
+      addPeriodLog: async (startDate, endDate) => {
+        const { userId, periodLogs, cycleSettings } = get();
+        if (!userId) return;
+        await logPeriodStart(userId, startDate);
+        const entry: PeriodRecord = { startDate, ...(endDate ? { endDate } : {}) };
+        const updated = [entry, ...periodLogs.filter((l) => l.startDate !== startDate)]
+          .sort((a, b) => b.startDate.localeCompare(a.startDate))
+          .slice(0, 24);
+        set({ periodLogs: updated, cycleSettings: recomputeCycleFromLogs(updated, cycleSettings) });
+      },
+
+      removePeriodLog: async (startDate) => {
+        const { userId, periodLogs, cycleSettings } = get();
+        if (!userId) return;
+        await deletePeriodLog(userId, startDate);
+        const updated = periodLogs.filter((l) => l.startDate !== startDate);
+        set({ periodLogs: updated, cycleSettings: recomputeCycleFromLogs(updated, cycleSettings) });
       },
 
       // -----------------------------------------------------------------------

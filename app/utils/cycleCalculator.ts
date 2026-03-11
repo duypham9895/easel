@@ -1,5 +1,61 @@
 import { CyclePhase } from '@/types';
+import type { PeriodRecord } from '@/types';
 import { getOvulationDay } from '@/constants/cycle';
+
+export interface CycleStats {
+  avgCycleLength: number;
+  avgPeriodLength: number;
+  variability: number;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+const DAY_MS = 86_400_000;
+const DEFAULT_STATS: CycleStats = { avgCycleLength: 28, avgPeriodLength: 5, variability: 0, confidence: 'low' };
+
+export function computeCycleStats(logs: PeriodRecord[]): CycleStats {
+  if (logs.length < 2) return { ...DEFAULT_STATS };
+
+  const sorted = [...logs]
+    .sort((a, b) => b.startDate.localeCompare(a.startDate))
+    .slice(0, 7);
+
+  const gaps: number[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const days = Math.round(
+      (new Date(sorted[i].startDate).getTime() - new Date(sorted[i + 1].startDate).getTime()) / DAY_MS,
+    );
+    if (days >= 21 && days <= 45) gaps.push(days);
+  }
+  if (gaps.length === 0) return { ...DEFAULT_STATS };
+
+  const recentCount = Math.ceil(gaps.length / 2);
+  let wSum = 0, wTotal = 0;
+  for (let i = 0; i < gaps.length; i++) {
+    const w = i < recentCount ? 2 : 1;
+    wSum += gaps[i] * w;
+    wTotal += w;
+  }
+  const avgCycleLength = Math.round(wSum / wTotal);
+
+  const pLens: number[] = [];
+  for (const r of sorted) {
+    if (r.endDate) {
+      const d = Math.round((new Date(r.endDate).getTime() - new Date(r.startDate).getTime()) / DAY_MS) + 1;
+      if (d >= 2 && d <= 10) pLens.push(d);
+    }
+  }
+  const avgPeriodLength = pLens.length > 0
+    ? Math.round(pLens.reduce((a, b) => a + b, 0) / pLens.length)
+    : 5;
+
+  const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  const variance = gaps.reduce((s, g) => s + (g - mean) ** 2, 0) / gaps.length;
+  const variability = Math.round(Math.sqrt(variance) * 10) / 10;
+
+  const confidence = gaps.length >= 6 ? 'high' : gaps.length >= 3 ? 'medium' : 'low';
+
+  return { avgCycleLength, avgPeriodLength, variability, confidence };
+}
 
 export function getCurrentDayInCycle(
   lastPeriodStartDate: string,
@@ -57,8 +113,26 @@ export function buildCalendarMarkers(
   lastPeriodStartDate: string,
   avgCycleLength: number,
   avgPeriodLength: number,
+  periodLogs?: PeriodRecord[],
 ): Record<string, { type: 'period' | 'ovulation' | 'fertile' }> {
   const markers: Record<string, { type: 'period' | 'ovulation' | 'fertile' }> = {};
+
+  // Mark actual historical period dates from logs
+  if (periodLogs && periodLogs.length > 0) {
+    for (const log of periodLogs) {
+      const pStart = new Date(log.startDate);
+      pStart.setHours(0, 0, 0, 0);
+      const pLen = log.endDate
+        ? Math.round((new Date(log.endDate).getTime() - pStart.getTime()) / DAY_MS) + 1
+        : avgPeriodLength;
+      for (let d = 0; d < pLen; d++) {
+        const date = new Date(pStart.getTime());
+        date.setDate(date.getDate() + d);
+        markers[toDateString(date)] = { type: 'period' };
+      }
+    }
+  }
+
   const start = new Date(lastPeriodStartDate);
   start.setHours(0, 0, 0, 0);
 

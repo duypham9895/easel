@@ -95,6 +95,27 @@
     "updateCycleButton": "Cập nhật thông tin chu kỳ"
   },
 
+  "periodHistory": {
+    "headline": "Lịch sử kỳ kinh",
+    "subtitle": "Thêm nhiều kỳ kinh giúp dự đoán chu kỳ chính xác hơn.",
+    "mostRecent": "Kỳ kinh gần nhất",
+    "olderPeriod": "Kỳ kinh trước đó",
+    "started": "Bắt đầu",
+    "ended": "Kết thúc",
+    "startDate": "Ngày bắt đầu kỳ kinh",
+    "endDate": "Ngày kết thúc kỳ kinh (tùy chọn)",
+    "optional": "Tùy chọn",
+    "rememberMore": "Tôi nhớ thêm kỳ kinh khác",
+    "addAnother": "Thêm kỳ kinh khác",
+    "periodsLogged": "{{count}} kỳ kinh đã ghi",
+    "iRememberMore": "Tôi nhớ thêm các kỳ kinh trước",
+    "autoComputed": "~{{days}} ngày (tính từ lịch sử)",
+    "maxReached": "Bạn có thể thêm kỳ kinh trong 24 tháng gần đây",
+    "tooOld": "Kỳ kinh phải trong 24 tháng gần đây",
+    "endBeforeStart": "Ngày kết thúc không thể trước ngày bắt đầu",
+    "overlap": "Các kỳ kinh không được trùng nhau"
+  },
+
   "tooltips": {
     "cycleLength": "Độ dài chu kỳ là số ngày từ ngày đầu kỳ kinh này đến ngày đầu kỳ kinh tiếp theo. Hầu hết chu kỳ từ 21-35 ngày.",
     "periodLength": "Độ dài kỳ kinh là số ngày bạn thường có kinh. Hầu hết kỳ kinh kéo dài 3-7 ngày.",

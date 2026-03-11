@@ -16,6 +16,11 @@ export interface CycleSettings {
   lastPeriodStartDate: string; // ISO date YYYY-MM-DD
 }
 
+export interface PeriodRecord {
+  startDate: string;  // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+}
+
 // ---------------------------------------------------------------------------
 // Database row types — mirror the Supabase schema exactly
 // ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { CycleSettings } from '@/types';
+import { CycleSettings, DbPeriodLog, PeriodRecord } from '@/types';
 
 export interface DbCycleSettings {
   id: string;
@@ -63,6 +63,34 @@ export async function logPeriodStart(
       { user_id: userId, start_date: startDate, notes: notes ?? null },
       { onConflict: 'user_id, start_date' }
     );
+
+  if (error) throw error;
+}
+
+/** Fetch recent period logs for a user, newest first. */
+export async function fetchPeriodLogs(userId: string): Promise<PeriodRecord[]> {
+  const { data, error } = await supabase
+    .from('period_logs')
+    .select('start_date, end_date')
+    .eq('user_id', userId)
+    .order('start_date', { ascending: false })
+    .limit(24);
+
+  if (error) throw error;
+
+  return ((data ?? []) as Pick<DbPeriodLog, 'start_date' | 'end_date'>[]).map((row) => ({
+    startDate: row.start_date,
+    ...(row.end_date != null ? { endDate: row.end_date } : {}),
+  }));
+}
+
+/** Delete a specific period log by user + start date. */
+export async function deletePeriodLog(userId: string, startDate: string): Promise<void> {
+  const { error } = await supabase
+    .from('period_logs')
+    .delete()
+    .eq('user_id', userId)
+    .eq('start_date', startDate);
 
   if (error) throw error;
 }
