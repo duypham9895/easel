@@ -233,10 +233,11 @@ describe('E2E: Single period → backward compatible (same as before)', () => {
   });
 
   it('calendar markers work with single period (no logged history)', () => {
-    const markers = buildCalendarMarkers('2026-03-01', 28, 5);
+    // Use future date since FR-12 skips predicted dates before today
+    const markers = buildCalendarMarkers('2027-03-01', 28, 5);
     // Should have predicted period + ovulation + fertile markers
-    expect(markers['2026-03-01']).toEqual({ type: 'period', source: 'predicted' });
-    expect(markers['2026-03-05']).toEqual({ type: 'period', source: 'predicted' });
+    expect(markers['2027-03-01']).toEqual({ type: 'period', source: 'predicted' });
+    expect(markers['2027-03-05']).toEqual({ type: 'period', source: 'predicted' });
   });
 
   it('calendar markers with single period log marks it as logged', () => {

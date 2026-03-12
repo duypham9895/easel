@@ -177,7 +177,7 @@ describe('buildCalendarMarkers', () => {
     return `${yy}-${mm}-${dd}`;
   }
 
-  const START = '2025-06-15'; // mid-year to avoid UTC-boundary edge cases
+  const START = '2027-06-15'; // use future date since FR-12 skips predicted dates before today
   const CYCLE = 28;
   const PERIOD = 5;
   // getOvulationDay(28, 5) = Math.max(6, 14) = 14 → offset = 13 from cycleStart

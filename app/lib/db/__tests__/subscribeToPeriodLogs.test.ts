@@ -4,7 +4,9 @@
  */
 
 const mockSubscribe = jest.fn().mockReturnThis();
-const mockOn = jest.fn().mockReturnValue({ subscribe: mockSubscribe });
+const mockOnChainable: jest.Mock = jest.fn();
+mockOnChainable.mockReturnValue({ on: mockOnChainable, subscribe: mockSubscribe });
+const mockOn = mockOnChainable;
 const mockChannel = jest.fn().mockReturnValue({ on: mockOn });
 const mockRemoveChannel = jest.fn();
 
@@ -47,10 +49,6 @@ describe('subscribeToPeriodLogs', () => {
   });
 
   it('returns a cleanup function that removes the channel', () => {
-    const channelRef = { on: mockOn };
-    mockChannel.mockReturnValueOnce(channelRef);
-    mockOn.mockReturnValueOnce({ subscribe: jest.fn().mockReturnValue(channelRef) });
-
     const cleanup = subscribeToPeriodLogs(MOON_ID, jest.fn());
     expect(typeof cleanup).toBe('function');
 

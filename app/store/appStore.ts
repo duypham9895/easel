@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserRole, SOSOption, CycleSettings, NotificationPreferences, PeriodRecord, CycleDeviation } from '@/types';
-import { detectDeviation } from '@/utils/cycleCalculator';
+import { UserRole, SOSOption, CycleSettings, NotificationPreferences, PeriodRecord, CycleDeviation, PredictionWindow } from '@/types';
+import { detectDeviation, computePredictionWindow } from '@/utils/cycleCalculator';
 import { supabase } from '@/lib/supabase';
 import { getProfile, upsertProfile } from '@/lib/db/profiles';
-import { getCycleSettings, upsertCycleSettings, fetchPeriodLogs, logPeriodStart, deletePeriodLog } from '@/lib/db/cycle';
+import { getCycleSettings, upsertCycleSettings, fetchPeriodLogs, logPeriodStart, deletePeriodLog, updatePeriodLogTags, updatePeriodEndDate } from '@/lib/db/cycle';
 import { createOrRefreshLinkCode, linkToPartnerByCode, getMyCouple } from '@/lib/db/couples';
 import { sendSOSSignal } from '@/lib/db/sos';
 import { upsertPushToken } from '@/lib/db/pushTokens';
@@ -41,6 +41,9 @@ interface AppState {
   // Deviation detection (transient — not persisted)
   lastDeviation: CycleDeviation | null;
 
+  // Prediction window (transient — not persisted)
+  predictionWindow: PredictionWindow | null;
+
   // Auth actions
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -59,8 +62,10 @@ interface AppState {
   // Cycle
   updateCycleSettings: (settings: Partial<CycleSettings>) => Promise<void>;
   loadPeriodLogs: () => Promise<void>;
-  addPeriodLog: (startDate: string, endDate?: string | null) => Promise<void>;
+  addPeriodLog: (startDate: string, endDate?: string | null, tags?: string[]) => Promise<void>;
   removePeriodLog: (startDate: string) => Promise<void>;
+  updatePeriodTags: (startDate: string, tags: string[]) => Promise<void>;
+  setPeriodEndDate: (startDate: string, endDate: string) => Promise<void>;
   clearDeviation: () => void;
 
   // SOS
@@ -158,6 +163,7 @@ export const useAppStore = create<AppState>()(
       notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
       activeWhisper: null,
       lastDeviation: null,
+      predictionWindow: null,
       language: (i18n.language as SupportedLanguage) ?? 'en',
 
       // -----------------------------------------------------------------------
@@ -240,6 +246,7 @@ export const useAppStore = create<AppState>()(
           activeSOS: null,
           activeWhisper: null,
           lastDeviation: null,
+          predictionWindow: null,
           cycleSettings: makeDefaultCycleSettings(),
           periodLogs: [],
           partnerCycleSettings: null,
@@ -365,17 +372,24 @@ export const useAppStore = create<AppState>()(
       },
 
       loadPeriodLogs: async () => {
-        const { userId } = get();
+        const { userId, cycleSettings } = get();
         if (!userId) return;
         const logs = await fetchPeriodLogs(userId);
-        set({ periodLogs: logs });
+        set({
+          periodLogs: logs,
+          predictionWindow: computePredictionWindow(logs, cycleSettings),
+        });
       },
 
-      addPeriodLog: async (startDate, endDate) => {
+      addPeriodLog: async (startDate, endDate, tags) => {
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
         await logPeriodStart(userId, startDate);
-        const entry: PeriodRecord = { startDate, ...(endDate ? { endDate } : {}) };
+        const entry: PeriodRecord = {
+          startDate,
+          ...(endDate ? { endDate } : {}),
+          ...(tags && tags.length > 0 ? { tags } : {}),
+        };
         const updated = [entry, ...periodLogs.filter((l) => l.startDate !== startDate)]
           .sort((a, b) => b.startDate.localeCompare(a.startDate))
           .slice(0, 24);
@@ -385,21 +399,64 @@ export const useAppStore = create<AppState>()(
           ? detectDeviation(startDate, cycleSettings.lastPeriodStartDate, cycleSettings.avgCycleLength)
           : null;
 
+        const newCycleSettings = recomputeCycleFromLogs(updated, cycleSettings);
         set({
           periodLogs: updated,
-          cycleSettings: recomputeCycleFromLogs(updated, cycleSettings),
+          cycleSettings: newCycleSettings,
           lastDeviation: deviation,
+          predictionWindow: computePredictionWindow(updated, newCycleSettings),
         });
       },
 
       clearDeviation: () => set({ lastDeviation: null }),
+
+      updatePeriodTags: async (startDate, tags) => {
+        const { userId, periodLogs, cycleSettings } = get();
+        if (!userId) return;
+
+        // Optimistic update
+        const updated = periodLogs.map((l) =>
+          l.startDate === startDate ? { ...l, tags } : l,
+        );
+        set({
+          periodLogs: updated,
+          predictionWindow: computePredictionWindow(updated, cycleSettings),
+        });
+
+        // Persist to DB
+        await updatePeriodLogTags(userId, startDate, tags);
+      },
+
+      setPeriodEndDate: async (startDate, endDate) => {
+        const { userId, periodLogs, cycleSettings } = get();
+        if (!userId) return;
+
+        // Optimistic update
+        const updated = periodLogs.map((l) =>
+          l.startDate === startDate ? { ...l, endDate } : l,
+        );
+        const newCycleSettings = recomputeCycleFromLogs(updated, cycleSettings);
+        set({
+          periodLogs: updated,
+          cycleSettings: newCycleSettings,
+          predictionWindow: computePredictionWindow(updated, newCycleSettings),
+        });
+
+        // Persist to DB
+        await updatePeriodEndDate(userId, startDate, endDate);
+      },
 
       removePeriodLog: async (startDate) => {
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
         await deletePeriodLog(userId, startDate);
         const updated = periodLogs.filter((l) => l.startDate !== startDate);
-        set({ periodLogs: updated, cycleSettings: recomputeCycleFromLogs(updated, cycleSettings) });
+        const newCycleSettings = recomputeCycleFromLogs(updated, cycleSettings);
+        set({
+          periodLogs: updated,
+          cycleSettings: newCycleSettings,
+          predictionWindow: computePredictionWindow(updated, newCycleSettings),
+        });
       },
 
       // -----------------------------------------------------------------------
@@ -524,7 +581,7 @@ export const useAppStore = create<AppState>()(
       name: 'easel-app-storage',
       storage: createJSONStorage(() => AsyncStorage),
       // activeSOS/activeWhisper are transient; userId/coupleId are re-hydrated via bootstrapSession
-      partialize: ({ activeSOS, activeWhisper, lastDeviation, userId, coupleId, ...rest }) => rest,
+      partialize: ({ activeSOS, activeWhisper, lastDeviation, predictionWindow, userId, coupleId, ...rest }) => rest,
     },
   ),
 );

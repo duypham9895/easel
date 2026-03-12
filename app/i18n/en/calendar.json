@@ -33,5 +33,41 @@
   "logPeriod": "Log a period",
   "editCycleSettings": "Edit",
   "cyclePeriodSummary": "Cycle length · Period length",
-  "seeAllPeriods": "See all {{count}} periods"
+  "seeAllPeriods": "See all {{count}} periods",
+
+  "logPeriodStart": "Log period start",
+  "endPeriodHere": "End period here",
+  "factors": "Factors",
+  "factorsSubtitle": "Anything that may have affected your cycle",
+  "stress": "Stress",
+  "illness": "Illness",
+  "travel": "Travel",
+  "medication": "Medication",
+  "other": "Other",
+  "addNote": "Add a note",
+  "notePlaceholder": "How are you feeling today?",
+  "save": "Save",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "confirmDelete": "Delete period log?",
+  "confirmDeleteMessage": "This will remove this period from your history. This cannot be undone.",
+
+  "predictionWindow": "PREDICTION WINDOW",
+  "periodExpected": "Period expected {{range}}",
+  "confidenceHigh": "High",
+  "confidenceMedium": "Medium",
+  "confidenceLow": "Low",
+
+  "partnerCalendar": "Your Moon's cycle calendar",
+  "calendarPrivate": "Moon has chosen to keep her calendar private",
+
+  "tagStress": "Stress",
+  "tagIllness": "Illness",
+  "tagTravel": "Travel",
+  "tagMedication": "Medication",
+  "tagOther": "Other",
+
+  "notificationPeriodApproachingTitle": "Period reminder",
+  "notificationPeriodApproachingBody": "Your period may start in {{days}} days",
+  "partnerPeriodUpdated": "Moon updated her period log"
 }

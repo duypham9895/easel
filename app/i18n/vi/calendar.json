@@ -33,5 +33,41 @@
   "logPeriod": "Ghi kỳ kinh",
   "editCycleSettings": "Chỉnh sửa",
   "cyclePeriodSummary": "Độ dài chu kỳ · Độ dài kỳ kinh",
-  "seeAllPeriods": "Xem tất cả {{count}} kỳ kinh"
+  "seeAllPeriods": "Xem tất cả {{count}} kỳ kinh",
+
+  "logPeriodStart": "Ghi ngày bắt đầu",
+  "endPeriodHere": "Kết thúc kỳ kinh tại đây",
+  "factors": "Yếu tố ảnh hưởng",
+  "factorsSubtitle": "Những gì có thể ảnh hưởng đến chu kỳ của bạn",
+  "stress": "Căng thẳng",
+  "illness": "Bệnh",
+  "travel": "Du lịch",
+  "medication": "Thuốc",
+  "other": "Khác",
+  "addNote": "Thêm ghi chú",
+  "notePlaceholder": "Hôm nay bạn cảm thấy thế nào?",
+  "save": "Lưu",
+  "delete": "Xóa",
+  "cancel": "Hủy",
+  "confirmDelete": "Xóa kỳ kinh đã ghi?",
+  "confirmDeleteMessage": "Kỳ kinh này sẽ bị xóa khỏi lịch sử. Không thể hoàn tác.",
+
+  "predictionWindow": "DỰ ĐOÁN",
+  "periodExpected": "Kỳ kinh dự kiến {{range}}",
+  "confidenceHigh": "Cao",
+  "confidenceMedium": "Trung bình",
+  "confidenceLow": "Thấp",
+
+  "partnerCalendar": "Lịch chu kỳ của Moon",
+  "calendarPrivate": "Moon đã chọn giữ lịch chu kỳ riêng tư",
+
+  "tagStress": "Căng thẳng",
+  "tagIllness": "Ốm",
+  "tagTravel": "Du lịch",
+  "tagMedication": "Thuốc",
+  "tagOther": "Khác",
+
+  "notificationPeriodApproachingTitle": "Nhắc nhở kỳ kinh",
+  "notificationPeriodApproachingBody": "Kỳ kinh có thể bắt đầu trong {{days}} ngày nữa",
+  "partnerPeriodUpdated": "Moon đã cập nhật kỳ kinh"
 }

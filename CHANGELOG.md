@@ -9,6 +9,44 @@ Versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.7.0] — 2026-03-12
+
+### Added
+- **Period Calendar** — full-featured calendar view for Moon with logged/predicted period markers, ovulation, and fertile window visualization
+- **Prediction Algorithm** — weighted rolling average cycle prediction with confidence scoring (low/medium/high) and prediction window (±4 days max)
+- **Manual Period Logging** — tap any day to log period start, end period, add override tags (stress, illness, travel, medication, other), and notes
+- **Override Tags** — `TEXT[]` column on `period_logs` with GIN index; tagged cycles receive 0.5× weight in prediction calculations
+- **Prediction Window Card** — shows expected period range and confidence badge on Moon's calendar
+- **Partner Calendar View** — read-only calendar for Sun showing Moon's cycle data, predictions, and legend
+- **Period Listener Hook** — Sun receives real-time updates when Moon logs/edits periods via Supabase Realtime (INSERT + UPDATE)
+- **Cycle Notification Hook** — Moon receives local push notification when period is approaching (scheduled at 9 AM)
+- **i18n** — 33 new translation keys for calendar features (EN + VI)
+
+### Changed
+- `computeCycleStats` now applies tag-aware weighting (0.5× for tagged cycle gaps)
+- `buildCalendarMarkers` skips predicted dates before today (FR-12)
+- `subscribeToPeriodLogs` listens for both INSERT and UPDATE events
+- `fetchPeriodLogs` now selects the `tags` column
+- Store actions `addPeriodLog`, `removePeriodLog` recompute `predictionWindow` automatically
+- `PeriodLogSheet` redesigned with tag pills, notes input, contextual actions, and validation
+
+### Database (migration 007)
+- New column: `period_logs.tags` — `TEXT[]` with CHECK constraint limiting values to `stress`, `illness`, `travel`, `medication`, `other`
+- GIN index on `tags` for efficient array containment queries
+
+### Tests
+- 332 tests passing (62 cycleCalculator unit, 24 store integration, 30 E2E scenario, 27 data integrity + existing)
+
+---
+
+## [1.6.0] — 2026-03-10
+
+### Added
+- MyCycleCard component on calendar screen
+- i18n keys for My Cycle row in Settings
+
+---
+
 ## [1.5.1] — 2026-03-07
 
 ### Known Issues

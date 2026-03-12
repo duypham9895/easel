@@ -16,9 +16,20 @@ export interface CycleSettings {
   lastPeriodStartDate: string; // ISO date YYYY-MM-DD
 }
 
+export type OverrideTag = 'stress' | 'illness' | 'travel' | 'medication' | 'other';
+
 export interface PeriodRecord {
   startDate: string;  // YYYY-MM-DD
   endDate?: string;   // YYYY-MM-DD
+  tags?: string[];
+}
+
+export interface PredictionWindow {
+  startDate: string;   // YYYY-MM-DD — earliest predicted date
+  endDate: string;     // YYYY-MM-DD — latest predicted date
+  predictedDate: string; // YYYY-MM-DD — center of window
+  confidence: number;    // 10–100
+  confidenceLabel: 'high' | 'medium' | 'low';
 }
 
 // ---------------------------------------------------------------------------
@@ -61,6 +72,7 @@ export interface DbPeriodLog {
   start_date: string;
   end_date: string | null;
   notes: string | null;
+  tags: string[] | null;
   created_at: string;
 }
 

@@ -1,5 +1,6 @@
 import { CyclePhase } from '@/types';
-import type { PeriodRecord, CycleDeviation, CalendarMarker } from '@/types';
+import type { PeriodRecord, CycleDeviation, CalendarMarker, PredictionWindow } from '@/types';
+import type { CycleSettings } from '@/types';
 import { getOvulationDay } from '@/constants/cycle';
 
 export interface CycleStats {
@@ -12,6 +13,16 @@ export interface CycleStats {
 const DAY_MS = 86_400_000;
 const DEFAULT_STATS: CycleStats = { avgCycleLength: 28, avgPeriodLength: 5, variability: 0, confidence: 'low' };
 
+/**
+ * Determine weight for a cycle gap based on whether the bounding logs have tags.
+ * Tagged cycles (stress, illness, etc.) get 0.5x weight since they may be atypical.
+ * Recency weighting: recent half gets 2x, older half gets 1x (before tag adjustment).
+ */
+function gapWeight(isRecent: boolean, isTagged: boolean): number {
+  const base = isRecent ? 2 : 1;
+  return isTagged ? base * 0.5 : base;
+}
+
 export function computeCycleStats(logs: PeriodRecord[]): CycleStats {
   if (logs.length < 2) return { ...DEFAULT_STATS };
 
@@ -20,18 +31,25 @@ export function computeCycleStats(logs: PeriodRecord[]): CycleStats {
     .slice(0, 7);
 
   const gaps: number[] = [];
+  const gapTagged: boolean[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
     const days = Math.round(
       (new Date(sorted[i].startDate).getTime() - new Date(sorted[i + 1].startDate).getTime()) / DAY_MS,
     );
-    if (days >= 21 && days <= 45) gaps.push(days);
+    if (days >= 21 && days <= 45) {
+      gaps.push(days);
+      // A gap is "tagged" if either bounding log has tags
+      const hasTag = (sorted[i].tags && sorted[i].tags!.length > 0)
+        || (sorted[i + 1].tags && sorted[i + 1].tags!.length > 0);
+      gapTagged.push(!!hasTag);
+    }
   }
   if (gaps.length === 0) return { ...DEFAULT_STATS };
 
   const recentCount = Math.ceil(gaps.length / 2);
   let wSum = 0, wTotal = 0;
   for (let i = 0; i < gaps.length; i++) {
-    const w = i < recentCount ? 2 : 1;
+    const w = gapWeight(i < recentCount, gapTagged[i]);
     wSum += gaps[i] * w;
     wTotal += w;
   }
@@ -106,6 +124,62 @@ export function getConceptionChance(phase: CyclePhase): string {
 }
 
 /**
+ * Compute a prediction window for the next period start date.
+ *
+ * Uses the tag-aware weighted average from computeCycleStats to determine
+ * a predicted date, then creates a window of ±min(ceil(variability), 4) days
+ * (minimum ±1 day) around it.
+ *
+ * Confidence = base 40 + cycle_count bonus (up to 30) + variability bonus (up to 30),
+ * clamped to [10, 100].
+ */
+export function computePredictionWindow(
+  logs: PeriodRecord[],
+  _currentSettings: CycleSettings,
+): PredictionWindow | null {
+  if (logs.length < 2) return null;
+
+  const stats = computeCycleStats(logs);
+
+  // Use the most recent log as the anchor
+  const sorted = [...logs].sort((a, b) => b.startDate.localeCompare(a.startDate));
+  const lastStart = parseLocalDate(sorted[0].startDate);
+
+  const predicted = new Date(lastStart.getTime());
+  predicted.setDate(predicted.getDate() + stats.avgCycleLength);
+  const predictedDate = toLocalDateString(predicted);
+
+  // Window radius: ceil(variability), clamped to [1, 4]
+  const radius = Math.max(1, Math.min(4, Math.ceil(stats.variability)));
+
+  const windowStart = new Date(predicted.getTime());
+  windowStart.setDate(windowStart.getDate() - radius);
+
+  const windowEnd = new Date(predicted.getTime());
+  windowEnd.setDate(windowEnd.getDate() + radius);
+
+  // Confidence calculation
+  const gapCount = Math.min(sorted.length - 1, 6); // max 6 usable gaps from 7 logs
+  const cycleBonus = Math.min(30, gapCount * 5);    // 5 pts per gap, max 30
+  const varBonus = stats.variability <= 1 ? 30
+    : stats.variability <= 2 ? 20
+    : stats.variability <= 3 ? 10
+    : 0;
+  const confidence = Math.max(10, Math.min(100, 40 + cycleBonus + varBonus));
+
+  const confidenceLabel: PredictionWindow['confidenceLabel'] =
+    confidence >= 70 ? 'high' : confidence >= 45 ? 'medium' : 'low';
+
+  return {
+    startDate: toLocalDateString(windowStart),
+    endDate: toLocalDateString(windowEnd),
+    predictedDate,
+    confidence,
+    confidenceLabel,
+  };
+}
+
+/**
  * Returns a map of date strings (YYYY-MM-DD) to their cycle status
  * for use in the calendar view.
  *
@@ -150,6 +224,11 @@ export function buildCalendarMarkers(
 
   const start = parseLocalDate(lastPeriodStartDate);
 
+  // FR-12: skip predicted dates before today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = toLocalDateString(today);
+
   // Mark 3 cycles ahead (predicted)
   for (let cycle = 0; cycle < 3; cycle++) {
     const cycleStart = new Date(start.getTime());
@@ -160,8 +239,8 @@ export function buildCalendarMarkers(
       const date = new Date(cycleStart.getTime());
       date.setDate(date.getDate() + d);
       const key = toLocalDateString(date);
-      // Don't overwrite logged data with predictions
-      if (!loggedDates.has(key)) {
+      // Don't overwrite logged data with predictions; skip past predicted dates
+      if (!loggedDates.has(key) && key >= todayStr) {
         markers[key] = { type: 'period', source: 'predicted' };
       }
     }
@@ -170,7 +249,7 @@ export function buildCalendarMarkers(
     const ovulationDate = new Date(cycleStart.getTime());
     ovulationDate.setDate(ovulationDate.getDate() + ovulationDay - 1);
     const ovKey = toLocalDateString(ovulationDate);
-    if (!loggedDates.has(ovKey)) {
+    if (!loggedDates.has(ovKey) && ovKey >= todayStr) {
       markers[ovKey] = { type: 'ovulation', source: 'predicted' };
     }
 
@@ -179,7 +258,7 @@ export function buildCalendarMarkers(
       const fertileDate = new Date(ovulationDate.getTime());
       fertileDate.setDate(fertileDate.getDate() - d);
       const key = toLocalDateString(fertileDate);
-      if (!markers[key]) {
+      if (!markers[key] && key >= todayStr) {
         markers[key] = { type: 'fertile', source: 'predicted' };
       }
     }

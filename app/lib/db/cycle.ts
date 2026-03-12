@@ -72,17 +72,48 @@ export async function logPeriodStart(
 export async function fetchPeriodLogs(userId: string): Promise<PeriodRecord[]> {
   const { data, error } = await supabase
     .from('period_logs')
-    .select('start_date, end_date')
+    .select('start_date, end_date, tags')
     .eq('user_id', userId)
     .order('start_date', { ascending: false })
     .limit(24);
 
   if (error) throw error;
 
-  return ((data ?? []) as Pick<DbPeriodLog, 'start_date' | 'end_date'>[]).map((row) => ({
+  return ((data ?? []) as Pick<DbPeriodLog, 'start_date' | 'end_date' | 'tags'>[]).map((row) => ({
     startDate: row.start_date,
     ...(row.end_date != null ? { endDate: row.end_date } : {}),
+    ...(row.tags && row.tags.length > 0 ? { tags: row.tags } : {}),
   }));
+}
+
+/** Update tags on an existing period log. */
+export async function updatePeriodLogTags(
+  userId: string,
+  startDate: string,
+  tags: string[],
+): Promise<void> {
+  const { error } = await supabase
+    .from('period_logs')
+    .update({ tags })
+    .eq('user_id', userId)
+    .eq('start_date', startDate);
+
+  if (error) throw error;
+}
+
+/** Update end_date on an existing period log. */
+export async function updatePeriodEndDate(
+  userId: string,
+  startDate: string,
+  endDate: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('period_logs')
+    .update({ end_date: endDate })
+    .eq('user_id', userId)
+    .eq('start_date', startDate);
+
+  if (error) throw error;
 }
 
 /** Delete a specific period log by user + start date. */
@@ -110,6 +141,14 @@ export function subscribeToPeriodLogs(
 ): () => void {
   let channel: RealtimeChannel | null = null;
 
+  const handlePayload = (payload: { new: Record<string, unknown> }) => {
+    const record = payload.new as unknown as DbPeriodLog;
+    onNewPeriod({
+      start_date: record.start_date,
+      end_date: record.end_date,
+    });
+  };
+
   channel = supabase
     .channel(`period-logs:${moonUserId}`)
     .on(
@@ -120,13 +159,17 @@ export function subscribeToPeriodLogs(
         table: 'period_logs',
         filter: `user_id=eq.${moonUserId}`,
       },
-      (payload) => {
-        const record = payload.new as DbPeriodLog;
-        onNewPeriod({
-          start_date: record.start_date,
-          end_date: record.end_date,
-        });
+      handlePayload,
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'period_logs',
+        filter: `user_id=eq.${moonUserId}`,
       },
+      handlePayload,
     )
     .subscribe();
 

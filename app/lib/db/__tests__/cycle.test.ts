@@ -34,7 +34,7 @@ describe('fetchPeriodLogs', () => {
     const result = await fetchPeriodLogs(USER_ID);
 
     expect(mockFrom).toHaveBeenCalledWith('period_logs');
-    expect(selectMock).toHaveBeenCalledWith('start_date, end_date');
+    expect(selectMock).toHaveBeenCalledWith('start_date, end_date, tags');
     expect(eqMock).toHaveBeenCalledWith('user_id', USER_ID);
     expect(orderMock).toHaveBeenCalledWith('start_date', { ascending: false });
     expect(limitMock).toHaveBeenCalledWith(24);

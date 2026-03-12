@@ -11,6 +11,9 @@ import { Colors, Spacing, Radii, Typography, CalendarTokens } from '@/constants/
 import { getCurrentPhase, buildCalendarMarkers } from '@/utils/cycleCalculator';
 import { PHASE_INFO } from '@/constants/phases';
 import { MyCycleCard } from '@/components/moon/MyCycleCard';
+import { PeriodLogSheet } from '@/components/moon/PeriodLogSheet';
+import { PredictionWindowCard } from '@/components/moon/PredictionWindowCard';
+import { PartnerCalendarView } from '@/components/sun/PartnerCalendarView';
 import type { CyclePhase, CalendarMarker } from '@/types';
 
 export default function CalendarTab() {
@@ -19,7 +22,10 @@ export default function CalendarTab() {
   const role = useAppStore(s => s.role);
   const isPartnerLinked = useAppStore(s => s.isPartnerLinked);
   const language = useAppStore(s => s.language);
+  const partnerCycleSettings = useAppStore(s => s.partnerCycleSettings);
+  const predictionWindow = useAppStore(s => s.predictionWindow);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [showPeriodLogSheet, setShowPeriodLogSheet] = useState(false);
   const { t } = useTranslation('calendar');
   const router = useRouter();
 
@@ -39,6 +45,37 @@ export default function CalendarTab() {
 
   // Sun users don't have their own cycle — show partner info instead
   if (role === 'sun') {
+    // Partner linked and has cycle data — show read-only calendar
+    if (isPartnerLinked && partnerCycleSettings && partnerCycleSettings.lastPeriodStartDate) {
+      return (
+        <SafeAreaView style={styles.root} edges={['top']}>
+          <PartnerCalendarView
+            partnerCycleSettings={partnerCycleSettings}
+            predictionWindow={predictionWindow}
+            language={language}
+          />
+        </SafeAreaView>
+      );
+    }
+
+    // Partner linked but calendar sharing disabled or no data
+    if (isPartnerLinked && !partnerCycleSettings) {
+      return (
+        <SafeAreaView style={[styles.root, styles.rootPadded]} edges={['top']}>
+          <View style={styles.header}>
+            <Text style={styles.title}>{t('title')}</Text>
+            <Text style={styles.subtitle}>{t('moonCycleAtGlance')}</Text>
+          </View>
+          <View style={styles.sunEmptyCard}>
+            <Feather name="lock" size={40} color={Colors.textHint} />
+            <Text style={styles.sunEmptyTitle}>{t('moonCycleSynced')}</Text>
+            <Text style={styles.sunEmptyBody}>{t('calendarPrivate')}</Text>
+          </View>
+        </SafeAreaView>
+      );
+    }
+
+    // Not linked
     return (
       <SafeAreaView style={[styles.root, styles.rootPadded]} edges={['top']}>
         <View style={styles.header}>
@@ -47,25 +84,17 @@ export default function CalendarTab() {
         </View>
         <View style={styles.sunEmptyCard}>
           <Feather name="moon" size={40} color={Colors.menstrual} />
-          <Text style={styles.sunEmptyTitle}>
-            {isPartnerLinked ? t('moonCycleSynced') : t('notLinked')}
-          </Text>
-          <Text style={styles.sunEmptyBody}>
-            {isPartnerLinked
-              ? t('moonCycleAppearHere')
-              : t('linkFirst')}
-          </Text>
-          {!isPartnerLinked && (
-            <TouchableOpacity
-              style={styles.connectButton}
-              onPress={() => router.replace('/(tabs)')}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-            >
-              <Feather name="link-2" size={16} color={Colors.white} />
-              <Text style={styles.connectButtonText}>{t('connectNow')}</Text>
-            </TouchableOpacity>
-          )}
+          <Text style={styles.sunEmptyTitle}>{t('notLinked')}</Text>
+          <Text style={styles.sunEmptyBody}>{t('linkFirst')}</Text>
+          <TouchableOpacity
+            style={styles.connectButton}
+            onPress={() => router.replace('/(tabs)')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+          >
+            <Feather name="link-2" size={16} color={Colors.white} />
+            <Text style={styles.connectButtonText}>{t('connectNow')}</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -190,6 +219,11 @@ export default function CalendarTab() {
           <LegendItem color={Colors.textPrimary} label={t('today')} />
         </View>
 
+        {/* Prediction Window — Moon only */}
+        {predictionWindow && (
+          <PredictionWindowCard prediction={predictionWindow} language={language} />
+        )}
+
         {/* My Cycle Card — Moon only */}
         <MyCycleCard
           cycleSettings={cycleSettings}
@@ -201,14 +235,31 @@ export default function CalendarTab() {
         />
       </ScrollView>
 
+      {/* Read-only detail sheet (phase info) */}
       <DayDetailSheet
-        dateString={selectedDay}
+        dateString={selectedDay && !showPeriodLogSheet ? selectedDay : null}
         markers={markers}
         lastPeriodStartDate={lastPeriodStartDate}
         avgCycleLength={avgCycleLength}
         avgPeriodLength={avgPeriodLength}
         onClose={() => setSelectedDay(null)}
+        onEditDay={() => setShowPeriodLogSheet(true)}
       />
+
+      {/* Period log editing sheet — Moon only */}
+      {selectedDay && (
+        <PeriodLogSheet
+          visible={showPeriodLogSheet}
+          selectedDate={selectedDay}
+          existingLog={periodLogs.find(l => l.startDate === selectedDay)}
+          markers={markers}
+          onClose={() => setShowPeriodLogSheet(false)}
+          onSave={() => {
+            setShowPeriodLogSheet(false);
+            setSelectedDay(null);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -220,6 +271,7 @@ interface DayDetailSheetProps {
   avgCycleLength: number;
   avgPeriodLength: number;
   onClose: () => void;
+  onEditDay?: () => void;
 }
 
 function computeDayInfo(
@@ -260,7 +312,7 @@ function markerColor(type: 'period' | 'ovulation' | 'fertile'): string {
   return Colors.follicular;
 }
 
-function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLength, avgPeriodLength, onClose }: DayDetailSheetProps) {
+function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLength, avgPeriodLength, onClose, onEditDay }: DayDetailSheetProps) {
   const { t: tCal } = useTranslation('calendar');
   const { t: tPhases } = useTranslation('phases');
 
@@ -324,6 +376,18 @@ function DayDetailSheet({ dateString, markers, lastPeriodStartDate, avgCycleLeng
           <Text style={sheetStyles.sectionLabel}>{tCal('selfCareTip')}</Text>
           <Text style={sheetStyles.sectionBody}>{tPhases(`${phase}_selfCare`)}</Text>
         </View>
+
+        {/* Edit button — opens PeriodLogSheet */}
+        {onEditDay && (
+          <TouchableOpacity
+            style={sheetStyles.editButton}
+            onPress={onEditDay}
+            activeOpacity={0.85}
+          >
+            <Feather name="edit-2" size={16} color={Colors.menstrual} />
+            <Text style={sheetStyles.editButtonText}>{tCal('logPeriodStart')}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Modal>
   );
@@ -521,5 +585,19 @@ const sheetStyles = StyleSheet.create({
     ...Typography.body,
     color: Colors.textPrimary,
     lineHeight: 22,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.menstrual + '18',
+    borderRadius: Radii.md,
+    padding: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  editButtonText: {
+    ...Typography.bodyBold,
+    color: Colors.menstrual,
   },
 });
