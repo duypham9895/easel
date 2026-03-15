@@ -1,8 +1,8 @@
 # =============================================================================
 # TestFlight CI/CD — Build iOS app and submit to TestFlight
 #
-# master: Build + Submit to TestFlight (production)
-# develop: Build only (validates the build succeeds, no TestFlight submit)
+# master only: Build + Submit to TestFlight (production)
+# Use workflow_dispatch for manual builds on any branch
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   EXPO_TOKEN  — from expo.dev/accounts/[owner]/settings/access-tokens
@@ -18,7 +18,6 @@ on:
   push:
     branches:
       - master
-      - develop
     paths:
       - 'app/**'
       - '!app/supabase/**'
@@ -53,12 +52,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build iOS app
-        run: |
-          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
-            eas build --platform ios --profile production --non-interactive
-          else
-            eas build --platform ios --profile preview --non-interactive
-          fi
+        run: eas build --platform ios --profile production --non-interactive
 
       - name: Submit to TestFlight
         if: github.ref == 'refs/heads/master'
