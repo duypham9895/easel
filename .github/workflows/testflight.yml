@@ -1,0 +1,55 @@
+# =============================================================================
+# TestFlight CI/CD — Build iOS app and submit to TestFlight on push to main
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   EXPO_TOKEN  — from expo.dev/accounts/[owner]/settings/access-tokens
+#                 (must have build + submit permissions)
+#
+# Apple credentials are stored in EAS (configured via `eas credentials`).
+# No local certs or provisioning profiles needed in CI.
+# =============================================================================
+
+name: TestFlight
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - '!app/supabase/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-submit:
+    name: Build iOS & Submit to TestFlight
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS app
+        run: eas build --platform ios --profile production --non-interactive
+
+      - name: Submit to TestFlight
+        run: eas submit --platform ios --profile production --latest --non-interactive
