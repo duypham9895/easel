@@ -1,5 +1,5 @@
 # =============================================================================
-# TestFlight CI/CD — Build iOS app and submit to TestFlight on push to main
+# TestFlight CI/CD — Build iOS app and submit to TestFlight on push to master
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   EXPO_TOKEN  — from expo.dev/accounts/[owner]/settings/access-tokens
@@ -14,7 +14,7 @@ name: TestFlight
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'app/**'
       - '!app/supabase/**'

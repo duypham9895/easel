@@ -1,0 +1,68 @@
+# =============================================================================
+# CI — Type Check on every push and pull request
+#
+# Runs TypeScript type checking for both app/ and proxy/ packages.
+# This is the quality gate — code must pass before merging to master.
+#
+# No secrets required.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  typecheck-app:
+    name: Type Check — App
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+  typecheck-proxy:
+    name: Type Check — Proxy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proxy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: proxy/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit

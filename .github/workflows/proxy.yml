@@ -1,5 +1,5 @@
 # =============================================================================
-# Proxy CI/CD — Deploy to Vercel on push to main
+# Proxy CI/CD — Deploy to Vercel on push to master
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   VERCEL_TOKEN       — from vercel.com/account/tokens
@@ -12,7 +12,7 @@ name: Proxy
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'proxy/**'
   workflow_dispatch:

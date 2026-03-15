@@ -1,9 +1,9 @@
 # =============================================================================
 # Supabase CI/CD — Database Migrations + Edge Functions
 #
-# migrate job: runs on EVERY push to `main` (supabase db push is idempotent —
+# migrate job: runs on EVERY push to `master` (supabase db push is idempotent —
 #   it only applies migrations not yet in the schema_migrations table).
-# deploy-functions job: runs on EVERY push to `main` (supabase functions deploy
+# deploy-functions job: runs on EVERY push to `master` (supabase functions deploy
 #   is idempotent — it only re-deploys functions whose source has changed).
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
@@ -17,14 +17,14 @@ name: Supabase
 on:
   push:
     branches:
-      - main
+      - master
   # Allow manual trigger from GitHub Actions tab
   workflow_dispatch:
 
 jobs:
   # ---------------------------------------------------------------------------
   # Job 1: Apply migration files to the production Supabase database.
-  # Runs on every push to main. supabase db push is idempotent — it tracks
+  # Runs on every push to master. supabase db push is idempotent — it tracks
   # applied migrations and only runs new ones.
   # ---------------------------------------------------------------------------
   migrate:
@@ -50,7 +50,7 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Job 2: Deploy Supabase Edge Functions to production.
-  # Runs on every push to main. supabase functions deploy is idempotent —
+  # Runs on every push to master. supabase functions deploy is idempotent —
   # it only re-deploys functions whose source has changed.
   # ---------------------------------------------------------------------------
   deploy-functions:
