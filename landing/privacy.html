@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Easel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ivory: #fdf8f5;
+      --ink: #2a1f2d;
+      --muted: #8a7490;
+      --rose-deep: #c97c84;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', -apple-system, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-body); background: var(--ivory); color: var(--ink); line-height: 1.75; }
+    .container { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+    h1 { font-family: var(--font-display); font-size: 2.5rem; font-weight: 500; margin-bottom: 0.5rem; }
+    h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; margin-top: 2.5rem; margin-bottom: 0.75rem; color: var(--rose-deep); }
+    p, li { font-size: 0.95rem; margin-bottom: 0.75rem; }
+    ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+    .updated { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+    a { color: var(--rose-deep); }
+    .back { display: inline-block; margin-bottom: 2rem; font-size: 0.9rem; color: var(--muted); }
+    .back:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="./" class="back">&larr; Back to Easel</a>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: March 15, 2026</p>
+
+    <p>Easel ("we", "our", "us") is a couples menstrual cycle tracking app. We take your privacy seriously — especially given the sensitive nature of health data. This policy explains what we collect, why, and how we protect it.</p>
+
+    <h2>1. Information We Collect</h2>
+    <p><strong>Account Information:</strong> Email address and password (for authentication via Supabase Auth).</p>
+    <p><strong>Profile Information:</strong> Display name, avatar photo, and role selection (Moon or Sun).</p>
+    <p><strong>Health Data:</strong> Menstrual cycle dates, cycle length, period length, mood entries, symptom logs, and daily check-in responses. If you enable HealthKit integration, we read menstrual cycle data from Apple Health with your explicit permission.</p>
+    <p><strong>Partner Data:</strong> Couple linking code, partner connection status, whisper signals, and SOS alerts shared between linked partners.</p>
+    <p><strong>Device Information:</strong> Push notification tokens (for delivering alerts), device locale (for language preferences).</p>
+
+    <h2>2. How We Use Your Information</h2>
+    <ul>
+      <li>Provide cycle tracking, phase predictions, and personalized insights</li>
+      <li>Deliver whisper signals and SOS alerts between linked partners</li>
+      <li>Generate personalized AI-powered guidance (via MiniMax AI through our secure proxy)</li>
+      <li>Send push notifications for cycle reminders and partner alerts</li>
+      <li>Improve app functionality and user experience</li>
+    </ul>
+
+    <h2>3. AI Processing</h2>
+    <p>We use MiniMax AI to generate personalized greetings, partner advice, and health insights. Your cycle phase and mood data may be sent to this service through our secure server-side proxy. We do not send your name, email, or any personally identifiable information to the AI provider. All AI requests are proxied through our servers — the AI provider never has direct access to your device or account.</p>
+
+    <h2>4. Data Sharing</h2>
+    <p><strong>With Your Partner:</strong> When you link with a partner, they can see your cycle phase, mood, whisper signals, and SOS alerts. This is the core purpose of the app and requires your explicit action to link.</p>
+    <p><strong>We do NOT:</strong></p>
+    <ul>
+      <li>Sell your personal or health data to third parties</li>
+      <li>Share your data with advertisers</li>
+      <li>Use your health data for purposes other than app functionality</li>
+      <li>Transfer data to data brokers</li>
+    </ul>
+
+    <h2>5. Data Storage & Security</h2>
+    <p>Your data is stored securely on Supabase (PostgreSQL) with Row Level Security (RLS) enabled on every table. This means database queries are restricted based on your authenticated identity — you can only access your own data and your linked partner's shared data. All data transmission uses HTTPS/TLS encryption.</p>
+
+    <h2>6. Apple HealthKit</h2>
+    <p>If you grant permission, Easel reads menstrual cycle data from Apple HealthKit. We do not write data to HealthKit. HealthKit data is processed locally on your device and is not shared with third parties. You can revoke HealthKit access at any time in your device Settings.</p>
+
+    <h2>7. Data Retention & Deletion</h2>
+    <p>Your data is retained as long as your account is active. You can request account deletion by contacting us at the email below. Upon deletion, all your personal data, health data, and partner connections will be permanently removed from our servers within 30 days.</p>
+
+    <h2>8. Children's Privacy</h2>
+    <p>Easel is not intended for children under 13. We do not knowingly collect personal information from children under 13.</p>
+
+    <h2>9. Your Rights</h2>
+    <p>You have the right to:</p>
+    <ul>
+      <li>Access your personal data</li>
+      <li>Request correction of inaccurate data</li>
+      <li>Request deletion of your account and data</li>
+      <li>Withdraw consent for HealthKit access at any time</li>
+      <li>Unlink from your partner at any time</li>
+    </ul>
+
+    <h2>10. Changes to This Policy</h2>
+    <p>We may update this policy from time to time. We will notify you of significant changes through the app or via email.</p>
+
+    <h2>11. Contact Us</h2>
+    <p>If you have questions about this privacy policy or your data, contact us at:</p>
+    <p><strong>Email:</strong> <a href="mailto:duypham9895@gmail.com">duypham9895@gmail.com</a></p>
+  </div>
+</body>
+</html>
