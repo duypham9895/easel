@@ -1,5 +1,8 @@
 # =============================================================================
-# Proxy CI/CD — Deploy to Vercel on push to master
+# Proxy CI/CD — Deploy to Vercel
+#
+# master: Production deploy (vercel deploy --prod)
+# develop: Preview deploy (vercel deploy — generates a unique preview URL)
 #
 # Required GitHub Secrets (Settings → Secrets → Actions):
 #   VERCEL_TOKEN       — from vercel.com/account/tokens
@@ -13,6 +16,7 @@ on:
   push:
     branches:
       - master
+      - develop
     paths:
       - 'proxy/**'
   workflow_dispatch:
@@ -24,17 +28,23 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Deploy to Vercel production
+      - name: Deploy to Vercel
         working-directory: proxy
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prod --yes \
-            --token=${{ secrets.VERCEL_TOKEN }})
-          echo "Deployed to: $DEPLOYMENT_URL"
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            DEPLOYMENT_URL=$(vercel deploy --prod --yes \
+              --token=${{ secrets.VERCEL_TOKEN }})
+            echo "Production deployed to: $DEPLOYMENT_URL"
+          else
+            DEPLOYMENT_URL=$(vercel deploy --yes \
+              --token=${{ secrets.VERCEL_TOKEN }})
+            echo "Preview deployed to: $DEPLOYMENT_URL"
+          fi
