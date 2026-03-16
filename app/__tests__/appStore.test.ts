@@ -27,6 +27,15 @@ const mockLinkToPartnerByCode = jest.fn().mockResolvedValue(null);
 const mockGetMyCouple = jest.fn().mockResolvedValue(null);
 const mockSendSOSSignal = jest.fn().mockResolvedValue(undefined);
 const mockUpsertPushToken = jest.fn().mockResolvedValue(undefined);
+const mockUpsertPeriodDayLog = jest.fn().mockResolvedValue(undefined);
+const mockFetchPeriodDayLogs = jest.fn().mockResolvedValue([]);
+const mockDeletePeriodDayLog = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('@/lib/db/periodDayLogs', () => ({
+  upsertPeriodDayLog: mockUpsertPeriodDayLog,
+  fetchPeriodDayLogs: mockFetchPeriodDayLogs,
+  deletePeriodDayLog: mockDeletePeriodDayLog,
+}));
 
 jest.mock('@/lib/db/cycle', () => ({
   getCycleSettings: mockGetCycleSettings,
@@ -103,7 +112,7 @@ jest.mock('@/i18n/config', () => ({
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
-import type { PeriodRecord } from '@/types';
+import type { PeriodRecord, PeriodDayRecord } from '@/types';
 
 // We need to dynamically import the store after mocks are set up
 let useAppStore: typeof import('@/store/appStore').useAppStore;
@@ -423,6 +432,243 @@ describe('appStore period actions', () => {
       seedStore({ userId: null, periodLogs: [{ startDate: '2026-03-01' }] });
       await getState().removePeriodLog('2026-03-01');
       expect(mockDeletePeriodLog).not.toHaveBeenCalled();
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Period Day Logs
+// ---------------------------------------------------------------------------
+describe('appStore period day log actions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    seedStore({
+      periodDayLogs: {},
+      selectedCalendarDay: null,
+      isSavingDayLog: false,
+      periodLogs: [
+        { startDate: '2026-03-01', endDate: '2026-03-05' },
+        { startDate: '2026-02-01', endDate: '2026-02-05' },
+      ],
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // savePeriodDayLog
+  // -----------------------------------------------------------------------
+  describe('savePeriodDayLog', () => {
+    it('saves day log with optimistic update', async () => {
+      await getState().savePeriodDayLog('2026-03-02', 'medium', ['cramps', 'fatigue'], 'test note');
+      const state = getState();
+
+      expect(state.periodDayLogs['2026-03-02']).toEqual({
+        logDate: '2026-03-02',
+        flowIntensity: 'medium',
+        symptoms: ['cramps', 'fatigue'],
+        notes: 'test note',
+      });
+      expect(mockUpsertPeriodDayLog).toHaveBeenCalledWith(
+        'test-user-id',
+        '2026-03-02',
+        'medium',
+        ['cramps', 'fatigue'],
+        'test note',
+      );
+    });
+
+    it('rolls back on failure', async () => {
+      mockUpsertPeriodDayLog.mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(
+        getState().savePeriodDayLog('2026-03-02', 'heavy', ['headache']),
+      ).rejects.toThrow('DB error');
+
+      const state = getState();
+      // Should rollback to original empty map
+      expect(state.periodDayLogs['2026-03-02']).toBeUndefined();
+      expect(state.isSavingDayLog).toBe(false);
+    });
+
+    it('auto-creates period_log when day is not within existing period', async () => {
+      // 2026-03-15 is outside both existing period ranges
+      await getState().savePeriodDayLog('2026-03-15', 'light', []);
+      const state = getState();
+
+      // addPeriodLog should have been called internally, adding a new period starting 2026-03-15
+      expect(mockLogPeriodStart).toHaveBeenCalledWith('test-user-id', '2026-03-15');
+      expect(state.periodLogs.some((l) => l.startDate === '2026-03-15')).toBe(true);
+    });
+
+    it('does not create a period_log when day is within existing period', async () => {
+      // 2026-03-02 is within the 03-01 to 03-05 period
+      await getState().savePeriodDayLog('2026-03-02', 'medium', []);
+      expect(mockLogPeriodStart).not.toHaveBeenCalled();
+    });
+
+    it('does nothing if userId is null', async () => {
+      seedStore({ userId: null });
+      await getState().savePeriodDayLog('2026-03-02', 'light', []);
+      expect(mockUpsertPeriodDayLog).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // loadPeriodDayLogs
+  // -----------------------------------------------------------------------
+  describe('loadPeriodDayLogs', () => {
+    it('loads records into state keyed by logDate', async () => {
+      const records: PeriodDayRecord[] = [
+        { logDate: '2026-03-01', flowIntensity: 'heavy', symptoms: ['cramps'] },
+        { logDate: '2026-03-02', flowIntensity: 'medium', symptoms: ['fatigue'] },
+        { logDate: '2026-03-03', flowIntensity: 'light', symptoms: [] },
+      ];
+      mockFetchPeriodDayLogs.mockResolvedValueOnce(records);
+
+      await getState().loadPeriodDayLogs('2026-03-01', '2026-03-05');
+      const state = getState();
+
+      expect(mockFetchPeriodDayLogs).toHaveBeenCalledWith('test-user-id', '2026-03-01', '2026-03-05');
+      expect(state.periodDayLogs['2026-03-01']).toEqual(records[0]);
+      expect(state.periodDayLogs['2026-03-02']).toEqual(records[1]);
+      expect(state.periodDayLogs['2026-03-03']).toEqual(records[2]);
+    });
+
+    it('merges with existing day logs', async () => {
+      seedStore({
+        periodDayLogs: {
+          '2026-02-28': { logDate: '2026-02-28', flowIntensity: 'spotting', symptoms: [] },
+        },
+        periodLogs: [],
+      });
+
+      mockFetchPeriodDayLogs.mockResolvedValueOnce([
+        { logDate: '2026-03-01', flowIntensity: 'heavy', symptoms: ['cramps'] },
+      ]);
+
+      await getState().loadPeriodDayLogs('2026-03-01', '2026-03-05');
+      const state = getState();
+
+      // Existing entry preserved
+      expect(state.periodDayLogs['2026-02-28']).toBeDefined();
+      // New entry added
+      expect(state.periodDayLogs['2026-03-01']).toBeDefined();
+    });
+
+    it('does nothing if userId is null', async () => {
+      seedStore({ userId: null });
+      await getState().loadPeriodDayLogs('2026-03-01', '2026-03-05');
+      expect(mockFetchPeriodDayLogs).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // removePeriodDayLog
+  // -----------------------------------------------------------------------
+  describe('removePeriodDayLog', () => {
+    it('removes record from state optimistically', async () => {
+      seedStore({
+        periodDayLogs: {
+          '2026-03-01': { logDate: '2026-03-01', flowIntensity: 'heavy', symptoms: ['cramps'] },
+          '2026-03-02': { logDate: '2026-03-02', flowIntensity: 'medium', symptoms: [] },
+        },
+        periodLogs: [],
+      });
+
+      await getState().removePeriodDayLog('2026-03-01');
+      const state = getState();
+
+      expect(state.periodDayLogs['2026-03-01']).toBeUndefined();
+      expect(state.periodDayLogs['2026-03-02']).toBeDefined();
+      expect(mockDeletePeriodDayLog).toHaveBeenCalledWith('test-user-id', '2026-03-01');
+    });
+
+    it('rolls back on failure', async () => {
+      const originalLogs: Record<string, PeriodDayRecord> = {
+        '2026-03-01': { logDate: '2026-03-01', flowIntensity: 'heavy', symptoms: ['cramps'] },
+      };
+      seedStore({ periodDayLogs: originalLogs, periodLogs: [] });
+
+      mockDeletePeriodDayLog.mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(
+        getState().removePeriodDayLog('2026-03-01'),
+      ).rejects.toThrow('DB error');
+
+      const state = getState();
+      // Should rollback
+      expect(state.periodDayLogs['2026-03-01']).toEqual(originalLogs['2026-03-01']);
+    });
+
+    it('does nothing if userId is null', async () => {
+      seedStore({ userId: null });
+      await getState().removePeriodDayLog('2026-03-01');
+      expect(mockDeletePeriodDayLog).not.toHaveBeenCalled();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // selectCalendarDay
+  // -----------------------------------------------------------------------
+  describe('selectCalendarDay', () => {
+    it('sets selectedCalendarDay', () => {
+      getState().selectCalendarDay('2026-03-15');
+      expect(getState().selectedCalendarDay).toBe('2026-03-15');
+    });
+
+    it('clears selection when passed null', () => {
+      seedStore({ selectedCalendarDay: '2026-03-15' });
+      getState().selectCalendarDay(null);
+      expect(getState().selectedCalendarDay).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // receivePeriodDayLog
+  // -----------------------------------------------------------------------
+  describe('receivePeriodDayLog', () => {
+    it('INSERT adds record to state', () => {
+      const record: PeriodDayRecord = {
+        logDate: '2026-03-02',
+        flowIntensity: 'medium',
+        symptoms: ['bloating'],
+      };
+
+      getState().receivePeriodDayLog('INSERT', '2026-03-02', record);
+      expect(getState().periodDayLogs['2026-03-02']).toEqual(record);
+    });
+
+    it('UPDATE updates existing record', () => {
+      seedStore({
+        periodDayLogs: {
+          '2026-03-02': { logDate: '2026-03-02', flowIntensity: 'light', symptoms: [] },
+        },
+        periodLogs: [],
+      });
+
+      const updated: PeriodDayRecord = {
+        logDate: '2026-03-02',
+        flowIntensity: 'heavy',
+        symptoms: ['cramps', 'nausea'],
+      };
+
+      getState().receivePeriodDayLog('UPDATE', '2026-03-02', updated);
+      expect(getState().periodDayLogs['2026-03-02']).toEqual(updated);
+    });
+
+    it('DELETE removes record from state', () => {
+      seedStore({
+        periodDayLogs: {
+          '2026-03-02': { logDate: '2026-03-02', flowIntensity: 'medium', symptoms: [] },
+          '2026-03-03': { logDate: '2026-03-03', flowIntensity: 'light', symptoms: [] },
+        },
+        periodLogs: [],
+      });
+
+      getState().receivePeriodDayLog('DELETE', '2026-03-02', null);
+      const state = getState();
+
+      expect(state.periodDayLogs['2026-03-02']).toBeUndefined();
+      expect(state.periodDayLogs['2026-03-03']).toBeDefined();
     });
   });
 });

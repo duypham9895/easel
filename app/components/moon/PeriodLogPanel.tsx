@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/appStore';
 import { FlowIntensitySelector } from '@/components/moon/FlowIntensitySelector';
 import { SymptomChipGroup } from '@/components/moon/SymptomChipGroup';
+import { TagPillGroup } from '@/components/moon/TagPillGroup';
 import {
   Colors, CycleCalendarTokens, MoonColors, Spacing, Radii, Typography,
 } from '@/constants/theme';
@@ -30,18 +31,7 @@ const MAX_PAST_DAYS = 30;
 const NOTE_WARNING_THRESHOLD = 180;
 const DAY_MS = 86_400_000;
 
-interface TagDef {
-  readonly id: OverrideTag;
-  readonly icon: React.ComponentProps<typeof Feather>['name'];
-}
-
-const TAG_DEFS: readonly TagDef[] = [
-  { id: 'stress', icon: 'zap' },
-  { id: 'illness', icon: 'thermometer' },
-  { id: 'travel', icon: 'map-pin' },
-  { id: 'medication', icon: 'activity' },
-  { id: 'other', icon: 'more-horizontal' },
-] as const;
+const TAG_IDS: readonly OverrideTag[] = ['stress', 'illness', 'travel', 'medication', 'other'];
 
 /* ── Props ──────────────────────────────────────────────────────────── */
 
@@ -132,14 +122,14 @@ export function PeriodLogPanel({
       setSelectedSymptoms(new Set(existingDayLog.symptoms));
       setNote(existingDayLog.notes ?? '');
     } else {
-      setSelectedFlow(null);
+      setSelectedFlow('medium');
       setSelectedSymptoms(new Set());
       setNote('');
     }
     setSelectedTags(
       existingPeriodLog?.tags
         ? existingPeriodLog.tags.filter((t): t is OverrideTag =>
-            TAG_DEFS.some((d) => d.id === t),
+            TAG_IDS.includes(t as OverrideTag),
           )
         : [],
     );
@@ -311,37 +301,11 @@ export function PeriodLogPanel({
           {/* Factors */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('factors')}</Text>
-            <View style={styles.tagsRow}>
-              {TAG_DEFS.map((tag) => {
-                const isSelected = selectedTags.includes(tag.id);
-                return (
-                  <TouchableOpacity
-                    key={tag.id}
-                    style={[
-                      styles.tagPill,
-                      isSelected ? styles.tagPillSelected : styles.tagPillUnselected,
-                    ]}
-                    onPress={() => toggleTag(tag.id)}
-                    activeOpacity={0.7}
-                    disabled={hasDateError}
-                  >
-                    <Feather
-                      name={tag.icon}
-                      size={14}
-                      color={isSelected ? Colors.white : Colors.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.tagLabel,
-                        isSelected ? styles.tagLabelSelected : styles.tagLabelUnselected,
-                      ]}
-                    >
-                      {t(tag.id)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <TagPillGroup
+              selected={selectedTags}
+              onToggle={toggleTag}
+              disabled={hasDateError}
+            />
           </View>
 
           {/* Notes */}
@@ -487,39 +451,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...Typography.bodyBold,
     color: MOON.textPrimary,
-  },
-
-  // Tags
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  tagPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    height: 36,
-    borderRadius: Radii.full,
-    paddingHorizontal: Spacing.md,
-  },
-  tagPillSelected: {
-    backgroundColor: Colors.accent,
-  },
-  tagPillUnselected: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: MOON.textHint + '60',
-  },
-  tagLabel: {
-    ...Typography.caption,
-  },
-  tagLabelSelected: {
-    color: Colors.white,
-    fontWeight: '600',
-  },
-  tagLabelUnselected: {
-    color: MOON.textSecondary,
   },
 
   // Notes
