@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  TextInput, Alert, ScrollView,
+  TextInput, Alert, ScrollView, Modal, Pressable,
+  Animated, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -36,6 +36,7 @@ const TAG_IDS: readonly OverrideTag[] = ['stress', 'illness', 'travel', 'medicat
 /* ── Props ──────────────────────────────────────────────────────────── */
 
 interface PeriodLogPanelProps {
+  visible: boolean;
   selectedDate: string;
   existingDayLog: PeriodDayRecord | null;
   existingPeriodLog: PeriodRecord | null;
@@ -93,6 +94,7 @@ function isTooFarBack(dateString: string): boolean {
 /* ── Component ──────────────────────────────────────────────────────── */
 
 export function PeriodLogPanel({
+  visible,
   selectedDate,
   existingDayLog,
   existingPeriodLog,
@@ -106,8 +108,28 @@ export function PeriodLogPanel({
   const { i18n } = useTranslation();
   const locale = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
 
+  const slideAnim = useRef(new Animated.Value(600)).current;
+
   const savePeriodDayLog = useAppStore((s) => s.savePeriodDayLog);
   const removePeriodDayLog = useAppStore((s) => s.removePeriodDayLog);
+
+  // ── Slide animation ──────────────────────────────────────────────
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 20,
+        stiffness: 180,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 600,
+        duration: 280,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, slideAnim]);
 
   // ── Local state ────────────────────────────────────────────────────
   const [selectedFlow, setSelectedFlow] = useState<FlowIntensity | null>(null);
@@ -117,6 +139,7 @@ export function PeriodLogPanel({
 
   // ── Initialize from existing day log ───────────────────────────────
   useEffect(() => {
+    if (!visible) return;
     if (existingDayLog) {
       setSelectedFlow(existingDayLog.flowIntensity);
       setSelectedSymptoms(new Set(existingDayLog.symptoms));
@@ -133,7 +156,7 @@ export function PeriodLogPanel({
           )
         : [],
     );
-  }, [selectedDate, existingDayLog, existingPeriodLog]);
+  }, [visible, selectedDate, existingDayLog, existingPeriodLog]);
 
   // ── Derived values ─────────────────────────────────────────────────
   const formattedDate = useMemo(
@@ -202,7 +225,7 @@ export function PeriodLogPanel({
       console.error('[PeriodLogPanel] save failed:', error);
       Alert.alert(tCommon('error'), tCommon('errorGeneric'));
     }
-  }, [canSave, selectedFlow, selectedDate, selectedSymptoms, selectedTags, note, savePeriodDayLog, updatePeriodTags, onSave, tCommon]);
+  }, [canSave, selectedFlow, selectedDate, selectedSymptoms, selectedTags, note, savePeriodDayLog, updatePeriodTags, onSave, tCommon, existingPeriodLog]);
 
   const handleDelete = useCallback(() => {
     if (!isEditing) return;
@@ -233,157 +256,194 @@ export function PeriodLogPanel({
 
   // ── Render ─────────────────────────────────────────────────────────
   return (
-    <Animated.View
-      entering={FadeIn.duration(300).withInitialValues({ opacity: 0 })}
-      style={styles.card}
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
     >
-      <Animated.View entering={SlideInDown.duration(300)}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          contentContainerStyle={styles.scrollContent}
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoid}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.dateText}>{formattedDate}</Text>
-              <View style={styles.badgeRow}>
-                <View style={[styles.cycleBadge, { backgroundColor: phaseInfo.color + '22' }]}>
-                  <Text style={[styles.cycleBadgeText, { color: phaseInfo.color }]}>
-                    {t('cycleDay', { day: dayInfo.dayInCycle })}
+          <Animated.View
+            style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}
+          >
+            <Pressable>
+              {/* Handle */}
+              <View style={styles.handle} />
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+                contentContainerStyle={styles.scrollContent}
+              >
+                {/* Header */}
+                <View style={styles.header}>
+                  <View style={styles.headerLeft}>
+                    <Text style={styles.dateText}>{formattedDate}</Text>
+                    <View style={styles.badgeRow}>
+                      <View style={[styles.cycleBadge, { backgroundColor: phaseInfo.color + '22' }]}>
+                        <Text style={[styles.cycleBadgeText, { color: phaseInfo.color }]}>
+                          {t('cycleDay', { day: dayInfo.dayInCycle })}
+                        </Text>
+                      </View>
+                      <Text style={[styles.phaseName, { color: phaseInfo.color }]}>
+                        {phaseInfo.name}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={onClose}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Feather name="x" size={20} color={MOON.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Date validation error */}
+                {hasDateError && (
+                  <View style={styles.errorBanner}>
+                    <Feather name="alert-circle" size={14} color={Colors.menstrual} />
+                    <Text style={styles.errorText}>
+                      {isFuture ? t('futureDateError') : t('tooFarBackError')}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Flow Intensity */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{t('flowIntensity')}</Text>
+                  <FlowIntensitySelector
+                    selected={selectedFlow}
+                    onSelect={setSelectedFlow}
+                    disabled={hasDateError}
+                  />
+                </View>
+
+                {/* Symptoms */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{t('symptoms')}</Text>
+                  <SymptomChipGroup
+                    selected={selectedSymptoms}
+                    onToggle={toggleSymptom}
+                    disabled={hasDateError}
+                  />
+                </View>
+
+                {/* Factors */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{t('factors')}</Text>
+                  <TagPillGroup
+                    selected={selectedTags}
+                    onToggle={toggleTag}
+                    disabled={hasDateError}
+                  />
+                </View>
+
+                {/* Notes */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>{t('addNote')}</Text>
+                  <TextInput
+                    style={styles.noteInput}
+                    placeholder={t('notePlaceholder')}
+                    placeholderTextColor={MOON.textHint}
+                    value={note}
+                    onChangeText={(text) => setNote(text.slice(0, MAX_NOTE_LENGTH))}
+                    maxLength={MAX_NOTE_LENGTH}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    editable={!hasDateError}
+                  />
+                  <Text style={[
+                    styles.charCount,
+                    note.length >= NOTE_WARNING_THRESHOLD && styles.charCountWarning,
+                  ]}>
+                    {note.length}/{MAX_NOTE_LENGTH}
                   </Text>
                 </View>
-                <Text style={[styles.phaseName, { color: phaseInfo.color }]}>
-                  {phaseInfo.name}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="x" size={20} color={MOON.textSecondary} />
-            </TouchableOpacity>
-          </View>
 
-          {/* Date validation error */}
-          {hasDateError && (
-            <View style={styles.errorBanner}>
-              <Feather name="alert-circle" size={14} color={Colors.menstrual} />
-              <Text style={styles.errorText}>
-                {isFuture ? t('futureDateError') : t('tooFarBackError')}
-              </Text>
-            </View>
-          )}
+                {/* Save button */}
+                <View style={styles.saveSection}>
+                  <TouchableOpacity
+                    style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
+                    onPress={handleSave}
+                    activeOpacity={0.85}
+                    disabled={!canSave}
+                  >
+                    <Text style={styles.saveButtonText}>{t('save')}</Text>
+                  </TouchableOpacity>
+                </View>
 
-          {/* Flow Intensity */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('flowIntensity')}</Text>
-            <FlowIntensitySelector
-              selected={selectedFlow}
-              onSelect={setSelectedFlow}
-              disabled={hasDateError}
-            />
-          </View>
-
-          {/* Symptoms */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('symptoms')}</Text>
-            <SymptomChipGroup
-              selected={selectedSymptoms}
-              onToggle={toggleSymptom}
-              disabled={hasDateError}
-            />
-          </View>
-
-          {/* Factors */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('factors')}</Text>
-            <TagPillGroup
-              selected={selectedTags}
-              onToggle={toggleTag}
-              disabled={hasDateError}
-            />
-          </View>
-
-          {/* Notes */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('addNote')}</Text>
-            <TextInput
-              style={styles.noteInput}
-              placeholder={t('notePlaceholder')}
-              placeholderTextColor={MOON.textHint}
-              value={note}
-              onChangeText={(text) => setNote(text.slice(0, MAX_NOTE_LENGTH))}
-              maxLength={MAX_NOTE_LENGTH}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              editable={!hasDateError}
-            />
-            <Text style={[
-              styles.charCount,
-              note.length >= NOTE_WARNING_THRESHOLD && styles.charCountWarning,
-            ]}>
-              {note.length}/{MAX_NOTE_LENGTH}
-            </Text>
-          </View>
-
-          {/* Save button */}
-          <View style={styles.saveSection}>
-            <TouchableOpacity
-              style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              activeOpacity={0.85}
-              disabled={!canSave}
-            >
-              <Text style={styles.saveButtonText}>{t('save')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Delete + Cancel row */}
-          <View style={styles.bottomActions}>
-            {isEditing && (
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDelete}
-                activeOpacity={0.85}
-              >
-                <Feather name="trash-2" size={16} color={Colors.menstrual} />
-                <Text style={styles.deleteButtonText}>{t('delete')}</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={onClose}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.cancelText}>{t('cancel')}</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </Animated.View>
-    </Animated.View>
+                {/* Delete + Cancel row */}
+                <View style={styles.bottomActions}>
+                  {isEditing && (
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={handleDelete}
+                      activeOpacity={0.85}
+                    >
+                      <Feather name="trash-2" size={16} color={Colors.menstrual} />
+                      <Text style={styles.deleteButtonText}>{t('delete')}</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={onClose}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.cancelText}>{t('cancel')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </Pressable>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </Pressable>
+    </Modal>
   );
 }
 
 /* ── Styles ─────────────────────────────────────────────────────────── */
 
 const styles = StyleSheet.create({
-  card: {
+  backdrop: {
+    flex: 1,
+    backgroundColor: MOON.overlay,
+    justifyContent: 'flex-end',
+  },
+  keyboardAvoid: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
     backgroundColor: MOON.surface,
-    borderRadius: Radii.xl,
-    overflow: 'hidden',
+    borderTopLeftRadius: Radii.xl,
+    borderTopRightRadius: Radii.xl,
+    paddingBottom: 40,
+    maxHeight: '85%',
     shadowColor: MOON.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 32,
+    elevation: 20,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: MOON.accentPrimary + '40',
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: Spacing.md,
   },
   scrollContent: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
     gap: Spacing.md,
   },
 
