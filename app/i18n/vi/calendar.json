@@ -69,5 +69,38 @@
 
   "notificationPeriodApproachingTitle": "Nhắc nhở kỳ kinh",
   "notificationPeriodApproachingBody": "Kỳ kinh có thể bắt đầu trong {{days}} ngày nữa",
-  "partnerPeriodUpdated": "Moon đã cập nhật kỳ kinh"
+  "partnerPeriodUpdated": "Moon đã cập nhật kỳ kinh",
+
+  "flowIntensity": "Lượng kinh hôm nay?",
+  "spotting": "Lốm đốm",
+  "light": "Nhẹ",
+  "medium": "Trung bình",
+  "heavy": "Nhiều",
+
+  "symptoms": "Bạn cảm thấy thế nào?",
+  "cramps": "Chuột rút",
+  "fatigue": "Mệt mỏi",
+  "headache": "Đau đầu",
+  "bloating": "Đầy hơi",
+  "moodSwings": "Thay đổi tâm trạng",
+  "nausea": "Buồn nôn",
+
+  "savePeriodLog": "Lưu",
+  "saving": "Đang lưu...",
+  "periodLoggedSuccess": "Đã ghi nhận — hãy chăm sóc bản thân hôm nay nhé",
+  "saveError": "Không thể lưu. Chạm để thử lại.",
+  "tapToLog": "Chạm vào ngày để ghi nhận kỳ kinh",
+  "noChanges": "Không có thay đổi để lưu",
+
+  "dayLogHeader": "Chi tiết ngày",
+  "dayFlowLabel": "Ngày {{day}} — {{flow}}",
+
+  "deleteDay": "Xóa ngày này",
+  "confirmDeleteDay": "Xóa ghi nhận của ngày này?",
+  "confirmDeleteDayMessage": "Điều này sẽ xóa dữ liệu lưu lượng và triệu chứng cho ngày này.",
+
+  "futureDateError": "Không thể ghi nhận ngày trong tương lai",
+  "tooFarBackError": "Quá xa trong quá khứ — bạn có thể ghi nhận tối đa 30 ngày trước",
+  "predictedTooltip": "Dựa trên các chu kỳ gần đây. Ghi nhận càng nhiều, dự đoán càng chính xác.",
+  "firstTimeHint": "Chạm vào bất kỳ ngày nào để ghi nhận kỳ kinh"
 }

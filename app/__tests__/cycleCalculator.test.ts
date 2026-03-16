@@ -7,6 +7,7 @@ import {
   getCurrentPhase,
   getDaysUntilNextPeriod,
   getConceptionChance,
+  enrichMarkersWithRangeInfo,
 } from '@/utils/cycleCalculator';
 import type { PeriodRecord, CycleSettings } from '@/types';
 import { generatePeriodLogs, generateLogsWithExactCycles } from './fixtures/generatePeriodLogs';
@@ -717,5 +718,122 @@ describe('getConceptionChance', () => {
     expect(getConceptionChance('follicular')).toBe('Medium');
     expect(getConceptionChance('ovulatory')).toBe('Very High');
     expect(getConceptionChance('luteal')).toBe('Low');
+  });
+});
+
+// =========================================================================
+// enrichMarkersWithRangeInfo
+// =========================================================================
+describe('enrichMarkersWithRangeInfo', () => {
+  it('returns empty object for empty markers', () => {
+    const result = enrichMarkersWithRangeInfo({});
+    expect(result).toEqual({});
+  });
+
+  it('does not set range flags for a single isolated period day', () => {
+    const markers: Record<string, import('@/types').CalendarMarker> = {
+      '2026-03-05': { type: 'period', source: 'logged' },
+    };
+    const result = enrichMarkersWithRangeInfo(markers);
+
+    // Single day has no consecutive neighbors, so all range flags are false
+    expect(result['2026-03-05'].isRangeStart).toBe(false);
+    expect(result['2026-03-05'].isRangeMid).toBe(false);
+    expect(result['2026-03-05'].isRangeEnd).toBe(false);
+  });
+
+  it('marks three consecutive period days as start/mid/end', () => {
+    const markers: Record<string, import('@/types').CalendarMarker> = {
+      '2026-03-01': { type: 'period', source: 'logged' },
+      '2026-03-02': { type: 'period', source: 'logged' },
+      '2026-03-03': { type: 'period', source: 'logged' },
+    };
+    const result = enrichMarkersWithRangeInfo(markers);
+
+    expect(result['2026-03-01'].isRangeStart).toBe(true);
+    expect(result['2026-03-01'].isRangeMid).toBe(false);
+    expect(result['2026-03-01'].isRangeEnd).toBe(false);
+
+    expect(result['2026-03-02'].isRangeStart).toBe(false);
+    expect(result['2026-03-02'].isRangeMid).toBe(true);
+    expect(result['2026-03-02'].isRangeEnd).toBe(false);
+
+    expect(result['2026-03-03'].isRangeStart).toBe(false);
+    expect(result['2026-03-03'].isRangeMid).toBe(false);
+    expect(result['2026-03-03'].isRangeEnd).toBe(true);
+  });
+
+  it('does not set range flags for non-consecutive period days', () => {
+    const markers: Record<string, import('@/types').CalendarMarker> = {
+      '2026-03-01': { type: 'period', source: 'logged' },
+      '2026-03-05': { type: 'period', source: 'logged' },
+    };
+    const result = enrichMarkersWithRangeInfo(markers);
+
+    // Neither day is consecutive with the other, so all flags are false
+    expect(result['2026-03-01'].isRangeStart).toBe(false);
+    expect(result['2026-03-01'].isRangeMid).toBe(false);
+    expect(result['2026-03-01'].isRangeEnd).toBe(false);
+
+    expect(result['2026-03-05'].isRangeStart).toBe(false);
+    expect(result['2026-03-05'].isRangeMid).toBe(false);
+    expect(result['2026-03-05'].isRangeEnd).toBe(false);
+  });
+
+  it('only applies range flags to period markers, not ovulation or fertile', () => {
+    const markers: Record<string, import('@/types').CalendarMarker> = {
+      '2026-03-01': { type: 'period', source: 'logged' },
+      '2026-03-02': { type: 'period', source: 'logged' },
+      '2026-03-03': { type: 'period', source: 'logged' },
+      '2026-03-14': { type: 'ovulation', source: 'predicted' },
+      '2026-03-12': { type: 'fertile', source: 'predicted' },
+      '2026-03-13': { type: 'fertile', source: 'predicted' },
+    };
+    const result = enrichMarkersWithRangeInfo(markers);
+
+    // Period markers get range flags
+    expect(result['2026-03-01'].isRangeStart).toBe(true);
+    expect(result['2026-03-02'].isRangeMid).toBe(true);
+    expect(result['2026-03-03'].isRangeEnd).toBe(true);
+
+    // Non-period markers should not have range flags set
+    expect(result['2026-03-14'].isRangeStart).toBeUndefined();
+    expect(result['2026-03-14'].isRangeMid).toBeUndefined();
+    expect(result['2026-03-14'].isRangeEnd).toBeUndefined();
+
+    expect(result['2026-03-12'].isRangeStart).toBeUndefined();
+    expect(result['2026-03-13'].isRangeStart).toBeUndefined();
+  });
+
+  it('preserves existing marker properties (type, source)', () => {
+    const markers: Record<string, import('@/types').CalendarMarker> = {
+      '2026-03-01': { type: 'period', source: 'logged' },
+      '2026-03-02': { type: 'period', source: 'predicted' },
+      '2026-03-14': { type: 'ovulation', source: 'predicted' },
+    };
+    const result = enrichMarkersWithRangeInfo(markers);
+
+    // Original type and source are preserved
+    expect(result['2026-03-01'].type).toBe('period');
+    expect(result['2026-03-01'].source).toBe('logged');
+
+    expect(result['2026-03-02'].type).toBe('period');
+    expect(result['2026-03-02'].source).toBe('predicted');
+
+    expect(result['2026-03-14'].type).toBe('ovulation');
+    expect(result['2026-03-14'].source).toBe('predicted');
+  });
+
+  it('does not mutate the original markers object', () => {
+    const markers: Record<string, import('@/types').CalendarMarker> = {
+      '2026-03-01': { type: 'period', source: 'logged' },
+      '2026-03-02': { type: 'period', source: 'logged' },
+    };
+    const result = enrichMarkersWithRangeInfo(markers);
+
+    // Original should not have range flags
+    expect(markers['2026-03-01'].isRangeStart).toBeUndefined();
+    // Result should have them
+    expect(result['2026-03-01'].isRangeStart).toBe(true);
   });
 });
