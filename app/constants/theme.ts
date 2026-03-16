@@ -88,6 +88,52 @@ export const CalendarTokens = {
   deviationCardText: '#6B5B45',
 } as const;
 
+/** Design tokens for the Flo-style cycle calendar (CR_20260316_001). */
+export const CycleCalendarTokens = {
+  // Phase fills
+  periodLogged: '#D4537E',
+  periodPredicted: '#F2A6C0',
+  fertileWindow: '#70D6FF',
+  ovulationDay: '#3AAFFF',
+
+  // Day cell
+  dayCellSize: 44,
+  dayCellRadius: 22,
+  dayCellFontSize: 14,
+  todayRingColor: '#1D1D1F',
+  selectedRingColor: '#D4537E',
+  selectedRingWidth: 2,
+  rangeBandHeight: 32,
+  rangeBandOpacity: 0.18,
+
+  // Flow intensity dot sizing
+  flowDotSpotting: 4,
+  flowDotLight: 6,
+  flowDotMedium: 8,
+  flowDotHeavy: 10,
+  flowDotColor: '#D4537E',
+
+  // Symptom chips
+  chipHeight: 40,
+  chipMinWidth: 88,
+  chipActiveBackground: '#D4537E',
+  chipActiveForeground: '#FFFFFF',
+  chipInactiveBackground: '#F2F2F7',
+  chipInactiveForeground: '#4B4B4B',
+  chipBorderRadius: 20,
+
+  // Save button
+  saveButtonHeight: 52,
+  saveButtonColor: '#D4537E',
+  saveButtonDisabledOpacity: 0.4,
+
+  // Toast
+  toastSuccessBackground: '#4CAF50',
+  toastErrorBackground: '#EF5350',
+  toastTextColor: '#FFFFFF',
+  toastDuration: 2500,
+} as const;
+
 export function getTheme(role: 'moon' | 'sun' | null) {
   if (role === 'moon') return MoonColors;
   if (role === 'sun') return SunColors;

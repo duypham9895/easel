@@ -5,12 +5,15 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Linking from 'expo-linking';
 import { useNotifications } from '@/hooks/useNotifications';
+import { usePeriodDayLogListener } from '@/hooks/usePeriodDayLogListener';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store/appStore';
 
 function AppWithHooks() {
   // Register for push notifications after login; saves token to DB
   useNotifications();
+  // Subscribe to partner's period day log updates (Sun only)
+  usePeriodDayLogListener();
 
   const bootstrapSession = useAppStore((s) => s.bootstrapSession);
   const signOut = useAppStore((s) => s.signOut);

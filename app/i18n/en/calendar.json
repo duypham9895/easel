@@ -69,5 +69,38 @@
 
   "notificationPeriodApproachingTitle": "Period reminder",
   "notificationPeriodApproachingBody": "Your period may start in {{days}} days",
-  "partnerPeriodUpdated": "Moon updated her period log"
+  "partnerPeriodUpdated": "Moon updated her period log",
+
+  "flowIntensity": "How's your flow?",
+  "spotting": "A little",
+  "light": "Light",
+  "medium": "Moderate",
+  "heavy": "Heavy",
+
+  "symptoms": "How are you feeling?",
+  "cramps": "Cramps",
+  "fatigue": "Tired",
+  "headache": "Headache",
+  "bloating": "Bloating",
+  "moodSwings": "Moody",
+  "nausea": "Nausea",
+
+  "savePeriodLog": "Save",
+  "saving": "Saving...",
+  "periodLoggedSuccess": "Got it — take care of yourself today",
+  "saveError": "Could not save. Tap to try again.",
+  "tapToLog": "Tap a day to log your period",
+  "noChanges": "No changes to save",
+
+  "dayLogHeader": "Log details",
+  "dayFlowLabel": "Day {{day}} — {{flow}} flow",
+
+  "deleteDay": "Remove this day",
+  "confirmDeleteDay": "Remove this day's log?",
+  "confirmDeleteDayMessage": "This will remove the flow and symptom data for this day.",
+
+  "futureDateError": "You can't log a future date",
+  "tooFarBackError": "Too far in the past — you can log up to 30 days back",
+  "predictedTooltip": "Based on your recent cycles. The more you log, the more accurate predictions become.",
+  "firstTimeHint": "Tap any day to start logging your period"
 }

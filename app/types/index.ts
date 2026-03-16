@@ -129,6 +129,43 @@ export interface CyclePrediction {
 export interface CalendarMarker {
   type: 'period' | 'ovulation' | 'fertile';
   source: 'logged' | 'predicted';
+  isRangeStart?: boolean;
+  isRangeEnd?: boolean;
+  isRangeMid?: boolean;
+}
+
+// ── Period Day Logs (Flo-style per-day tracking) ────────────────────────
+
+/** Flow intensity levels for period day tracking. */
+export type FlowIntensity = 'spotting' | 'light' | 'medium' | 'heavy';
+
+/** Symptom identifiers for period day tracking. */
+export type PeriodSymptom =
+  | 'cramps'
+  | 'fatigue'
+  | 'headache'
+  | 'bloating'
+  | 'mood_swings'
+  | 'nausea';
+
+/** App-layer type for a single period day log (camelCase). */
+export interface PeriodDayRecord {
+  logDate: string;               // YYYY-MM-DD
+  flowIntensity: FlowIntensity;
+  symptoms: PeriodSymptom[];
+  notes?: string;
+}
+
+/** Database row type for period_day_logs table (snake_case, mirrors Supabase). */
+export interface DbPeriodDayLog {
+  id: string;
+  user_id: string;
+  log_date: string;              // YYYY-MM-DD
+  flow_intensity: FlowIntensity;
+  symptoms: PeriodSymptom[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CycleDeviation {

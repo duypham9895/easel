@@ -303,6 +303,46 @@ export function detectDeviation(
   };
 }
 
+/**
+ * Enrich calendar markers with range position info for connected period rendering.
+ * Identifies start/end/mid positions within consecutive period day sequences.
+ */
+export function enrichMarkersWithRangeInfo(
+  markers: Record<string, CalendarMarker>,
+): Record<string, CalendarMarker> {
+  const enriched: Record<string, CalendarMarker> = {};
+  for (const [key, marker] of Object.entries(markers)) {
+    enriched[key] = { ...marker };
+  }
+
+  const periodDates = Object.entries(markers)
+    .filter(([_, m]) => m.type === 'period')
+    .map(([date]) => date)
+    .sort();
+
+  for (let i = 0; i < periodDates.length; i++) {
+    const date = periodDates[i];
+    const prev = periodDates[i - 1];
+    const next = periodDates[i + 1];
+    const isConsecutiveWithPrev = prev !== undefined && daysDiffStr(prev, date) === 1;
+    const isConsecutiveWithNext = next !== undefined && daysDiffStr(date, next) === 1;
+
+    enriched[date] = {
+      ...enriched[date],
+      isRangeStart: !isConsecutiveWithPrev && isConsecutiveWithNext,
+      isRangeEnd: isConsecutiveWithPrev && !isConsecutiveWithNext,
+      isRangeMid: isConsecutiveWithPrev && isConsecutiveWithNext,
+    };
+  }
+
+  return enriched;
+}
+
+/** Compute days between two YYYY-MM-DD strings. */
+function daysDiffStr(a: string, b: string): number {
+  return Math.round((parseLocalDate(b).getTime() - parseLocalDate(a).getTime()) / DAY_MS);
+}
+
 /** Parse a YYYY-MM-DD string as local midnight (avoids UTC date-only parsing pitfall). */
 function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);

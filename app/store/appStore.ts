@@ -6,6 +6,8 @@ import { detectDeviation, computePredictionWindow } from '@/utils/cycleCalculato
 import { supabase } from '@/lib/supabase';
 import { getProfile, upsertProfile } from '@/lib/db/profiles';
 import { getCycleSettings, upsertCycleSettings, fetchPeriodLogs, logPeriodStart, deletePeriodLog, updatePeriodLogTags, updatePeriodEndDate } from '@/lib/db/cycle';
+import { upsertPeriodDayLog, fetchPeriodDayLogs, deletePeriodDayLog } from '@/lib/db/periodDayLogs';
+import type { FlowIntensity, PeriodSymptom, PeriodDayRecord } from '@/types';
 import { createOrRefreshLinkCode, linkToPartnerByCode, getMyCouple } from '@/lib/db/couples';
 import { sendSOSSignal } from '@/lib/db/sos';
 import { upsertPushToken } from '@/lib/db/pushTokens';
@@ -44,6 +46,11 @@ interface AppState {
   // Prediction window (transient — not persisted)
   predictionWindow: PredictionWindow | null;
 
+  // Period day logs (Flo-style per-day tracking)
+  periodDayLogs: Record<string, PeriodDayRecord>;
+  selectedCalendarDay: string | null;
+  isSavingDayLog: boolean;
+
   // Auth actions
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -80,6 +87,22 @@ interface AppState {
   updateAvatarUrl: (url: string) => Promise<void>;
   updateDisplayName: (name: string) => Promise<void>;
   updateNotificationPrefs: (prefs: Partial<NotificationPreferences>) => void;
+
+  // Period day logs
+  savePeriodDayLog: (
+    logDate: string,
+    flowIntensity: FlowIntensity,
+    symptoms: PeriodSymptom[],
+    notes?: string,
+  ) => Promise<void>;
+  loadPeriodDayLogs: (startDate: string, endDate: string) => Promise<void>;
+  removePeriodDayLog: (logDate: string) => Promise<void>;
+  selectCalendarDay: (dateString: string | null) => void;
+  receivePeriodDayLog: (
+    event: 'INSERT' | 'UPDATE' | 'DELETE',
+    logDate: string,
+    data: PeriodDayRecord | null,
+  ) => void;
 
   // Push notifications
   registerPushToken: (token: string) => Promise<void>;
@@ -164,6 +187,9 @@ export const useAppStore = create<AppState>()(
       activeWhisper: null,
       lastDeviation: null,
       predictionWindow: null,
+      periodDayLogs: {},
+      selectedCalendarDay: null,
+      isSavingDayLog: false,
       language: (i18n.language as SupportedLanguage) ?? 'en',
 
       // -----------------------------------------------------------------------
@@ -194,6 +220,23 @@ export const useAppStore = create<AppState>()(
           ? await fetchPeriodLogs(userId)
           : [];
 
+        // Load period day logs for Moon users
+        let periodDayLogsMap: Record<string, PeriodDayRecord> = {};
+        if (profile?.role === 'moon' && periodLogs.length > 0) {
+          const today = new Date().toISOString().split('T')[0];
+          const threeMonthsAgo = new Date();
+          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+          const startDate = threeMonthsAgo.toISOString().split('T')[0];
+          try {
+            const dayLogRecords = await fetchPeriodDayLogs(userId, startDate, today);
+            for (const r of dayLogRecords) {
+              periodDayLogsMap[r.logDate] = r;
+            }
+          } catch (err) {
+            console.warn('[signIn] period day logs load failed:', err);
+          }
+        }
+
         set({
           isLoggedIn: true,
           email: data.user.email ?? email,
@@ -203,6 +246,7 @@ export const useAppStore = create<AppState>()(
           coupleId: couple?.id ?? null,
           cycleSettings,
           periodLogs,
+          periodDayLogs: periodDayLogsMap,
           partnerCycleSettings,
           displayName: profile?.display_name ?? null,
           avatarUrl: profile?.avatar_url ?? null,
@@ -253,6 +297,9 @@ export const useAppStore = create<AppState>()(
           displayName: null,
           avatarUrl: null,
           notificationPrefs: DEFAULT_NOTIFICATION_PREFS,
+          periodDayLogs: {},
+          selectedCalendarDay: null,
+          isSavingDayLog: false,
           language: 'en',
         });
         i18n.changeLanguage('en');
@@ -297,6 +344,23 @@ export const useAppStore = create<AppState>()(
           ? await fetchPeriodLogs(userId)
           : [];
 
+        // Load period day logs (Flo-style per-day data) for Moon users
+        let periodDayLogsMap: Record<string, PeriodDayRecord> = {};
+        if (profile?.role === 'moon' && periodLogs.length > 0) {
+          const today = new Date().toISOString().split('T')[0];
+          const threeMonthsAgo = new Date();
+          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+          const startDate = threeMonthsAgo.toISOString().split('T')[0];
+          try {
+            const dayLogRecords = await fetchPeriodDayLogs(userId, startDate, today);
+            for (const r of dayLogRecords) {
+              periodDayLogsMap[r.logDate] = r;
+            }
+          } catch (err) {
+            console.warn('[bootstrapSession] period day logs load failed:', err);
+          }
+        }
+
         // Restore language preference from DB
         const { data: prefData } = await supabase
           .from('user_preferences')
@@ -317,6 +381,7 @@ export const useAppStore = create<AppState>()(
           coupleId: couple?.id ?? null,
           cycleSettings,
           periodLogs,
+          periodDayLogs: periodDayLogsMap,
           partnerCycleSettings,
           displayName: profile?.display_name ?? null,
           avatarUrl: profile?.avatar_url ?? null,
@@ -548,6 +613,108 @@ export const useAppStore = create<AppState>()(
       },
 
       // -----------------------------------------------------------------------
+      // Period day logs (Flo-style per-day tracking)
+      // -----------------------------------------------------------------------
+      savePeriodDayLog: async (logDate, flowIntensity, symptoms, notes) => {
+        const { userId, periodDayLogs, periodLogs, cycleSettings } = get();
+        if (!userId) return;
+
+        set({ isSavingDayLog: true });
+
+        const newRecord: PeriodDayRecord = {
+          logDate,
+          flowIntensity,
+          symptoms,
+          ...(notes ? { notes } : {}),
+        };
+        const updatedDayLogs = { ...periodDayLogs, [logDate]: newRecord };
+        set({ periodDayLogs: updatedDayLogs });
+
+        try {
+          await upsertPeriodDayLog(userId, logDate, flowIntensity, symptoms, notes);
+
+          // Auto-create or extend period_log for this day
+          const logMs = new Date(logDate + 'T00:00:00').getTime();
+          const containingPeriod = periodLogs.find((log) => {
+            const startMs = new Date(log.startDate + 'T00:00:00').getTime();
+            const endMs = log.endDate
+              ? new Date(log.endDate + 'T00:00:00').getTime()
+              : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
+            return logMs >= startMs && logMs <= endMs;
+          });
+
+          if (!containingPeriod) {
+            // Check for adjacent period to extend
+            const adjacentPeriod = periodLogs.find((log) => {
+              const startMs = new Date(log.startDate + 'T00:00:00').getTime();
+              const endMs = log.endDate
+                ? new Date(log.endDate + 'T00:00:00').getTime()
+                : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
+              const dayBefore = startMs - 86_400_000;
+              const dayAfter = endMs + 86_400_000;
+              return logMs === dayBefore || logMs === dayAfter;
+            });
+
+            if (adjacentPeriod) {
+              // Extend adjacent period's end_date to include this day
+              const newEnd = logDate > (adjacentPeriod.endDate ?? adjacentPeriod.startDate)
+                ? logDate
+                : adjacentPeriod.endDate ?? adjacentPeriod.startDate;
+              await get().setPeriodEndDate(adjacentPeriod.startDate, newEnd);
+            } else {
+              await get().addPeriodLog(logDate);
+            }
+          }
+        } catch (error) {
+          set({ periodDayLogs });
+          throw error;
+        } finally {
+          set({ isSavingDayLog: false });
+        }
+      },
+
+      loadPeriodDayLogs: async (startDate, endDate) => {
+        const { userId } = get();
+        if (!userId) return;
+
+        const records = await fetchPeriodDayLogs(userId, startDate, endDate);
+        const dayLogs = { ...get().periodDayLogs };
+        for (const record of records) {
+          dayLogs[record.logDate] = record;
+        }
+        set({ periodDayLogs: dayLogs });
+      },
+
+      removePeriodDayLog: async (logDate) => {
+        const { userId, periodDayLogs } = get();
+        if (!userId) return;
+
+        const { [logDate]: _removed, ...remaining } = periodDayLogs;
+        set({ periodDayLogs: remaining });
+
+        try {
+          await deletePeriodDayLog(userId, logDate);
+        } catch (error) {
+          set({ periodDayLogs });
+          throw error;
+        }
+      },
+
+      selectCalendarDay: (dateString) => {
+        set({ selectedCalendarDay: dateString });
+      },
+
+      receivePeriodDayLog: (event, logDate, data) => {
+        const { periodDayLogs } = get();
+        if (event === 'DELETE') {
+          const { [logDate]: _removed, ...remaining } = periodDayLogs;
+          set({ periodDayLogs: remaining });
+        } else if (data) {
+          set({ periodDayLogs: { ...periodDayLogs, [logDate]: data } });
+        }
+      },
+
+      // -----------------------------------------------------------------------
       // Push notifications
       // -----------------------------------------------------------------------
       registerPushToken: async (token) => {
@@ -581,7 +748,7 @@ export const useAppStore = create<AppState>()(
       name: 'easel-app-storage',
       storage: createJSONStorage(() => AsyncStorage),
       // activeSOS/activeWhisper are transient; userId/coupleId are re-hydrated via bootstrapSession
-      partialize: ({ activeSOS, activeWhisper, lastDeviation, predictionWindow, userId, coupleId, ...rest }) => rest,
+      partialize: ({ activeSOS, activeWhisper, lastDeviation, predictionWindow, userId, coupleId, selectedCalendarDay, isSavingDayLog, ...rest }) => rest,
     },
   ),
 );
