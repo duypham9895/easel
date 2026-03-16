@@ -49,7 +49,7 @@ export function SaveToast({ visible, variant, message, onDismiss, onRetry }: Sav
         onPress={handlePress}
         activeOpacity={0.8}
       >
-        <Feather name={iconName} size={20} color="#FFFFFF" style={styles.icon} />
+        <Feather name={iconName} size={20} color={CycleCalendarTokens.toastTextColor as string} style={styles.icon} />
         <Text style={styles.message} numberOfLines={1}>
           {message}
         </Text>
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   message: {
     ...Typography.bodyBold,
-    color: '#FFFFFF',
+    color: CycleCalendarTokens.toastTextColor,
     flexShrink: 1,
   },
 });

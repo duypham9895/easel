@@ -118,7 +118,6 @@ export function PeriodLogPanel({
 
   const savePeriodDayLog = useAppStore((s) => s.savePeriodDayLog);
   const removePeriodDayLog = useAppStore((s) => s.removePeriodDayLog);
-  const removePeriodLog = useAppStore((s) => s.removePeriodLog);
 
   // ── Local state ────────────────────────────────────────────────────
   const [selectedFlow, setSelectedFlow] = useState<FlowIntensity | null>(null);
@@ -202,9 +201,9 @@ export function PeriodLogPanel({
         note.trim() || undefined,
       );
 
-      // Persist override tags to period_logs if any are selected
-      if (selectedTags.length > 0) {
-        await updatePeriodTags(selectedDate, selectedTags);
+      // Persist override tags to the period_log that contains this date
+      if (selectedTags.length > 0 && existingPeriodLog) {
+        await updatePeriodTags(existingPeriodLog.startDate, selectedTags);
       }
 
       notificationSuccess();
@@ -220,17 +219,16 @@ export function PeriodLogPanel({
 
     impactMedium();
     Alert.alert(
-      t('confirmDelete'),
-      t('confirmDeleteMessage'),
+      t('confirmDeleteDay'),
+      t('confirmDeleteDayMessage'),
       [
         { text: t('cancel'), style: 'cancel' },
         {
-          text: t('delete'),
+          text: t('deleteDay'),
           style: 'destructive',
           onPress: async () => {
             try {
               await removePeriodDayLog(selectedDate);
-              await removePeriodLog(selectedDate);
               notificationSuccess();
               onSave();
             } catch (error) {
@@ -241,7 +239,7 @@ export function PeriodLogPanel({
         },
       ],
     );
-  }, [isEditing, t, tCommon, selectedDate, removePeriodDayLog, removePeriodLog, onSave]);
+  }, [isEditing, t, tCommon, selectedDate, removePeriodDayLog, onSave]);
 
   // ── Render ─────────────────────────────────────────────────────────
   return (

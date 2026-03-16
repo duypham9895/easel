@@ -220,6 +220,23 @@ export const useAppStore = create<AppState>()(
           ? await fetchPeriodLogs(userId)
           : [];
 
+        // Load period day logs for Moon users
+        let periodDayLogsMap: Record<string, PeriodDayRecord> = {};
+        if (profile?.role === 'moon' && periodLogs.length > 0) {
+          const today = new Date().toISOString().split('T')[0];
+          const threeMonthsAgo = new Date();
+          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+          const startDate = threeMonthsAgo.toISOString().split('T')[0];
+          try {
+            const dayLogRecords = await fetchPeriodDayLogs(userId, startDate, today);
+            for (const r of dayLogRecords) {
+              periodDayLogsMap[r.logDate] = r;
+            }
+          } catch (err) {
+            console.warn('[signIn] period day logs load failed:', err);
+          }
+        }
+
         set({
           isLoggedIn: true,
           email: data.user.email ?? email,
@@ -229,6 +246,7 @@ export const useAppStore = create<AppState>()(
           coupleId: couple?.id ?? null,
           cycleSettings,
           periodLogs,
+          periodDayLogs: periodDayLogsMap,
           partnerCycleSettings,
           displayName: profile?.display_name ?? null,
           avatarUrl: profile?.avatar_url ?? null,
@@ -615,18 +633,37 @@ export const useAppStore = create<AppState>()(
         try {
           await upsertPeriodDayLog(userId, logDate, flowIntensity, symptoms, notes);
 
-          // Auto-create period_log if this day isn't already within a period
-          const isWithinPeriod = periodLogs.some((log) => {
+          // Auto-create or extend period_log for this day
+          const logMs = new Date(logDate + 'T00:00:00').getTime();
+          const containingPeriod = periodLogs.find((log) => {
             const startMs = new Date(log.startDate + 'T00:00:00').getTime();
             const endMs = log.endDate
               ? new Date(log.endDate + 'T00:00:00').getTime()
               : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
-            const logMs = new Date(logDate + 'T00:00:00').getTime();
             return logMs >= startMs && logMs <= endMs;
           });
 
-          if (!isWithinPeriod) {
-            await get().addPeriodLog(logDate);
+          if (!containingPeriod) {
+            // Check for adjacent period to extend
+            const adjacentPeriod = periodLogs.find((log) => {
+              const startMs = new Date(log.startDate + 'T00:00:00').getTime();
+              const endMs = log.endDate
+                ? new Date(log.endDate + 'T00:00:00').getTime()
+                : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
+              const dayBefore = startMs - 86_400_000;
+              const dayAfter = endMs + 86_400_000;
+              return logMs === dayBefore || logMs === dayAfter;
+            });
+
+            if (adjacentPeriod) {
+              // Extend adjacent period's end_date to include this day
+              const newEnd = logDate > (adjacentPeriod.endDate ?? adjacentPeriod.startDate)
+                ? logDate
+                : adjacentPeriod.endDate ?? adjacentPeriod.startDate;
+              await get().setPeriodEndDate(adjacentPeriod.startDate, newEnd);
+            } else {
+              await get().addPeriodLog(logDate);
+            }
           }
         } catch (error) {
           set({ periodDayLogs });

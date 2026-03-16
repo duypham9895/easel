@@ -14,10 +14,11 @@ export function usePeriodDayLogListener() {
     if (role !== 'sun' || !isPartnerLinked || !coupleId) return;
 
     let unsubscribe: (() => void) | null = null;
+    let cancelled = false;
 
     (async () => {
       const couple = await getMyCouple();
-      if (!couple?.girlfriend_id) return;
+      if (cancelled || !couple?.girlfriend_id) return;
 
       unsubscribe = subscribeToPeriodDayLogs(
         couple.girlfriend_id,
@@ -36,6 +37,7 @@ export function usePeriodDayLogListener() {
     })();
 
     return () => {
+      cancelled = true;
       if (unsubscribe) unsubscribe();
     };
   }, [role, isPartnerLinked, coupleId, receivePeriodDayLog]);
