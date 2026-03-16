@@ -2,16 +2,26 @@ appId: host.exp.Exponent
 tags:
   - calendar
   - full-suite
+  - cr002
 ---
 
-# CR_20260316_001 — Full Device Verification Suite
+# CR_20260316_002 — Full P0+P1 Device Verification Suite
 
 # Start fresh — navigate to Today then Calendar
 - tapOn: "Today, tab, 1 of 3"
 - tapOn: "Calendar, tab, 2 of 3"
 - waitForAnimationToEnd
 
-# --- CV-01/CV-02/CV-14: Calendar phase rendering ---
+# --- TC-001: MyCycleCard removed ---
+- assertNotVisible:
+    text: "MY CYCLE"
+    enabled: true
+- assertNotVisible:
+    text: "Log a period"
+    enabled: true
+- takeScreenshot: screenshots/suite-cr002-01-no-mycyclecard
+
+# --- TC-021: Legend visible with all 5 items ---
 - scrollUntilVisible:
     element: "Period (logged)"
     direction: DOWN
@@ -21,9 +31,15 @@ tags:
 - assertVisible: "Fertile window"
 - assertVisible: "Ovulation day"
 - assertVisible: "Today"
-- takeScreenshot: screenshots/suite-01-legend
+- takeScreenshot: screenshots/suite-cr002-02-legend
 
-# EC-01 already verified in first run (empty state)
+# --- TC-020: PredictionWindowCard visible ---
+- scrollUntilVisible:
+    element: "PREDICTION WINDOW"
+    direction: DOWN
+    timeout: 8000
+- assertVisible: "PREDICTION WINDOW"
+- takeScreenshot: screenshots/suite-cr002-03-prediction
 
 # --- Scroll back to calendar top ---
 - scrollUntilVisible:
@@ -31,15 +47,21 @@ tags:
     direction: UP
     timeout: 5000
 
-# --- CV-04: Tap day to open panel ---
-# Tap day 10 (a past date in March)
+# --- TC-003: Tap unlogged day to auto-mark ---
 - tapOn:
-    text: "10"
+    text: "8"
     index: 0
 - waitForAnimationToEnd
-- takeScreenshot: screenshots/suite-03-day10-tapped
+- takeScreenshot: screenshots/suite-cr002-04-auto-marked
 
-# --- CV-06: Flow selector with Moderate default ---
+# --- TC-004: Tap same day again to open bottom sheet ---
+- tapOn:
+    text: "8"
+    index: 0
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-cr002-05-sheet-open
+
+# --- TC-005: Flow selector in sheet ---
 - scrollUntilVisible:
     element: "How's your flow?"
     direction: DOWN
@@ -48,9 +70,10 @@ tags:
 - assertVisible: "Light"
 - assertVisible: "Moderate"
 - assertVisible: "Heavy"
-- takeScreenshot: screenshots/suite-04-flow-options
+- tapOn: "Heavy"
+- takeScreenshot: screenshots/suite-cr002-06-flow-heavy
 
-# --- CV-08/CV-09: All 6 symptom chips ---
+# --- TC-006: Symptom chips ---
 - scrollUntilVisible:
     element: "How are you feeling?"
     direction: DOWN
@@ -61,63 +84,100 @@ tags:
 - assertVisible: "Bloating"
 - assertVisible: "Moody"
 - assertVisible: "Nausea"
-
-# --- CV-08: Toggle symptoms ---
 - tapOn: "Cramps"
 - tapOn: "Headache"
-- takeScreenshot: screenshots/suite-05-symptoms-toggled
+- takeScreenshot: screenshots/suite-cr002-07-symptoms
 
-# --- Select Heavy flow ---
-- scrollUntilVisible:
-    element: "How's your flow?"
-    direction: UP
-    timeout: 5000
-- tapOn: "Heavy"
-- takeScreenshot: screenshots/suite-06-flow-heavy
-
-# --- BC-03: Override tags (factors) visible ---
-- scrollUntilVisible:
-    element: "Factors"
-    direction: DOWN
-    timeout: 5000
-- assertVisible: "Stress"
-- assertVisible: "Illness"
-- assertVisible: "Travel"
-- assertVisible: "Medication"
-- assertVisible: "Other"
-- takeScreenshot: screenshots/suite-07-factors
-
-# --- CV-10: Notes field ---
+# --- TC-007: Notes ---
 - scrollUntilVisible:
     element: "Add a note"
     direction: DOWN
     timeout: 5000
 - tapOn: "How are you feeling today?"
-- inputText: "Test log from Maestro"
-- takeScreenshot: screenshots/suite-08-notes
+- inputText: "Suite test note"
+- takeScreenshot: screenshots/suite-cr002-08-notes
 
-# --- Save and verify toast (CV-11) ---
+# --- Save ---
 - scrollUntilVisible:
     element: "Save"
     direction: DOWN
     timeout: 5000
 - tapOn: "Save"
 - waitForAnimationToEnd
-- takeScreenshot: screenshots/suite-09-after-save
+- takeScreenshot: screenshots/suite-cr002-09-after-save
 
-# --- CV-01: Verify logged day has deep pink fill ---
+# --- TC-016: Backdrop dismiss — open sheet then tap backdrop ---
+- tapOn:
+    text: "8"
+    index: 0
+- waitForAnimationToEnd
+# Tap near top of screen (backdrop area above the sheet)
+- tapOn:
+    point: "50%,10%"
+- waitForAnimationToEnd
+# Calendar title should be visible again (sheet dismissed)
+- assertVisible: "Cycle Calendar"
+- takeScreenshot: screenshots/suite-cr002-10-backdrop-dismiss
+
+# --- TC-008: Delete log ---
+- tapOn:
+    text: "8"
+    index: 0
+- waitForAnimationToEnd
 - scrollUntilVisible:
-    element: "March 2026"
-    direction: UP
-    timeout: 10000
-- takeScreenshot: screenshots/suite-10-calendar-after-log
+    element: "Delete"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Delete"
+- tapOn: "Remove this day"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-cr002-11-after-delete
 
-# --- BC-04: Dashboard still works ---
+# --- TC-010: Month navigation ---
+- scrollUntilVisible:
+    element: "Cycle Calendar"
+    direction: UP
+    timeout: 5000
+- tapOn:
+    id: "header.arrow.right"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-cr002-12-next-month
+- tapOn:
+    id: "header.arrow.left"
+- tapOn:
+    id: "header.arrow.left"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-cr002-13-prev-month
+# Go back to current
+- tapOn:
+    id: "header.arrow.right"
+- waitForAnimationToEnd
+
+# --- TC-009: Future day blocked ---
+- tapOn:
+    id: "header.arrow.right"
+- tapOn:
+    id: "header.arrow.right"
+- waitForAnimationToEnd
+- tapOn:
+    text: "15"
+    index: 0
+# Nothing should happen — assert calendar still showing
+- assertVisible: "Cycle Calendar"
+- takeScreenshot: screenshots/suite-cr002-14-future-blocked
+# Navigate back
+- tapOn:
+    id: "header.arrow.left"
+- tapOn:
+    id: "header.arrow.left"
+- waitForAnimationToEnd
+
+# --- TC-024: Homepage unchanged ---
 - tapOn: "Today, tab, 1 of 3"
 - waitForAnimationToEnd
-- takeScreenshot: screenshots/suite-11-dashboard
+- takeScreenshot: screenshots/suite-cr002-15-homepage
 
-# --- RG-05: Settings still accessible ---
+# --- TC-024 continued: Settings still accessible ---
 - tapOn: "Settings, tab, 3 of 3"
 - waitForAnimationToEnd
-- takeScreenshot: screenshots/suite-12-settings
+- takeScreenshot: screenshots/suite-cr002-16-settings
