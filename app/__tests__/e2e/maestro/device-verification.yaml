@@ -1,0 +1,133 @@
+appId: host.exp.Exponent
+tags:
+  - device-verification
+  - cr-001
+---
+
+# CR_20260316_001 — Complete Device Verification
+# UX: First tap auto-logs day as period (medium flow). Second tap opens edit panel.
+
+# ===== PHASE 1: Calendar rendering =====
+
+- tapOn: "Calendar, tab, 2 of 3"
+- waitForAnimationToEnd
+
+# CV-02/CV-03/CV-14: Phase colors and legend
+- assertVisible: "Period (logged)"
+- assertVisible: "Period (predicted)"
+- assertVisible: "Fertile window"
+- assertVisible: "Ovulation day"
+- assertVisible: "Today"
+- takeScreenshot: screenshots/dv-01-calendar-legend
+
+# EC-01: Empty state hint
+- assertVisible: "Tap a day to log your period"
+- takeScreenshot: screenshots/dv-02-empty-hint
+
+# ===== PHASE 2: First tap — auto-log period day =====
+
+# Tap day 10 (past date) — auto-marks as period with default medium flow
+- tapOn:
+    text: "10"
+    index: 0
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/dv-03-day10-auto-logged
+
+# CV-11: Toast confirmation should appear
+# (Toast auto-dismisses after 2500ms — screenshot captures it if fast enough)
+
+# CV-01: Logged day should now have deep pink fill
+- takeScreenshot: screenshots/dv-04-calendar-after-first-log
+
+# ===== PHASE 3: Second tap — open edit panel =====
+
+# Tap day 10 again — opens PeriodLogPanel for editing
+- tapOn:
+    text: "10"
+    index: 0
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/dv-05-edit-panel-opened
+
+# CV-06: Flow selector visible with 4 options
+- scrollUntilVisible:
+    element: "How's your flow?"
+    direction: DOWN
+    timeout: 8000
+- assertVisible: "A little"
+- assertVisible: "Light"
+- assertVisible: "Moderate"
+- assertVisible: "Heavy"
+- takeScreenshot: screenshots/dv-06-flow-selector
+
+# CV-08/CV-09: All 6 symptom chips
+- scrollUntilVisible:
+    element: "How are you feeling?"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Cramps"
+- assertVisible: "Tired"
+- assertVisible: "Headache"
+- assertVisible: "Bloating"
+- assertVisible: "Moody"
+- assertVisible: "Nausea"
+- takeScreenshot: screenshots/dv-07-symptom-chips
+
+# ===== PHASE 4: Edit interactions =====
+
+# CV-08: Toggle symptoms
+- tapOn: "Cramps"
+- tapOn: "Bloating"
+
+# Change flow to Heavy
+- scrollUntilVisible:
+    element: "How's your flow?"
+    direction: UP
+    timeout: 5000
+- tapOn: "Heavy"
+- takeScreenshot: screenshots/dv-08-heavy-and-symptoms
+
+# BC-03: Override tags visible
+- scrollUntilVisible:
+    element: "Factors"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Stress"
+- assertVisible: "Illness"
+- assertVisible: "Travel"
+- tapOn: "Travel"
+- takeScreenshot: screenshots/dv-09-factors
+
+# CV-10: Notes field
+- scrollUntilVisible:
+    element: "Add a note"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "How are you feeling today?"
+- inputText: "E2E verified by Maestro"
+- takeScreenshot: screenshots/dv-10-notes
+
+# Save edits
+- scrollUntilVisible:
+    element: "Save"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Save"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/dv-11-saved
+
+# ===== PHASE 5: Backward compatibility =====
+
+# BC-04: Dashboard still works
+- tapOn: "Today, tab, 1 of 3"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/dv-12-dashboard
+
+# RG-05: Settings still accessible
+- tapOn: "Settings, tab, 3 of 3"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/dv-13-settings
+
+# Back to calendar — verify logged day persists
+- tapOn: "Calendar, tab, 2 of 3"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/dv-14-calendar-final

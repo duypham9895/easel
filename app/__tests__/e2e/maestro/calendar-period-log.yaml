@@ -1,0 +1,89 @@
+appId: host.exp.Exponent
+tags:
+  - calendar
+  - period-log
+---
+
+# CR_20260316_001 — Calendar & Period Log Device Tests
+
+# Navigate to Calendar tab
+- tapOn: "Calendar, tab, 2 of 3"
+- assertVisible: "Cycle Calendar"
+- takeScreenshot: screenshots/01-calendar-tab
+
+# CV-14: Legend items visible
+- assertVisible: "Period (logged)"
+- assertVisible: "Period (predicted)"
+- assertVisible: "Fertile window"
+- assertVisible: "Ovulation day"
+- assertVisible: "Today"
+- takeScreenshot: screenshots/02-legend-visible
+
+# EC-01: Empty state hint visible
+- scrollUntilVisible:
+    element: "Tap a day to log your period"
+    direction: DOWN
+    timeout: 5000
+- takeScreenshot: screenshots/03-empty-state-hint
+
+# Scroll back up to calendar
+- scrollUntilVisible:
+    element: "Cycle Calendar"
+    direction: UP
+
+# CV-04: Tap a day to open PeriodLogPanel — tap day 15
+- tapOn:
+    text: "15"
+    index: 0
+- takeScreenshot: screenshots/04-day-tapped
+
+# CV-06: Flow intensity selector with 4 options
+- scrollUntilVisible:
+    element: "How's your flow?"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "How's your flow?"
+- assertVisible: "A little"
+- assertVisible: "Light"
+- assertVisible: "Moderate"
+- assertVisible: "Heavy"
+- takeScreenshot: screenshots/05-flow-selector
+
+# CV-08/CV-09: All 6 symptom chips visible
+- scrollUntilVisible:
+    element: "How are you feeling?"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Cramps"
+- assertVisible: "Tired"
+- assertVisible: "Headache"
+- assertVisible: "Bloating"
+- assertVisible: "Moody"
+- assertVisible: "Nausea"
+- takeScreenshot: screenshots/06-symptom-chips
+
+# CV-08: Toggle symptom chips
+- tapOn: "Cramps"
+- tapOn: "Tired"
+- takeScreenshot: screenshots/07-symptoms-selected
+
+# Tap flow "Heavy"
+- tapOn: "Heavy"
+- takeScreenshot: screenshots/08-flow-heavy
+
+# CV-10: Notes field
+- scrollUntilVisible:
+    element: "How are you feeling today?"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "How are you feeling today?"
+- inputText: "Feeling tired but okay"
+- takeScreenshot: screenshots/09-notes-entered
+
+# Save
+- scrollUntilVisible:
+    element: "Save"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Save"
+- takeScreenshot: screenshots/10-after-save

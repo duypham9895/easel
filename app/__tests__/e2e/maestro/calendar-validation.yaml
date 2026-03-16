@@ -1,0 +1,56 @@
+appId: host.exp.Exponent
+tags:
+  - calendar
+  - validation
+---
+
+# CR_20260316_001 — Date Validation & Edge Case Tests
+# Covers: EC-04, EC-08, EC-10, BC-04, RG-05
+
+# Navigate to Calendar tab
+- tapOn: "Calendar, tab, 2 of 3"
+- assertVisible: "Cycle Calendar"
+
+# Navigate forward to a future month
+- tapOn:
+    id: "header.arrow.right"
+- tapOn:
+    id: "header.arrow.right"
+- waitForAnimationToEnd
+
+# Tap a future date — should show error
+- tapOn: "15"
+- waitForAnimationToEnd
+- assertVisible: "You can't log a future date"
+- takeScreenshot: screenshots/future-date-error
+
+# Close panel
+- tapOn:
+    id: "close-button"
+- waitForAnimationToEnd
+
+# Go back to current month
+- tapOn:
+    id: "header.arrow.left"
+- tapOn:
+    id: "header.arrow.left"
+- waitForAnimationToEnd
+
+# EC-10: Switch to Vietnamese
+- tapOn: "Settings, tab, 3 of 3"
+- scrollUntilVisible:
+    element: "Ngôn ngữ"
+    direction: DOWN
+- tapOn: "Tiếng Việt"
+- tapOn: "Calendar, tab, 2 of 3"
+
+# Verify Vietnamese labels
+- assertVisible: "Lịch chu kỳ"
+- takeScreenshot: screenshots/calendar-vietnamese
+
+# Switch back to English
+- tapOn: "Settings, tab, 3 of 3"
+- scrollUntilVisible:
+    element: "Language"
+    direction: DOWN
+- tapOn: "English"

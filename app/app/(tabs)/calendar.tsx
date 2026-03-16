@@ -10,11 +10,11 @@ import { Colors, Spacing, Radii, Typography, CycleCalendarTokens } from '@/const
 import { getCurrentPhase, buildCalendarMarkers, enrichMarkersWithRangeInfo } from '@/utils/cycleCalculator';
 import { PHASE_INFO } from '@/constants/phases';
 import { CalendarDayCell } from '@/components/moon/CalendarDayCell';
-import { MyCycleCard } from '@/components/moon/MyCycleCard';
 import { PeriodLogPanel } from '@/components/moon/PeriodLogPanel';
 import { PredictionWindowCard } from '@/components/moon/PredictionWindowCard';
 import { SaveToast } from '@/components/shared/SaveToast';
 import { PartnerCalendarView } from '@/components/sun/PartnerCalendarView';
+import { impactLight } from '@/utils/haptics';
 
 export default function CalendarTab() {
   const cycleSettings = useAppStore(s => s.cycleSettings);
@@ -26,8 +26,10 @@ export default function CalendarTab() {
   const partnerCycleSettings = useAppStore(s => s.partnerCycleSettings);
   const predictionWindow = useAppStore(s => s.predictionWindow);
   const loadPeriodDayLogs = useAppStore(s => s.loadPeriodDayLogs);
+  const savePeriodDayLog = useAppStore(s => s.savePeriodDayLog);
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; variant: 'success' | 'error'; message: string }>({
     visible: false, variant: 'success', message: '',
   });
@@ -138,9 +140,30 @@ export default function CalendarTab() {
     [baseMarkers],
   );
 
+  // Two-tap logic: unlogged day → auto-mark; logged day → open sheet
   const handleDayPress = useCallback((dateString: string) => {
-    setSelectedDay(prev => prev === dateString ? null : dateString);
-  }, []);
+    // Block future dates
+    const selected = new Date(dateString + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selected.getTime() > today.getTime()) return;
+
+    const hasExistingLog = !!periodDayLogs[dateString];
+
+    if (hasExistingLog) {
+      // Logged day → open bottom sheet for editing
+      setSelectedDay(dateString);
+      setSheetOpen(true);
+    } else {
+      // Unlogged day → auto-mark as period with default flow
+      impactLight();
+      savePeriodDayLog(dateString, 'medium', []).then(() => {
+        setToast({ visible: true, variant: 'success', message: t('periodLoggedSuccess') });
+      }).catch(() => {
+        setToast({ visible: true, variant: 'error', message: t('saveError') });
+      });
+    }
+  }, [periodDayLogs, savePeriodDayLog, t]);
 
   const handleMonthChange = useCallback((month: { dateString: string }) => {
     const [year, m] = month.dateString.split('-').map(Number);
@@ -150,12 +173,18 @@ export default function CalendarTab() {
     loadPeriodDayLogs(startDate, endDate);
   }, [loadPeriodDayLogs]);
 
-  const handleSave = useCallback(() => {
+  const handleSheetSave = useCallback(() => {
     setToast({ visible: true, variant: 'success', message: t('periodLoggedSuccess') });
+    setSheetOpen(false);
     setSelectedDay(null);
   }, [t]);
 
-  // Existing log for selected day
+  const handleSheetClose = useCallback(() => {
+    setSheetOpen(false);
+    setSelectedDay(null);
+  }, []);
+
+  // Existing log for selected day (for bottom sheet)
   const existingPeriodLog = selectedDay
     ? periodLogs.find(l => l.startDate === selectedDay) ?? null
     : null;
@@ -223,21 +252,8 @@ export default function CalendarTab() {
           <LegendItem color={Colors.textPrimary} label={t('today')} />
         </View>
 
-        {/* Inline Period Log Panel */}
-        {selectedDay && (
-          <PeriodLogPanel
-            selectedDate={selectedDay}
-            existingDayLog={existingDayLog}
-            existingPeriodLog={existingPeriodLog}
-            markers={markers}
-            cycleSettings={cycleSettings}
-            onSave={handleSave}
-            onClose={() => setSelectedDay(null)}
-          />
-        )}
-
-        {/* Tap hint when no day selected */}
-        {!selectedDay && periodLogs.length === 0 && (
+        {/* Tap hint when no period logs exist */}
+        {periodLogs.length === 0 && (
           <Text style={styles.tapHint}>{t('tapToLog')}</Text>
         )}
 
@@ -245,17 +261,21 @@ export default function CalendarTab() {
         {predictionWindow && (
           <PredictionWindowCard prediction={predictionWindow} language={language} />
         )}
-
-        {/* My Cycle Card — Moon only */}
-        <MyCycleCard
-          cycleSettings={cycleSettings}
-          periodLogs={periodLogs}
-          language={language}
-          onLogPeriod={() => router.push('/health-sync')}
-          onEditSettings={() => router.push('/health-sync')}
-          onViewAllPeriods={() => router.push('/health-sync')}
-        />
       </ScrollView>
+
+      {/* Bottom sheet for editing a logged day */}
+      {selectedDay && (
+        <PeriodLogPanel
+          visible={sheetOpen}
+          selectedDate={selectedDay}
+          existingDayLog={existingDayLog}
+          existingPeriodLog={existingPeriodLog}
+          markers={markers}
+          cycleSettings={cycleSettings}
+          onSave={handleSheetSave}
+          onClose={handleSheetClose}
+        />
+      )}
     </SafeAreaView>
   );
 }

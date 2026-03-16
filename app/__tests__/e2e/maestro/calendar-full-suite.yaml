@@ -1,0 +1,123 @@
+appId: host.exp.Exponent
+tags:
+  - calendar
+  - full-suite
+---
+
+# CR_20260316_001 — Full Device Verification Suite
+
+# Start fresh — navigate to Today then Calendar
+- tapOn: "Today, tab, 1 of 3"
+- tapOn: "Calendar, tab, 2 of 3"
+- waitForAnimationToEnd
+
+# --- CV-01/CV-02/CV-14: Calendar phase rendering ---
+- scrollUntilVisible:
+    element: "Period (logged)"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Period (logged)"
+- assertVisible: "Period (predicted)"
+- assertVisible: "Fertile window"
+- assertVisible: "Ovulation day"
+- assertVisible: "Today"
+- takeScreenshot: screenshots/suite-01-legend
+
+# EC-01 already verified in first run (empty state)
+
+# --- Scroll back to calendar top ---
+- scrollUntilVisible:
+    element: "Cycle Calendar"
+    direction: UP
+    timeout: 5000
+
+# --- CV-04: Tap day to open panel ---
+# Tap day 10 (a past date in March)
+- tapOn:
+    text: "10"
+    index: 0
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-03-day10-tapped
+
+# --- CV-06: Flow selector with Moderate default ---
+- scrollUntilVisible:
+    element: "How's your flow?"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "A little"
+- assertVisible: "Light"
+- assertVisible: "Moderate"
+- assertVisible: "Heavy"
+- takeScreenshot: screenshots/suite-04-flow-options
+
+# --- CV-08/CV-09: All 6 symptom chips ---
+- scrollUntilVisible:
+    element: "How are you feeling?"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Cramps"
+- assertVisible: "Tired"
+- assertVisible: "Headache"
+- assertVisible: "Bloating"
+- assertVisible: "Moody"
+- assertVisible: "Nausea"
+
+# --- CV-08: Toggle symptoms ---
+- tapOn: "Cramps"
+- tapOn: "Headache"
+- takeScreenshot: screenshots/suite-05-symptoms-toggled
+
+# --- Select Heavy flow ---
+- scrollUntilVisible:
+    element: "How's your flow?"
+    direction: UP
+    timeout: 5000
+- tapOn: "Heavy"
+- takeScreenshot: screenshots/suite-06-flow-heavy
+
+# --- BC-03: Override tags (factors) visible ---
+- scrollUntilVisible:
+    element: "Factors"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Stress"
+- assertVisible: "Illness"
+- assertVisible: "Travel"
+- assertVisible: "Medication"
+- assertVisible: "Other"
+- takeScreenshot: screenshots/suite-07-factors
+
+# --- CV-10: Notes field ---
+- scrollUntilVisible:
+    element: "Add a note"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "How are you feeling today?"
+- inputText: "Test log from Maestro"
+- takeScreenshot: screenshots/suite-08-notes
+
+# --- Save and verify toast (CV-11) ---
+- scrollUntilVisible:
+    element: "Save"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Save"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-09-after-save
+
+# --- CV-01: Verify logged day has deep pink fill ---
+- scrollUntilVisible:
+    element: "March 2026"
+    direction: UP
+    timeout: 10000
+- takeScreenshot: screenshots/suite-10-calendar-after-log
+
+# --- BC-04: Dashboard still works ---
+- tapOn: "Today, tab, 1 of 3"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-11-dashboard
+
+# --- RG-05: Settings still accessible ---
+- tapOn: "Settings, tab, 3 of 3"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/suite-12-settings

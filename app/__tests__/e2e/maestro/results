@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="iPhone 17 Pro - iOS 26.3 - 1F0C7F6E-CC83-416B-BD64-D6A73641965A" tests="1" failures="1" time="18.0">
+    <testcase id="calendar-period-log" name="calendar-period-log" classname="calendar-period-log" time="18.0" status="ERROR">
+      <properties>
+        <property name="tags" value="calendar, period-log"/>
+      </properties>
+      <failure>Element not found: Text matching regex: Calendar</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
