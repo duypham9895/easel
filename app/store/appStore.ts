@@ -155,6 +155,23 @@ function recomputeCycleFromLogs(logs: PeriodRecord[], current: CycleSettings): C
   return { ...current, lastPeriodStartDate, avgCycleLength, avgPeriodLength };
 }
 
+/** Load recent (3-month) period day logs for a Moon user. Returns empty map on failure. */
+async function loadRecentDayLogs(userId: string, hasPeriodLogs: boolean): Promise<Record<string, PeriodDayRecord>> {
+  if (!hasPeriodLogs) return {};
+  const today = new Date().toISOString().split('T')[0];
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  try {
+    const records = await fetchPeriodDayLogs(userId, threeMonthsAgo.toISOString().split('T')[0], today);
+    const map: Record<string, PeriodDayRecord> = {};
+    for (const r of records) { map[r.logDate] = r; }
+    return map;
+  } catch (err) {
+    console.warn('[loadRecentDayLogs] failed:', err);
+    return {};
+  }
+}
+
 // Module-level timer refs so they can be cleared without adding to persisted state
 let _sosTimer: ReturnType<typeof setTimeout> | null = null;
 let _whisperTimer: ReturnType<typeof setTimeout> | null = null;
@@ -234,22 +251,9 @@ export const useAppStore = create<AppState>()(
           ? await fetchPeriodLogs(userId)
           : [];
 
-        // Load period day logs for Moon users
-        let periodDayLogsMap: Record<string, PeriodDayRecord> = {};
-        if (profile?.role === 'moon' && periodLogs.length > 0) {
-          const today = new Date().toISOString().split('T')[0];
-          const threeMonthsAgo = new Date();
-          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-          const startDate = threeMonthsAgo.toISOString().split('T')[0];
-          try {
-            const dayLogRecords = await fetchPeriodDayLogs(userId, startDate, today);
-            for (const r of dayLogRecords) {
-              periodDayLogsMap[r.logDate] = r;
-            }
-          } catch (err) {
-            console.warn('[signIn] period day logs load failed:', err);
-          }
-        }
+        const periodDayLogsMap = profile?.role === 'moon'
+          ? await loadRecentDayLogs(userId, periodLogs.length > 0)
+          : {};
 
         set({
           isLoggedIn: true,
@@ -358,22 +362,9 @@ export const useAppStore = create<AppState>()(
           ? await fetchPeriodLogs(userId)
           : [];
 
-        // Load period day logs (Flo-style per-day data) for Moon users
-        let periodDayLogsMap: Record<string, PeriodDayRecord> = {};
-        if (profile?.role === 'moon' && periodLogs.length > 0) {
-          const today = new Date().toISOString().split('T')[0];
-          const threeMonthsAgo = new Date();
-          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-          const startDate = threeMonthsAgo.toISOString().split('T')[0];
-          try {
-            const dayLogRecords = await fetchPeriodDayLogs(userId, startDate, today);
-            for (const r of dayLogRecords) {
-              periodDayLogsMap[r.logDate] = r;
-            }
-          } catch (err) {
-            console.warn('[bootstrapSession] period day logs load failed:', err);
-          }
-        }
+        const periodDayLogsMap = profile?.role === 'moon'
+          ? await loadRecentDayLogs(userId, periodLogs.length > 0)
+          : {};
 
         // Restore language preference from DB
         const { data: prefData } = await supabase
