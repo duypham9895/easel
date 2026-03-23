@@ -695,25 +695,28 @@ export const useAppStore = create<AppState>()(
           });
 
           if (!containingPeriod) {
-            // Check for adjacent period to extend
-            const adjacentPeriod = periodLogs.find((log) => {
-              const startMs = new Date(log.startDate + 'T00:00:00').getTime();
-              const endMs = log.endDate
-                ? new Date(log.endDate + 'T00:00:00').getTime()
-                : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
-              const dayBefore = startMs - 86_400_000;
-              const dayAfter = endMs + 86_400_000;
-              return logMs === dayBefore || logMs === dayAfter;
-            });
+            // Auto-create or extend period_log — best-effort, don't fail the day log save
+            try {
+              const adjacentPeriod = periodLogs.find((log) => {
+                const startMs = new Date(log.startDate + 'T00:00:00').getTime();
+                const endMs = log.endDate
+                  ? new Date(log.endDate + 'T00:00:00').getTime()
+                  : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
+                const dayBefore = startMs - 86_400_000;
+                const dayAfter = endMs + 86_400_000;
+                return logMs === dayBefore || logMs === dayAfter;
+              });
 
-            if (adjacentPeriod) {
-              // Extend adjacent period's end_date to include this day
-              const newEnd = logDate > (adjacentPeriod.endDate ?? adjacentPeriod.startDate)
-                ? logDate
-                : adjacentPeriod.endDate ?? adjacentPeriod.startDate;
-              await get().setPeriodEndDate(adjacentPeriod.startDate, newEnd);
-            } else {
-              await get().addPeriodLog(logDate);
+              if (adjacentPeriod) {
+                const newEnd = logDate > (adjacentPeriod.endDate ?? adjacentPeriod.startDate)
+                  ? logDate
+                  : adjacentPeriod.endDate ?? adjacentPeriod.startDate;
+                await get().setPeriodEndDate(adjacentPeriod.startDate, newEnd);
+              } else {
+                await get().addPeriodLog(logDate);
+              }
+            } catch (periodError) {
+              console.warn('[savePeriodDayLog] auto-period-create failed:', periodError);
             }
           }
         } catch (error) {
