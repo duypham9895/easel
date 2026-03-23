@@ -58,7 +58,7 @@ export default function AuthScreen() {
   const passwordRef = useRef<TextInput>(null);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const isValid = isValidEmail && password.length >= 6;
+  const isValid = isValidEmail && password.length >= 8;
 
   const isValidResetEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim());
 
