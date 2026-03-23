@@ -16,13 +16,13 @@ function AppWithHooks() {
   usePeriodDayLogListener();
 
   const bootstrapSession = useAppStore((s) => s.bootstrapSession);
-  const signOut = useAppStore((s) => s.signOut);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
-        // Token expired or remote sign-out — clear local state and redirect
-        signOut();
+        // Token expired or remote sign-out — redirect only (signOut already
+        // handles state cleanup when user-initiated; for external sign-outs,
+        // bootstrapSession on next mount will detect no session and redirect)
         router.replace('/auth');
       }
     });
