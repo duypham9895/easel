@@ -110,15 +110,15 @@ export function useHealthSyncOnboarding() {
 
       const avgCycleLength = computeAvgCycleLength(records);
       const avgPeriodLength = computeAvgPeriodLength(records);
-      const lastPeriodStartDate = records[records.length - 1].startDate;
+      const lastPeriodStartDate = records[0].startDate;
       const confidenceLevel = computeConfidence(records.length, 'healthkit');
 
       const result: SyncResult = {
         records,
         periodsFound: records.length,
         dateRange: {
-          start: records[0].startDate,
-          end: records[records.length - 1].startDate,
+          start: records[records.length - 1].startDate,
+          end: records[0].startDate,
         },
         avgCycleLength,
         avgPeriodLength,
