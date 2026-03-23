@@ -98,8 +98,8 @@ export default function AuthScreen() {
       const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
       if (error) throw error;
       setResendSuccess(true);
-    } catch {
-      // Silently fail — user can try again
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resend verification email');
     } finally {
       setIsResending(false);
     }
