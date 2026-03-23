@@ -449,7 +449,7 @@ export const useAppStore = create<AppState>()(
       addPeriodLog: async (startDate, endDate, tags) => {
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
-        await logPeriodStart(userId, startDate);
+
         const entry: PeriodRecord = {
           startDate,
           ...(endDate ? { endDate } : {}),
@@ -459,7 +459,6 @@ export const useAppStore = create<AppState>()(
           .sort((a, b) => b.startDate.localeCompare(a.startDate))
           .slice(0, 24);
 
-        // Detect deviation using PREVIOUS cycle settings (before recomputation)
         const deviation = cycleSettings.lastPeriodStartDate
           ? detectDeviation(startDate, cycleSettings.lastPeriodStartDate, cycleSettings.avgCycleLength)
           : null;
@@ -471,6 +470,18 @@ export const useAppStore = create<AppState>()(
           lastDeviation: deviation,
           predictionWindow: computePredictionWindow(updated, newCycleSettings),
         });
+
+        try {
+          await logPeriodStart(userId, startDate);
+        } catch (error) {
+          set({
+            periodLogs,
+            cycleSettings,
+            lastDeviation: null,
+            predictionWindow: computePredictionWindow(periodLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       clearDeviation: () => set({ lastDeviation: null }),
@@ -479,7 +490,6 @@ export const useAppStore = create<AppState>()(
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
 
-        // Optimistic update
         const updated = periodLogs.map((l) =>
           l.startDate === startDate ? { ...l, tags } : l,
         );
@@ -488,15 +498,21 @@ export const useAppStore = create<AppState>()(
           predictionWindow: computePredictionWindow(updated, cycleSettings),
         });
 
-        // Persist to DB
-        await updatePeriodLogTags(userId, startDate, tags);
+        try {
+          await updatePeriodLogTags(userId, startDate, tags);
+        } catch (error) {
+          set({
+            periodLogs,
+            predictionWindow: computePredictionWindow(periodLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       setPeriodEndDate: async (startDate, endDate) => {
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
 
-        // Optimistic update
         const updated = periodLogs.map((l) =>
           l.startDate === startDate ? { ...l, endDate } : l,
         );
@@ -507,21 +523,39 @@ export const useAppStore = create<AppState>()(
           predictionWindow: computePredictionWindow(updated, newCycleSettings),
         });
 
-        // Persist to DB
-        await updatePeriodEndDate(userId, startDate, endDate);
+        try {
+          await updatePeriodEndDate(userId, startDate, endDate);
+        } catch (error) {
+          set({
+            periodLogs,
+            cycleSettings,
+            predictionWindow: computePredictionWindow(periodLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       removePeriodLog: async (startDate) => {
-        const { userId, periodLogs, cycleSettings } = get();
+        const { userId, cycleSettings } = get();
         if (!userId) return;
-        await deletePeriodLog(userId, startDate);
-        const updated = periodLogs.filter((l) => l.startDate !== startDate);
+        const prevLogs = get().periodLogs;
+        const updated = prevLogs.filter((l) => l.startDate !== startDate);
         const newCycleSettings = recomputeCycleFromLogs(updated, cycleSettings);
         set({
           periodLogs: updated,
           cycleSettings: newCycleSettings,
           predictionWindow: computePredictionWindow(updated, newCycleSettings),
         });
+        try {
+          await deletePeriodLog(userId, startDate);
+        } catch (error) {
+          set({
+            periodLogs: prevLogs,
+            cycleSettings,
+            predictionWindow: computePredictionWindow(prevLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       // -----------------------------------------------------------------------
