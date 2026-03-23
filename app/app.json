@@ -37,7 +37,13 @@
     "plugins": [
       "expo-router",
       "expo-notifications",
-      "expo-image-picker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Easel needs access to your photos so you can set a profile picture.",
+          "cameraPermission": "Easel needs access to your camera so you can take a profile photo."
+        }
+      ],
       [
         "react-native-health",
         {

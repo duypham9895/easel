@@ -1,0 +1,151 @@
+appId: host.exp.Exponent
+tags:
+  - calendar
+  - period-log
+  - cr002
+---
+
+# CR_20260316_002 — Calendar Rebuild P0 Device Tests
+# Two-tap interaction: tap unlogged day = auto-mark, tap logged day = bottom sheet
+
+# Navigate to Calendar tab
+- tapOn: "Calendar, tab, 2 of 3"
+- assertVisible: "Cycle Calendar"
+- takeScreenshot: screenshots/cr002-01-calendar-tab
+
+# TC-001: MyCycleCard removed — verify no "Log a period" button or cycle stats
+- assertNotVisible:
+    text: "Log a period"
+    enabled: true
+- assertNotVisible:
+    text: "MY CYCLE"
+    enabled: true
+- takeScreenshot: screenshots/cr002-02-no-mycyclecard
+
+# TC-021: Legend still shows all 5 items
+- scrollUntilVisible:
+    element: "Period (logged)"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Period (logged)"
+- assertVisible: "Period (predicted)"
+- assertVisible: "Fertile window"
+- assertVisible: "Ovulation day"
+- assertVisible: "Today"
+- takeScreenshot: screenshots/cr002-03-legend
+
+# Scroll back to calendar grid
+- scrollUntilVisible:
+    element: "Cycle Calendar"
+    direction: UP
+    timeout: 5000
+
+# TC-003: Tap unlogged past day — auto-marks as period + toast
+- tapOn:
+    text: "10"
+    index: 0
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/cr002-04-after-first-tap
+
+# TC-004: Tap the same day again (now logged) — bottom sheet opens
+- tapOn:
+    text: "10"
+    index: 0
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/cr002-05-sheet-open
+
+# TC-005: Flow intensity selector visible in sheet
+- scrollUntilVisible:
+    element: "How's your flow?"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "How's your flow?"
+- assertVisible: "A little"
+- assertVisible: "Light"
+- assertVisible: "Moderate"
+- assertVisible: "Heavy"
+- takeScreenshot: screenshots/cr002-06-flow-selector
+
+# TC-006: Symptom chips visible and selectable
+- scrollUntilVisible:
+    element: "How are you feeling?"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Cramps"
+- assertVisible: "Tired"
+- assertVisible: "Headache"
+- assertVisible: "Bloating"
+- assertVisible: "Moody"
+- assertVisible: "Nausea"
+- tapOn: "Cramps"
+- tapOn: "Tired"
+- takeScreenshot: screenshots/cr002-07-symptoms-selected
+
+# TC-007: Notes field
+- scrollUntilVisible:
+    element: "Add a note"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "How are you feeling today?"
+- inputText: "CR002 test note"
+- takeScreenshot: screenshots/cr002-08-notes
+
+# TC-005 continued: Change flow to Heavy
+- scrollUntilVisible:
+    element: "How's your flow?"
+    direction: UP
+    timeout: 5000
+- tapOn: "Heavy"
+- takeScreenshot: screenshots/cr002-09-flow-heavy
+
+# Save from sheet
+- scrollUntilVisible:
+    element: "Save"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Save"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/cr002-10-after-save
+
+# TC-008: Reopen sheet and delete the log
+- tapOn:
+    text: "10"
+    index: 0
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element: "Delete"
+    direction: DOWN
+    timeout: 5000
+- tapOn: "Delete"
+- tapOn: "Remove this day"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/cr002-11-after-delete
+
+# TC-009: Future day not tappable — navigate forward 2 months
+- scrollUntilVisible:
+    element: "Cycle Calendar"
+    direction: UP
+    timeout: 5000
+- tapOn:
+    id: "header.arrow.right"
+- tapOn:
+    id: "header.arrow.right"
+- waitForAnimationToEnd
+- tapOn:
+    text: "15"
+    index: 0
+# No sheet should appear — calendar title still visible
+- assertVisible: "Cycle Calendar"
+- takeScreenshot: screenshots/cr002-12-future-day-blocked
+
+# Navigate back to current month
+- tapOn:
+    id: "header.arrow.left"
+- tapOn:
+    id: "header.arrow.left"
+- waitForAnimationToEnd
+
+# TC-018: Tap today — should work (auto-mark or open sheet)
+# Today's date varies, so we tap the first date in the "today" ring
+# This is best verified visually via screenshot
+- takeScreenshot: screenshots/cr002-13-final-state

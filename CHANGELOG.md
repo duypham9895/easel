@@ -9,6 +9,38 @@ Versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [1.7.1] — 2026-03-23
+
+### Added
+- **Flo-style Period Day Logging** — per-day flow intensity (spotting/light/medium/heavy), symptom tracking (6 types), and notes for each day within a period
+- **Cycle Timeline Calendar** — rebuilt calendar with custom day cells showing flow intensity dots, phase-colored backgrounds, and period range bars
+- **Period Log Panel** — bottom sheet for detailed day editing with flow selector, symptom chips, override tags, and notes
+- **Partner Day Log Sync** — Sun receives Moon's day-by-day flow/symptom updates in real-time via Supabase Realtime
+- **Migration 008** — `period_day_logs` table with full RLS (owner read/write, partner read-only), CHECK constraints, and GIN index on symptoms
+
+### Fixed
+- **HealthKit sync** — `lastPeriodStartDate` now correctly uses the most recent period (was using the oldest)
+- **SOS/Whisper signals** — no longer silently dropped when not paired; throws `NOT_PAIRED` error with UI feedback
+- **Optimistic update rollbacks** — all 6 period/day log store actions now roll back on DB failure (was silently losing data)
+- **Stale closure rollback** — `savePeriodDayLog` and `removePeriodDayLog` now read current state on rollback instead of restoring a captured snapshot (was nuking concurrent Realtime updates)
+- **Partner linking race** — `linkToPartnerByCode` now detects 0-row updates from PostgREST, preventing double-link confusion
+- **Double sign-out** — auth state listener no longer calls `signOut()` (was racing with user-initiated sign-out)
+- **avgPeriodLength** — `recomputeCycleFromLogs` now updates period duration from log data (was stuck at initial/default value)
+- **SOS acknowledgment** — `acknowledgeSOSSignal` now detects 0-row updates (was silently failing on RLS block)
+- **Auth resend** — verification email resend now surfaces errors (was silently swallowing all failures)
+- **Auto-period-create** — day log save no longer fails if the auto-created period_log write fails (best-effort)
+
+### Changed
+- **Luteal phase copy** — replaced "irritable" with "tender/emotionally present", "avoid arguments" with "choose connection over conflict" (EN + VI)
+- **Partner benefit copy** — replaced "Never be caught off guard" / "emotions run high" with empathetic framing (EN + VI)
+- **SunDashboard empty state** — added proper i18n keys, removed blame language ("Moon hasn't set up her cycle yet")
+- **Proxy language validation** — all 8 AI endpoints now enforce `['en', 'vi']` whitelist (was accepting arbitrary strings on 7/8)
+- **Password minimum** — signup now requires 8 characters (was 6, inconsistent with reset-password)
+- **Health endpoint** — removed `MINIMAX_MODEL` name and env config from public `/api/health` response
+- **GitHub Actions** — downgraded `actions/checkout` and `actions/setup-node` from non-existent `@v6` to `@v4`
+- **iOS permissions** — customized camera/photo permission strings for App Store Review compliance
+- **DRY refactor** — extracted `loadRecentDayLogs` helper to deduplicate `signIn`/`bootstrapSession` day log loading
+
 ## [1.7.0] — 2026-03-12
 
 ### Added

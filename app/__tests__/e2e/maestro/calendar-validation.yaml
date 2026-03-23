@@ -1,0 +1,64 @@
+appId: host.exp.Exponent
+tags:
+  - calendar
+  - validation
+  - cr002
+---
+
+# CR_20260316_002 — Validation & Edge Case Tests
+# Covers: TC-009, TC-010, TC-011, TC-024
+
+# Navigate to Calendar tab
+- tapOn: "Calendar, tab, 2 of 3"
+- assertVisible: "Cycle Calendar"
+
+# TC-009: Navigate forward to future month — tap a day, nothing happens
+- tapOn:
+    id: "header.arrow.right"
+- tapOn:
+    id: "header.arrow.right"
+- waitForAnimationToEnd
+- tapOn: "15"
+- waitForAnimationToEnd
+# No sheet, no toast — calendar title still visible
+- assertVisible: "Cycle Calendar"
+- takeScreenshot: screenshots/cr002-val-01-future-blocked
+
+# Go back to current month
+- tapOn:
+    id: "header.arrow.left"
+- tapOn:
+    id: "header.arrow.left"
+- waitForAnimationToEnd
+
+# TC-011: Predictions visible on future months
+- tapOn:
+    id: "header.arrow.right"
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/cr002-val-02-predictions-next-month
+
+# Go back
+- tapOn:
+    id: "header.arrow.left"
+- waitForAnimationToEnd
+
+# EC-10: Switch to Vietnamese
+- tapOn: "Settings, tab, 3 of 3"
+- scrollUntilVisible:
+    element: "Ngôn ngữ"
+    direction: DOWN
+    timeout: 8000
+- tapOn: "Tiếng Việt"
+- tapOn: "Calendar, tab, 2 of 3"
+
+# Verify Vietnamese labels
+- assertVisible: "Lịch chu kỳ"
+- takeScreenshot: screenshots/cr002-val-03-vietnamese
+
+# Switch back to English
+- tapOn: "Settings, tab, 3 of 3"
+- scrollUntilVisible:
+    element: "Language"
+    direction: DOWN
+    timeout: 8000
+- tapOn: "English"

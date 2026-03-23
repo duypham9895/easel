@@ -79,7 +79,7 @@ export async function linkToPartnerByCode(
   if (expiresAt && expiresAt < new Date()) throw new Error('Link code has expired');
 
   // Claim the couple row atomically — only succeeds if status is still 'pending'
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from('couples')
     .update({
       boyfriend_id: boyfriendId,
@@ -89,9 +89,13 @@ export async function linkToPartnerByCode(
       link_code_expires_at: null,
     })
     .eq('id', data.id)
-    .eq('status', 'pending'); // atomic guard against race condition
+    .eq('status', 'pending')
+    .select('id');
 
   if (updateError) throw updateError;
+  if (!updated || updated.length === 0) {
+    throw new Error('This code has already been used');
+  }
   return data.id;
 }
 

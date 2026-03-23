@@ -125,7 +125,7 @@ function makeDefaultCycleSettings(): CycleSettings {
   };
 }
 
-/** Compute lastPeriodStartDate and avgCycleLength from period log history. */
+/** Compute lastPeriodStartDate, avgCycleLength, and avgPeriodLength from log history. */
 function recomputeCycleFromLogs(logs: PeriodRecord[], current: CycleSettings): CycleSettings {
   const lastPeriodStartDate = logs[0]?.startDate ?? current.lastPeriodStartDate;
   const gaps: number[] = [];
@@ -138,7 +138,38 @@ function recomputeCycleFromLogs(logs: PeriodRecord[], current: CycleSettings): C
   const avgCycleLength = gaps.length > 0
     ? Math.round(gaps.reduce((sum, d) => sum + d, 0) / gaps.length)
     : current.avgCycleLength;
-  return { ...current, lastPeriodStartDate, avgCycleLength };
+
+  const durations: number[] = [];
+  for (const log of logs) {
+    if (log.endDate) {
+      const d = Math.round(
+        (new Date(log.endDate).getTime() - new Date(log.startDate).getTime()) / 86_400_000,
+      ) + 1;
+      if (d >= 1 && d <= 14) durations.push(d);
+    }
+  }
+  const avgPeriodLength = durations.length > 0
+    ? Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length)
+    : current.avgPeriodLength;
+
+  return { ...current, lastPeriodStartDate, avgCycleLength, avgPeriodLength };
+}
+
+/** Load recent (3-month) period day logs for a Moon user. Returns empty map on failure. */
+async function loadRecentDayLogs(userId: string, hasPeriodLogs: boolean): Promise<Record<string, PeriodDayRecord>> {
+  if (!hasPeriodLogs) return {};
+  const today = new Date().toISOString().split('T')[0];
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  try {
+    const records = await fetchPeriodDayLogs(userId, threeMonthsAgo.toISOString().split('T')[0], today);
+    const map: Record<string, PeriodDayRecord> = {};
+    for (const r of records) { map[r.logDate] = r; }
+    return map;
+  } catch (err) {
+    console.warn('[loadRecentDayLogs] failed:', err);
+    return {};
+  }
 }
 
 // Module-level timer refs so they can be cleared without adding to persisted state
@@ -220,22 +251,9 @@ export const useAppStore = create<AppState>()(
           ? await fetchPeriodLogs(userId)
           : [];
 
-        // Load period day logs for Moon users
-        let periodDayLogsMap: Record<string, PeriodDayRecord> = {};
-        if (profile?.role === 'moon' && periodLogs.length > 0) {
-          const today = new Date().toISOString().split('T')[0];
-          const threeMonthsAgo = new Date();
-          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-          const startDate = threeMonthsAgo.toISOString().split('T')[0];
-          try {
-            const dayLogRecords = await fetchPeriodDayLogs(userId, startDate, today);
-            for (const r of dayLogRecords) {
-              periodDayLogsMap[r.logDate] = r;
-            }
-          } catch (err) {
-            console.warn('[signIn] period day logs load failed:', err);
-          }
-        }
+        const periodDayLogsMap = profile?.role === 'moon'
+          ? await loadRecentDayLogs(userId, periodLogs.length > 0)
+          : {};
 
         set({
           isLoggedIn: true,
@@ -344,22 +362,9 @@ export const useAppStore = create<AppState>()(
           ? await fetchPeriodLogs(userId)
           : [];
 
-        // Load period day logs (Flo-style per-day data) for Moon users
-        let periodDayLogsMap: Record<string, PeriodDayRecord> = {};
-        if (profile?.role === 'moon' && periodLogs.length > 0) {
-          const today = new Date().toISOString().split('T')[0];
-          const threeMonthsAgo = new Date();
-          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-          const startDate = threeMonthsAgo.toISOString().split('T')[0];
-          try {
-            const dayLogRecords = await fetchPeriodDayLogs(userId, startDate, today);
-            for (const r of dayLogRecords) {
-              periodDayLogsMap[r.logDate] = r;
-            }
-          } catch (err) {
-            console.warn('[bootstrapSession] period day logs load failed:', err);
-          }
-        }
+        const periodDayLogsMap = profile?.role === 'moon'
+          ? await loadRecentDayLogs(userId, periodLogs.length > 0)
+          : {};
 
         // Restore language preference from DB
         const { data: prefData } = await supabase
@@ -449,7 +454,7 @@ export const useAppStore = create<AppState>()(
       addPeriodLog: async (startDate, endDate, tags) => {
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
-        await logPeriodStart(userId, startDate);
+
         const entry: PeriodRecord = {
           startDate,
           ...(endDate ? { endDate } : {}),
@@ -459,7 +464,6 @@ export const useAppStore = create<AppState>()(
           .sort((a, b) => b.startDate.localeCompare(a.startDate))
           .slice(0, 24);
 
-        // Detect deviation using PREVIOUS cycle settings (before recomputation)
         const deviation = cycleSettings.lastPeriodStartDate
           ? detectDeviation(startDate, cycleSettings.lastPeriodStartDate, cycleSettings.avgCycleLength)
           : null;
@@ -471,6 +475,18 @@ export const useAppStore = create<AppState>()(
           lastDeviation: deviation,
           predictionWindow: computePredictionWindow(updated, newCycleSettings),
         });
+
+        try {
+          await logPeriodStart(userId, startDate);
+        } catch (error) {
+          set({
+            periodLogs,
+            cycleSettings,
+            lastDeviation: null,
+            predictionWindow: computePredictionWindow(periodLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       clearDeviation: () => set({ lastDeviation: null }),
@@ -479,7 +495,6 @@ export const useAppStore = create<AppState>()(
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
 
-        // Optimistic update
         const updated = periodLogs.map((l) =>
           l.startDate === startDate ? { ...l, tags } : l,
         );
@@ -488,15 +503,21 @@ export const useAppStore = create<AppState>()(
           predictionWindow: computePredictionWindow(updated, cycleSettings),
         });
 
-        // Persist to DB
-        await updatePeriodLogTags(userId, startDate, tags);
+        try {
+          await updatePeriodLogTags(userId, startDate, tags);
+        } catch (error) {
+          set({
+            periodLogs,
+            predictionWindow: computePredictionWindow(periodLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       setPeriodEndDate: async (startDate, endDate) => {
         const { userId, periodLogs, cycleSettings } = get();
         if (!userId) return;
 
-        // Optimistic update
         const updated = periodLogs.map((l) =>
           l.startDate === startDate ? { ...l, endDate } : l,
         );
@@ -507,21 +528,39 @@ export const useAppStore = create<AppState>()(
           predictionWindow: computePredictionWindow(updated, newCycleSettings),
         });
 
-        // Persist to DB
-        await updatePeriodEndDate(userId, startDate, endDate);
+        try {
+          await updatePeriodEndDate(userId, startDate, endDate);
+        } catch (error) {
+          set({
+            periodLogs,
+            cycleSettings,
+            predictionWindow: computePredictionWindow(periodLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       removePeriodLog: async (startDate) => {
-        const { userId, periodLogs, cycleSettings } = get();
+        const { userId, cycleSettings } = get();
         if (!userId) return;
-        await deletePeriodLog(userId, startDate);
-        const updated = periodLogs.filter((l) => l.startDate !== startDate);
+        const prevLogs = get().periodLogs;
+        const updated = prevLogs.filter((l) => l.startDate !== startDate);
         const newCycleSettings = recomputeCycleFromLogs(updated, cycleSettings);
         set({
           periodLogs: updated,
           cycleSettings: newCycleSettings,
           predictionWindow: computePredictionWindow(updated, newCycleSettings),
         });
+        try {
+          await deletePeriodLog(userId, startDate);
+        } catch (error) {
+          set({
+            periodLogs: prevLogs,
+            cycleSettings,
+            predictionWindow: computePredictionWindow(prevLogs, cycleSettings),
+          });
+          throw error;
+        }
       },
 
       // -----------------------------------------------------------------------
@@ -529,15 +568,15 @@ export const useAppStore = create<AppState>()(
       // -----------------------------------------------------------------------
       sendSOS: async (option) => {
         const { userId, coupleId } = get();
+        if (!userId || !coupleId) {
+          throw new Error('NOT_PAIRED');
+        }
 
         if (_sosTimer) clearTimeout(_sosTimer);
         set({ activeSOS: option });
-        _sosTimer = setTimeout(() => get().clearSOS(), 300_000); // 5 min — enough time to notice
+        _sosTimer = setTimeout(() => get().clearSOS(), 300_000);
 
-        // Persist to DB so BF's Realtime subscription triggers
-        if (userId && coupleId) {
-          await sendSOSSignal(coupleId, userId, option);
-        }
+        await sendSOSSignal(coupleId, userId, option);
       },
 
       // Called by useSOSListener when BF receives via Realtime — no DB write needed
@@ -557,12 +596,15 @@ export const useAppStore = create<AppState>()(
       // -----------------------------------------------------------------------
       sendWhisper: async (option) => {
         const { userId, coupleId } = get();
+        if (!userId || !coupleId) {
+          throw new Error('NOT_PAIRED');
+        }
+
         if (_whisperTimer) clearTimeout(_whisperTimer);
         set({ activeWhisper: option });
-        _whisperTimer = setTimeout(() => get().clearWhisper(), 300_000); // 5 min
-        if (userId && coupleId) {
-          await sendSOSSignal(coupleId, userId, option);
-        }
+        _whisperTimer = setTimeout(() => get().clearWhisper(), 300_000);
+
+        await sendSOSSignal(coupleId, userId, option);
       },
       receiveWhisper: (option) => {
         if (_whisperTimer) clearTimeout(_whisperTimer);
@@ -644,29 +686,37 @@ export const useAppStore = create<AppState>()(
           });
 
           if (!containingPeriod) {
-            // Check for adjacent period to extend
-            const adjacentPeriod = periodLogs.find((log) => {
-              const startMs = new Date(log.startDate + 'T00:00:00').getTime();
-              const endMs = log.endDate
-                ? new Date(log.endDate + 'T00:00:00').getTime()
-                : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
-              const dayBefore = startMs - 86_400_000;
-              const dayAfter = endMs + 86_400_000;
-              return logMs === dayBefore || logMs === dayAfter;
-            });
+            // Auto-create or extend period_log — best-effort, don't fail the day log save
+            try {
+              const adjacentPeriod = periodLogs.find((log) => {
+                const startMs = new Date(log.startDate + 'T00:00:00').getTime();
+                const endMs = log.endDate
+                  ? new Date(log.endDate + 'T00:00:00').getTime()
+                  : startMs + (cycleSettings.avgPeriodLength - 1) * 86_400_000;
+                const dayBefore = startMs - 86_400_000;
+                const dayAfter = endMs + 86_400_000;
+                return logMs === dayBefore || logMs === dayAfter;
+              });
 
-            if (adjacentPeriod) {
-              // Extend adjacent period's end_date to include this day
-              const newEnd = logDate > (adjacentPeriod.endDate ?? adjacentPeriod.startDate)
-                ? logDate
-                : adjacentPeriod.endDate ?? adjacentPeriod.startDate;
-              await get().setPeriodEndDate(adjacentPeriod.startDate, newEnd);
-            } else {
-              await get().addPeriodLog(logDate);
+              if (adjacentPeriod) {
+                const newEnd = logDate > (adjacentPeriod.endDate ?? adjacentPeriod.startDate)
+                  ? logDate
+                  : adjacentPeriod.endDate ?? adjacentPeriod.startDate;
+                await get().setPeriodEndDate(adjacentPeriod.startDate, newEnd);
+              } else {
+                await get().addPeriodLog(logDate);
+              }
+            } catch (periodError) {
+              console.warn('[savePeriodDayLog] auto-period-create failed:', periodError);
             }
           }
         } catch (error) {
-          set({ periodDayLogs });
+          const current = get().periodDayLogs;
+          const { [logDate]: _drop, ...withoutThisDay } = current;
+          set({ periodDayLogs: periodDayLogs[logDate]
+            ? { ...withoutThisDay, [logDate]: periodDayLogs[logDate] }
+            : withoutThisDay,
+          });
           throw error;
         } finally {
           set({ isSavingDayLog: false });
@@ -689,13 +739,18 @@ export const useAppStore = create<AppState>()(
         const { userId, periodDayLogs } = get();
         if (!userId) return;
 
+        const removedEntry = periodDayLogs[logDate];
         const { [logDate]: _removed, ...remaining } = periodDayLogs;
         set({ periodDayLogs: remaining });
 
         try {
           await deletePeriodDayLog(userId, logDate);
         } catch (error) {
-          set({ periodDayLogs });
+          const current = get().periodDayLogs;
+          set({ periodDayLogs: removedEntry
+            ? { ...current, [logDate]: removedEntry }
+            : current,
+          });
           throw error;
         }
       },

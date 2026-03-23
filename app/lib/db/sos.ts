@@ -32,12 +32,16 @@ export async function sendSOSSignal(
 
 /** BF acknowledges a received SOS. */
 export async function acknowledgeSOSSignal(signalId: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('sos_signals')
     .update({ acknowledged_at: new Date().toISOString() })
-    .eq('id', signalId);
+    .eq('id', signalId)
+    .select('id');
 
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('SOS signal not found or already acknowledged');
+  }
 }
 
 /**

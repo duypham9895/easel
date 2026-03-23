@@ -197,10 +197,10 @@ export function SunDashboard() {
               </View>
               <View style={styles.statusText}>
                 <Text style={[styles.phaseName, { color: SUN.textSecondary }]}>
-                  {t('waitingForCycleData', { defaultValue: 'Waiting for cycle data' })}
+                  {t('waitingForCycleData')}
                 </Text>
                 <Text style={styles.phaseTagline}>
-                  {t('moonHasntSetUp', { defaultValue: 'Moon hasn\'t set up her cycle yet' })}
+                  {t('moonHasntSetUp')}
                 </Text>
               </View>
             </View>

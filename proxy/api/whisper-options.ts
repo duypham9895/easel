@@ -51,7 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cleanSelections = selections.map((s: string) => sanitizeInput(s, 50));
 
   try {
-    const lang = typeof language === 'string' ? language : 'en';
+    const VALID_LANGUAGES = new Set(['en', 'vi']);
+  const lang = typeof language === 'string' && VALID_LANGUAGES.has(language) ? language : 'en';
     const options = await generateWhisperOptions(phase, dayInCycle, cleanSelections, lang);
     return res.status(200).json({ options });
   } catch (err) {
