@@ -529,15 +529,15 @@ export const useAppStore = create<AppState>()(
       // -----------------------------------------------------------------------
       sendSOS: async (option) => {
         const { userId, coupleId } = get();
+        if (!userId || !coupleId) {
+          throw new Error('NOT_PAIRED');
+        }
 
         if (_sosTimer) clearTimeout(_sosTimer);
         set({ activeSOS: option });
-        _sosTimer = setTimeout(() => get().clearSOS(), 300_000); // 5 min — enough time to notice
+        _sosTimer = setTimeout(() => get().clearSOS(), 300_000);
 
-        // Persist to DB so BF's Realtime subscription triggers
-        if (userId && coupleId) {
-          await sendSOSSignal(coupleId, userId, option);
-        }
+        await sendSOSSignal(coupleId, userId, option);
       },
 
       // Called by useSOSListener when BF receives via Realtime — no DB write needed
@@ -557,12 +557,15 @@ export const useAppStore = create<AppState>()(
       // -----------------------------------------------------------------------
       sendWhisper: async (option) => {
         const { userId, coupleId } = get();
+        if (!userId || !coupleId) {
+          throw new Error('NOT_PAIRED');
+        }
+
         if (_whisperTimer) clearTimeout(_whisperTimer);
         set({ activeWhisper: option });
-        _whisperTimer = setTimeout(() => get().clearWhisper(), 300_000); // 5 min
-        if (userId && coupleId) {
-          await sendSOSSignal(coupleId, userId, option);
-        }
+        _whisperTimer = setTimeout(() => get().clearWhisper(), 300_000);
+
+        await sendSOSSignal(coupleId, userId, option);
       },
       receiveWhisper: (option) => {
         if (_whisperTimer) clearTimeout(_whisperTimer);
