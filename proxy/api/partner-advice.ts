@@ -53,7 +53,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cleanSymptoms = symptoms ? symptoms.map((s: string) => sanitizeInput(s, 30)) : undefined;
 
   try {
-    const lang = typeof language === 'string' ? language : 'en';
+    const VALID_LANGUAGES = new Set(['en', 'vi']);
+  const lang = typeof language === 'string' && VALID_LANGUAGES.has(language) ? language : 'en';
     const advice = await generatePartnerAdvice(
       phase,
       dayInCycle,

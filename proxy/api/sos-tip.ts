@@ -36,7 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const lang = typeof language === 'string' ? language : 'en';
+    const VALID_LANGUAGES = new Set(['en', 'vi']);
+  const lang = typeof language === 'string' && VALID_LANGUAGES.has(language) ? language : 'en';
     const tip = await generateSOSTip(sosType, phase, dayInCycle, lang);
     return res.status(200).json({ tip });
   } catch (err) {
