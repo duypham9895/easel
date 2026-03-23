@@ -703,7 +703,12 @@ export const useAppStore = create<AppState>()(
             }
           }
         } catch (error) {
-          set({ periodDayLogs });
+          const current = get().periodDayLogs;
+          const { [logDate]: _drop, ...withoutThisDay } = current;
+          set({ periodDayLogs: periodDayLogs[logDate]
+            ? { ...withoutThisDay, [logDate]: periodDayLogs[logDate] }
+            : withoutThisDay,
+          });
           throw error;
         } finally {
           set({ isSavingDayLog: false });
@@ -726,13 +731,18 @@ export const useAppStore = create<AppState>()(
         const { userId, periodDayLogs } = get();
         if (!userId) return;
 
+        const removedEntry = periodDayLogs[logDate];
         const { [logDate]: _removed, ...remaining } = periodDayLogs;
         set({ periodDayLogs: remaining });
 
         try {
           await deletePeriodDayLog(userId, logDate);
         } catch (error) {
-          set({ periodDayLogs });
+          const current = get().periodDayLogs;
+          set({ periodDayLogs: removedEntry
+            ? { ...current, [logDate]: removedEntry }
+            : current,
+          });
           throw error;
         }
       },
