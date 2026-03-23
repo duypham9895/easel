@@ -125,7 +125,7 @@ function makeDefaultCycleSettings(): CycleSettings {
   };
 }
 
-/** Compute lastPeriodStartDate and avgCycleLength from period log history. */
+/** Compute lastPeriodStartDate, avgCycleLength, and avgPeriodLength from log history. */
 function recomputeCycleFromLogs(logs: PeriodRecord[], current: CycleSettings): CycleSettings {
   const lastPeriodStartDate = logs[0]?.startDate ?? current.lastPeriodStartDate;
   const gaps: number[] = [];
@@ -138,7 +138,21 @@ function recomputeCycleFromLogs(logs: PeriodRecord[], current: CycleSettings): C
   const avgCycleLength = gaps.length > 0
     ? Math.round(gaps.reduce((sum, d) => sum + d, 0) / gaps.length)
     : current.avgCycleLength;
-  return { ...current, lastPeriodStartDate, avgCycleLength };
+
+  const durations: number[] = [];
+  for (const log of logs) {
+    if (log.endDate) {
+      const d = Math.round(
+        (new Date(log.endDate).getTime() - new Date(log.startDate).getTime()) / 86_400_000,
+      ) + 1;
+      if (d >= 1 && d <= 14) durations.push(d);
+    }
+  }
+  const avgPeriodLength = durations.length > 0
+    ? Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length)
+    : current.avgPeriodLength;
+
+  return { ...current, lastPeriodStartDate, avgCycleLength, avgPeriodLength };
 }
 
 // Module-level timer refs so they can be cleared without adding to persisted state
